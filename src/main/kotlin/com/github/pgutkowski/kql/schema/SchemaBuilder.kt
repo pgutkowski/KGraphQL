@@ -6,7 +6,7 @@ import kotlin.reflect.KClass
 
 interface SchemaBuilder {
 
-    fun addClass(clazz : KClass<*>) : SchemaBuilder
+    fun <T : Any> addClass(kClass: KClass<T>) : SchemaBuilder
 
     fun build() : Schema
 

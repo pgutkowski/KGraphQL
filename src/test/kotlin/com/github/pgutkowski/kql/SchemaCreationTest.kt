@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kql
 
-import com.github.pgutkowski.kql.support.ClassSupport
+import com.github.pgutkowski.kql.support.QueryResolver
 import org.junit.Test
 
 
@@ -8,10 +8,15 @@ class SchemaCreationTest {
 
     @Test
     fun testBasicCreation(){
-        val schema = KQL.newSchema()
-                .addSupportedClass(TestClasses.InputClass::class, object: ClassSupport<TestClasses.InputClass> {})
-                .addClass(TestClasses.QueryClass::class)
-                .addClass(TestClasses.WithCollection::class)
+        KQL.newSchema()
+                .addInput(TestClasses.InputClass::class)
+                .addQuery(TestClasses.QueryClass::class, listOf(object: QueryResolver<TestClasses.QueryClass> {}))
+                .addQuery(TestClasses.WithCollection::class, listOf(object: QueryResolver<TestClasses.WithCollection> {}))
                 .build()
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun testInvalidQueryWithoutResolver(){
+        KQL.newSchema().addQuery(TestClasses.QueryClass::class, emptyList()).build()
     }
 }

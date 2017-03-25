@@ -1,16 +1,15 @@
 package com.github.pgutkowski.kql.schema.impl
 
 import com.github.pgutkowski.kql.TestClasses
-import com.github.pgutkowski.kql.support.ClassSupport
+import com.github.pgutkowski.kql.support.QueryResolver
 import org.junit.Test
 
 
 class DefaultSchemaTest {
 
     val testedSchema = DefaultSchemaBuilder()
-            .addSupportedClass(TestClasses.InputClass::class, object: ClassSupport<TestClasses.InputClass> {})
-            .addClass(TestClasses.QueryClass::class)
-            .addClass(TestClasses.WithCollection::class)
+            .addInput(TestClasses.InputClass::class)
+            .addQuery(TestClasses.QueryClass::class, listOf(object:  QueryResolver<TestClasses.QueryClass> {}))
             .build()
 
     @Test

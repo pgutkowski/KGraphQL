@@ -1,8 +1,8 @@
 package com.github.pgutkowski.kql.schema
 
-import com.github.pgutkowski.kql.query.Result
+import com.github.pgutkowski.kql.request.result.Result
 
 
 interface Schema {
-    fun handleQuery(query: String) : Result
+    fun handleRequest(request: String) : Result
 }

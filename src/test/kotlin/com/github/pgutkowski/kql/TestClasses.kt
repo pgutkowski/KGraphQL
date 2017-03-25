@@ -1,9 +1,9 @@
 package com.github.pgutkowski.kql
 
 import com.github.pgutkowski.kql.annotation.type.Input
-import com.github.pgutkowski.kql.annotation.type.Mutation
+import com.github.pgutkowski.kql.annotation.method.Mutation
 import com.github.pgutkowski.kql.annotation.type.Query
-import com.github.pgutkowski.kql.support.ByteArrayScalarSupport
+import com.github.pgutkowski.kql.scalar.ByteArrayScalarSupport
 
 
 class TestClasses {

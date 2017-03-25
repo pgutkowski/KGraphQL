@@ -1,3 +1,3 @@
-package com.github.pgutkowski.kql.support
+package com.github.pgutkowski.kql.scalar
 
 interface ByteScalarSupport<O> : ScalarSupport<O, Byte>

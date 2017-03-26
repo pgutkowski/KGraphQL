@@ -9,7 +9,11 @@ import org.junit.Test
 class RequestParserTest {
 
     val requestParser = RequestParser({
-        if(it.contains("id", true)) ParsedRequest.Action.QUERY else ParsedRequest.Action.MUTATION
+        if(it.contains("id", true) || it.contains("name", true)){
+            ParsedRequest.Action.QUERY
+        } else{
+            ParsedRequest.Action.MUTATION
+        }
     })
 
     @Test
@@ -21,9 +25,9 @@ class RequestParserTest {
 
     @Test
     fun dropRequestHeader(){
-        assertThat(requestParser.dropRequestHeader("{}"), equalTo(""))
-        assertThat(requestParser.dropRequestHeader("query {}"), equalTo(""))
-        assertThat(requestParser.dropRequestHeader("query CoolQuery { id, name }"), equalTo("id, name"))
+        assertThat(requestParser.dropRequestHeader("{}"), equalTo("{}"))
+        assertThat(requestParser.dropRequestHeader("query {}"), equalTo("{}"))
+        assertThat(requestParser.dropRequestHeader("query CoolQuery { id, name }"), equalTo("{ id, name }"))
     }
 
     @Test
@@ -31,7 +35,13 @@ class RequestParserTest {
         assertThat(requestParser.parse("query CoolQuery { id, name }").action, equalTo(ParsedRequest.Action.QUERY))
         assertThat(requestParser.parse("{ id, name }").action, equalTo(ParsedRequest.Action.QUERY))
 
-        assertThat(requestParser.parse("mutation HotMutation { id, name }").action, equalTo(ParsedRequest.Action.MUTATION))
-        assertThat(requestParser.parse("{ age, name }").action, equalTo(ParsedRequest.Action.MUTATION))
+        assertThat(requestParser.parse("mutation HotMutation { age, date }").action, equalTo(ParsedRequest.Action.MUTATION))
+        assertThat(requestParser.parse("{ age, date }").action, equalTo(ParsedRequest.Action.MUTATION))
+    }
+
+    @Test
+    fun testParsing(){
+        val result = requestParser.parse("query CoolQuery { id, name }")
+        println(result)
     }
 }

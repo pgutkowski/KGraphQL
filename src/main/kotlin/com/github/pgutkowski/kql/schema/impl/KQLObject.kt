@@ -14,7 +14,7 @@ sealed class KQLObject(val name : String) {
 
     class Mutation(name : String, val resolver: MutationResolver, val functions: List<KFunction<*>>) : KQLObject(name)
 
-    class Query<T : Any>(
+    class QueryField<T : Any>(
             name: String,
             val kClass: KClass<T>,
             val resolvers: List<QueryResolver<T>>,

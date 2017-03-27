@@ -1,7 +1,7 @@
 package com.github.pgutkowski.kql
 
 import com.github.pgutkowski.kql.annotation.type.Input
-import com.github.pgutkowski.kql.annotation.method.Mutation
+import com.github.pgutkowski.kql.annotation.method.ResolvingFunction
 import com.github.pgutkowski.kql.annotation.type.Query
 import com.github.pgutkowski.kql.scalar.ByteArrayScalarSupport
 
@@ -9,7 +9,7 @@ import com.github.pgutkowski.kql.scalar.ByteArrayScalarSupport
 class TestClasses {
 
     @Query
-    class QueryClass(val year: Int, val title: String)
+    class Film(val year: Int, val title: String)
 
     class Scalar(val id : String)
 

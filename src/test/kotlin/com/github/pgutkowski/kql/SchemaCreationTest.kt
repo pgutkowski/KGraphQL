@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kql
 
-import com.github.pgutkowski.kql.annotation.method.Mutation
+import com.github.pgutkowski.kql.annotation.method.ResolvingFunction
 import com.github.pgutkowski.kql.resolve.MutationResolver
 import com.github.pgutkowski.kql.resolve.QueryResolver
 import com.github.pgutkowski.kql.schema.impl.DefaultSchema
@@ -15,8 +15,8 @@ class SchemaCreationTest {
     fun testBasicCreation(){
         KQL.newSchema()
                 .addInput(TestClasses.InputClass::class)
-                .addQuery(TestClasses.QueryClass::class, listOf(object: QueryResolver<TestClasses.QueryClass> {}))
-                .addQuery(TestClasses.WithCollection::class, listOf(object: QueryResolver<TestClasses.WithCollection> {}))
+                .addQueryField(TestClasses.Film::class, listOf(object: QueryResolver<TestClasses.Film> {}))
+                .addQueryField(TestClasses.WithCollection::class, listOf(object: QueryResolver<TestClasses.WithCollection> {}))
                 .build()
     }
 
@@ -24,11 +24,12 @@ class SchemaCreationTest {
     fun testMutation(){
         val schema = DefaultSchemaBuilder()
                 .addMutations(object : MutationResolver {
-                    @Mutation
+                    @ResolvingFunction
                     fun createUser(id: String, name: String): String {
                         return id
                     }
 
+                    //not mutation
                     fun notMutation(): Int {
                         return 0
                     }
@@ -46,6 +47,6 @@ class SchemaCreationTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun testInvalidQueryWithoutResolver(){
-        KQL.newSchema().addQuery(TestClasses.QueryClass::class, emptyList()).build()
+        KQL.newSchema().addQueryField(TestClasses.Film::class, emptyList()).build()
     }
 }

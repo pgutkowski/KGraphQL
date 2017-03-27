@@ -11,7 +11,7 @@ interface SchemaBuilder {
 
     fun build() : Schema
 
-    fun <T: Any>addQuery(kClass: KClass<T>, queryResolvers: List<QueryResolver<T>>, fieldSupports: List<FieldResolver<T>> = emptyList()): SchemaBuilder
+    fun <T: Any> addQueryField(kClass: KClass<T>, queryResolvers: List<QueryResolver<T>>, fieldSupports: List<FieldResolver<T>> = emptyList()): SchemaBuilder
 
     fun <T: Any>addInput(kClass: KClass<T>): SchemaBuilder
 

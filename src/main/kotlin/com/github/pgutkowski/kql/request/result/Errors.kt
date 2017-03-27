@@ -1,5 +1,4 @@
 package com.github.pgutkowski.kql.request.result
 
 
-class Errors {
-}
+data class Errors(val message : String)

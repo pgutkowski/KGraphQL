@@ -42,6 +42,8 @@ class RequestParserTest {
     @Test
     fun testParsing(){
         val result = requestParser.parse("query CoolQuery { id, name }")
-        println(result)
+        assertThat(result.action, equalTo(ParsedRequest.Action.QUERY))
+        assertThat(result.name, equalTo("CoolQuery"))
+        assertThat(result.graph, equalTo(Graph("id" to null, "name" to null)))
     }
 }

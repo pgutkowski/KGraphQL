@@ -1,29 +1,28 @@
 package com.github.pgutkowski.kql.request
 
-import com.github.pgutkowski.kql.request.serialization.DefaultGraphDeserializer
-import com.github.pgutkowski.kql.request.serialization.GraphDeserializer
+import com.github.pgutkowski.kql.SyntaxException
 
 
-class RequestParser(private val actionResolver: (String) -> ParsedRequest.Action) {
+class RequestParser(private val actionResolver: (String) -> Request.Action) {
 
-    val graphDeserializer: GraphDeserializer = DefaultGraphDeserializer()
+    val graphDeserializer: GraphParser = DefaultGraphParser()
 
-    fun parse(request: String) : ParsedRequest {
+    fun parse(request: String) : Request {
         /**
          * first see if request is named and easily categorized as query or mutations
          */
         val requestHeaderTokens = getRequestHeaderTokens(request)
         var name : String? = null
-        var action : ParsedRequest.Action? = null
+        var action : Request.Action? = null
 
         when(requestHeaderTokens.size){
             0 -> name = ""
             1 ->{
                 name = ""
-                action = ParsedRequest.Action.valueOf(requestHeaderTokens.first().toUpperCase())
+                action = Request.Action.valueOf(requestHeaderTokens.first().toUpperCase())
             }
             2 -> {
-                action = ParsedRequest.Action.valueOf(requestHeaderTokens.first().toUpperCase())
+                action = Request.Action.valueOf(requestHeaderTokens.first().toUpperCase())
                 name = requestHeaderTokens[1]
             }
             //not supporting arguments yet
@@ -36,7 +35,7 @@ class RequestParser(private val actionResolver: (String) -> ParsedRequest.Action
             action = actionResolver.invoke(requestBody.trim().split(" ", ",").first())
         }*/
 
-        val body = graphDeserializer.deserialize(requestBody)
+        val body = graphDeserializer.parse(requestBody)
 
         val actions = body.keys
         if(actions.isEmpty()) throw SyntaxException("Invalid query: $requestBody, no fields specified")
@@ -54,7 +53,7 @@ class RequestParser(private val actionResolver: (String) -> ParsedRequest.Action
         }
 
         //TODO
-        return ParsedRequest(action, body, name)
+        return Request(action, body, name)
     }
 
     fun dropRequestHeader(request : String) = request.substring(request.indexOf('{'), request.lastIndexOf('}')+1).trim()

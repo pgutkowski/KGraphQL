@@ -1,4 +1,4 @@
-package com.github.pgutkowski.kql.request
+package com.github.pgutkowski.kql
 
 
 open class Graph() : HashMap<String, Any?>(){

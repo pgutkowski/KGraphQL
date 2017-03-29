@@ -6,6 +6,8 @@ import com.github.pgutkowski.kql.resolve.QueryResolver
 import com.github.pgutkowski.kql.schema.impl.DefaultSchema
 import com.github.pgutkowski.kql.schema.impl.DefaultSchemaBuilder
 import junit.framework.Assert.assertNotNull
+import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 
 
@@ -36,13 +38,24 @@ class SchemaCreationTest {
                 })
                 .build()
 
-        (schema as DefaultSchema)
+        schema as DefaultSchema
 
         assertNotNull(schema.mutations.any {
             it.functions.size == 1 && it.functions.any {
                 function -> function.name == "createUser"
             }
         })
+    }
+
+    @Test
+    fun testCustomNamedQuery(){
+        val schema = DefaultSchemaBuilder()
+                .addQueryField("lastFilm", TestClasses.Film::class, listOf(object: QueryResolver<TestClasses.Film>{}))
+                .build()
+
+        schema as DefaultSchema
+
+        assertThat(schema.queries.first().name, equalTo("lastFilm"))
     }
 
     @Test(expected = IllegalArgumentException::class)

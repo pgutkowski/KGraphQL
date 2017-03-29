@@ -21,10 +21,10 @@ sealed class KQLObject(val name : String) {
             val fieldsResolvers: List<FieldResolver<T>>
     ) : KQLObject(name)
 
-    class Scalar<T : Any, O>(
+    class Scalar<T : Any>(
             name : String,
             val kClass: KClass<T>,
-            val scalarSupport : ScalarSupport<T, O>
+            val scalarSupport : ScalarSupport<T>
     ) : KQLObject(name)
 
     class Input<T : Any>(name : String, val kClass: KClass<T>) : KQLObject(name)

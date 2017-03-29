@@ -1,19 +1,19 @@
-package com.github.pgutkowski.kql.request.serialization
+package com.github.pgutkowski.kql.request
 
-import com.github.pgutkowski.kql.request.Graph
-import com.github.pgutkowski.kql.request.SyntaxException
+import com.github.pgutkowski.kql.Graph
+import com.github.pgutkowski.kql.SyntaxException
 
 /**
  * TODO: resolve vulnerability for special characters in keys
  * TODO: probably it will be bottleneck in query handling, lots of memory allocation
  */
-class DefaultGraphDeserializer : GraphDeserializer {
+class DefaultGraphParser : GraphParser {
 
     companion object {
         private val delimiters = arrayOf('{', '}', '\n', ',')
     }
 
-    override fun deserialize(input: String): Graph {
+    override fun parse(input: String): Graph {
         validateInput(input)
 
         val map = Graph()
@@ -90,7 +90,7 @@ class DefaultGraphDeserializer : GraphDeserializer {
     fun String.dropBrackets(): String {
         if(startsWith("{") && endsWith("}")){
             return this.drop(1).dropLast(1)
-        } else throw SyntaxException("Cannot drop outer brackets from string: $this, because brackets are not on first and last index")
+        } else throw SyntaxException("Cannot drop outer brackets build string: $this, because brackets are not on first and last index")
     }
 
     fun Array<Char>.notContains(char : Char): Boolean {

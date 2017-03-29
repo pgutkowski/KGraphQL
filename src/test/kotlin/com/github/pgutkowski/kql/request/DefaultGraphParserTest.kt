@@ -1,18 +1,18 @@
-package com.github.pgutkowski.kql.request.result
+package com.github.pgutkowski.kql.request
 
-import com.github.pgutkowski.kql.request.Graph
-import com.github.pgutkowski.kql.request.serialization.DefaultGraphDeserializer
+import com.github.pgutkowski.kql.Graph
+import com.github.pgutkowski.kql.request.DefaultGraphParser
 import junit.framework.Assert.assertEquals
 import org.junit.Test
 
 
-class GraphDeserializerTest {
+class DefaultGraphParserTest {
 
-    val deserializer = DefaultGraphDeserializer()
+    val deserializer = DefaultGraphParser()
 
     @Test
     fun nestedQueryDeserialization() {
-        val map = deserializer.deserialize("{hero{name, appearsIn}\nvillain{name, [deeds]}}")
+        val map = deserializer.parse("{hero{name, appearsIn}\nvillain{name, [deeds]}}")
         val expected = Graph(
                 "hero" to MultiMapWithNulls("name", "appearsIn"),
                 "villain" to MultiMapWithNulls("name", "[deeds]")
@@ -23,7 +23,7 @@ class GraphDeserializerTest {
 
     @Test
     fun doubleNestedQueryDeserialization() {
-        val map = deserializer.deserialize("{hero{name, appearsIn{title, year}}\nvillain{name, [deeds]}}")
+        val map = deserializer.parse("{hero{name, appearsIn{title, year}}\nvillain{name, [deeds]}}")
         val expected = Graph(
                 "hero" to Graph("name" to null, "appearsIn" to MultiMapWithNulls("title", "year")),
                 "villain" to MultiMapWithNulls("name", "[deeds]")
@@ -34,7 +34,7 @@ class GraphDeserializerTest {
 
     @Test
     fun tripleNestedQueryDeserialization() {
-        val map = deserializer.deserialize("{hero{name, appearsIn{title{abbr, full}, year}}\nvillain{name, [deeds]}}")
+        val map = deserializer.parse("{hero{name, appearsIn{title{abbr, full}, year}}\nvillain{name, [deeds]}}")
         val expected = Graph(
                 "hero" to Graph("name" to null, "appearsIn" to Graph(
                         "title" to MultiMapWithNulls("abbr", "full"),

@@ -17,7 +17,7 @@ open class DefaultSchemaBuilder : SchemaBuilder {
 
     val queries = arrayListOf<KQLObject.QueryField<*>>()
 
-    val scalars = arrayListOf<KQLObject.Scalar<*,*>>()
+    val scalars = arrayListOf<KQLObject.Scalar<*>>()
 
     val mutations = arrayListOf<KQLObject.Mutation>()
 
@@ -27,7 +27,7 @@ open class DefaultSchemaBuilder : SchemaBuilder {
         return addQueryField(kClass.typeName(), kClass, queryResolvers, fieldSupports)
     }
 
-    fun <T: Any> addQueryField(name: String, kClass: KClass<T>, queryResolvers: List<QueryResolver<T>>, fieldSupports: List<FieldResolver<T>>): SchemaBuilder {
+    override fun <T: Any> addQueryField(name: String, kClass: KClass<T>, queryResolvers: List<QueryResolver<T>>, fieldSupports: List<FieldResolver<T>>): SchemaBuilder {
         if(queryResolvers.isEmpty()){
             throw IllegalArgumentException("Query type $kClass must be supported by at least 1 instance of ${QueryResolver::class}")
         }
@@ -52,7 +52,7 @@ open class DefaultSchemaBuilder : SchemaBuilder {
         return this
     }
 
-    override fun <T: Any, S>addScalar(kClass: KClass<T>, scalarSupport: ScalarSupport<T, S>): SchemaBuilder {
+    override fun <T: Any, S>addScalar(kClass: KClass<T>, scalarSupport: ScalarSupport<T>): SchemaBuilder {
         val scalar = KQLObject.Scalar(kClass.typeName(), kClass, scalarSupport)
         scalars.add(scalar)
         addType(scalar)

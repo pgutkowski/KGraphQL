@@ -5,7 +5,7 @@ import com.github.pgutkowski.kql.SyntaxException
 
 /**
  * TODO: resolve vulnerability for special characters in keys
- * TODO: probably it will be bottleneck in query handling, lots of memory allocation
+ * TODO: could be bottleneck in query handling, lots of memory allocation
  */
 class DefaultGraphParser : GraphParser {
 
@@ -15,10 +15,8 @@ class DefaultGraphParser : GraphParser {
 
     override fun parse(input: String): Graph {
         validateInput(input)
-
         val map = Graph()
         extractKeys(map, input)
-
         return map
     }
 

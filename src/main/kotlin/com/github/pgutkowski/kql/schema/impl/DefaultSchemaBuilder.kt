@@ -52,7 +52,7 @@ open class DefaultSchemaBuilder : SchemaBuilder {
         return this
     }
 
-    override fun <T: Any, S>addScalar(kClass: KClass<T>, scalarSupport: ScalarSupport<T>): SchemaBuilder {
+    override fun <T: Any>addScalar(kClass: KClass<T>, scalarSupport: ScalarSupport<T>): SchemaBuilder {
         val scalar = KQLObject.Scalar(kClass.typeName(), kClass, scalarSupport)
         scalars.add(scalar)
         addType(scalar)

@@ -10,7 +10,7 @@ import org.junit.Test
 class RequestParserTest {
 
     val requestParser = RequestParser({
-        if(it.contains("id", true) || it.contains("name", true)){
+        if(it.contains("literal", true) || it.contains("name", true)){
             Request.Action.QUERY
         } else{
             Request.Action.MUTATION
@@ -28,13 +28,13 @@ class RequestParserTest {
     fun dropRequestHeader(){
         assertThat(requestParser.dropRequestHeader("{}"), equalTo("{}"))
         assertThat(requestParser.dropRequestHeader("query {}"), equalTo("{}"))
-        assertThat(requestParser.dropRequestHeader("query CoolQuery { id, name }"), equalTo("{ id, name }"))
+        assertThat(requestParser.dropRequestHeader("query CoolQuery { literal, name }"), equalTo("{ literal, name }"))
     }
 
     @Test
     fun testInferType(){
-        assertThat(requestParser.parse("query CoolQuery { id, name }").action, equalTo(Request.Action.QUERY))
-        assertThat(requestParser.parse("{ id, name }").action, equalTo(Request.Action.QUERY))
+        assertThat(requestParser.parse("query CoolQuery { literal, name }").action, equalTo(Request.Action.QUERY))
+        assertThat(requestParser.parse("{ literal, name }").action, equalTo(Request.Action.QUERY))
 
         assertThat(requestParser.parse("mutation HotMutation { age, date }").action, equalTo(Request.Action.MUTATION))
         assertThat(requestParser.parse("{ age, date }").action, equalTo(Request.Action.MUTATION))
@@ -42,9 +42,9 @@ class RequestParserTest {
 
     @Test
     fun testParsing(){
-        val result = requestParser.parse("query CoolQuery { id, name }")
+        val result = requestParser.parse("query CoolQuery { literal, name }")
         assertThat(result.action, equalTo(Request.Action.QUERY))
         assertThat(result.name, equalTo("CoolQuery"))
-        assertThat(result.graph, equalTo(Graph("id" to null, "name" to null)))
+        assertThat(result.graph, equalTo(Graph("literal" to null, "name" to null)))
     }
 }

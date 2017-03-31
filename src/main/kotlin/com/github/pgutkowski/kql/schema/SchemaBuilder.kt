@@ -19,5 +19,5 @@ interface SchemaBuilder {
 
     fun <T: Any>addInput(kClass: KClass<T>): SchemaBuilder
 
-    fun <T: Any, S>addScalar(kClass: KClass<T>, scalarSupport: ScalarSupport<T>): SchemaBuilder
+    fun <T: Any>addScalar(kClass: KClass<T>, scalarSupport: ScalarSupport<T>): SchemaBuilder
 }

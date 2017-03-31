@@ -1,79 +1,129 @@
 package com.github.pgutkowski.kql.schema.impl
 
-import com.fasterxml.jackson.databind.JsonMappingException
+import com.github.pgutkowski.kql.SyntaxException
 import com.github.pgutkowski.kql.TestClasses
 import com.github.pgutkowski.kql.annotation.method.ResolvingFunction
-import com.github.pgutkowski.kql.Graph
+import com.github.pgutkowski.kql.deserialize
+import com.github.pgutkowski.kql.extract
 import com.github.pgutkowski.kql.resolve.QueryResolver
+import junit.framework.Assert.assertEquals
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
+import org.junit.Ignore
 import org.junit.Test
 
 
 class DefaultSchemaTest {
 
-    val testReturnValue = TestClasses.Film(2006, "Prestige", TestClasses.Director("Christopher Nolan", 43, listOf("Tom Hardy")))
+    val testFilm = TestClasses.Film(
+            TestClasses.Id("Prestige", 2006),
+            2006, "Prestige",
+            TestClasses.Director(
+                    "Christopher Nolan", 43,
+                    listOf (
+                            TestClasses.Actor("Tom Hardy", 232),
+                            TestClasses.Actor("Christian Bale", 232)
+                    )
+            )
+    )
 
     val testedSchema = DefaultSchemaBuilder()
             .addInput(TestClasses.InputClass::class)
             .addQueryField(TestClasses.Film::class, listOf(object: QueryResolver<TestClasses.Film> {
-                @ResolvingFunction fun getQueryClass() : TestClasses.Film = testReturnValue
+                @ResolvingFunction fun getQueryClass() : TestClasses.Film = testFilm
             }))
-            .build()
+            .addScalar(TestClasses.Id::class, TestClasses.IdScalarSupport())
+            .build() as DefaultSchema
 
     @Test
-    fun testBasicQuery(){
-        val result = testedSchema.handleRequest("{film{title}}")
+    fun testBasicResult(){
+        val result = testedSchema.createResult("{film{title}}")
         assertThat(result.errors, nullValue())
-        assertThat(result.data!!["film"] as TestClasses.Film, equalTo(testReturnValue))
+        assertThat(result.data!!["film"] as TestClasses.Film, equalTo(testFilm))
     }
 
     @Test
-    fun testBasicQueryWithImpliedFields(){
-        val result = testedSchema.handleRequest("{film}")
+    fun testBasicResultWithImpliedFields(){
+        val result = testedSchema.createResult("{film}")
         assertThat(result.errors, nullValue())
-        assertThat(result.data!!["film"] as TestClasses.Film, equalTo(testReturnValue))
+        assertThat(result.data!!["film"] as TestClasses.Film, equalTo(testFilm))
     }
 
     @Test
-    fun testNamedBasicQuery(){
-        val result = testedSchema.handleRequest("query Named {film{title}}")
+    fun testNamedBasicResult(){
+        val result = testedSchema.createResult("query Named {film{title}}")
         assertThat(result.errors, nullValue())
-        assertThat(result.data!!["film"] as TestClasses.Film, equalTo(testReturnValue))
+        assertThat(result.data!!["film"] as TestClasses.Film, equalTo(testFilm))
     }
 
-    @Test
+    @Test(expected = SyntaxException::class)
     fun testInvalidQueryMissingBracket(){
-        val result = testedSchema.handleRequest("query Named {film{title}")
-        assertThat(result.errors, notNullValue())
-        assertThat(result.data, nullValue())
+        testedSchema.createResult("query Named {film{title}")
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException::class)
     fun testBasicInvalidNamedQuery(){
-        val result = testedSchema.handleRequest("InvalidNamedQuery {film{title}}")
-        assertThat(result.errors, notNullValue())
-        assertThat(result.data, nullValue())
+        testedSchema.createResult("InvalidNamedQuery {film{title}}")
     }
 
     @Test
     fun testBasicJsonQuery(){
-        val result = testedSchema.handleRequestAsJson("{film{title, director{name}}}")
-        //TODO: find better way for JSON result verification
-        assertThat(result, equalTo("{\"data\":{\"film\":{\"director\":{\"name\":\"Christopher Nolan\"},\"title\":\"Prestige\"}}}"))
-    }
+        val result = testedSchema.handleRequest("{film{title, director{name, age}}}")
 
-
-    /**
-     * Failing tests to be fixed
-     */
-    @Test(expected = JsonMappingException::class)
-    fun testBasicJsonQueryInvalidProperty(){
-        val result = testedSchema.handleRequestAsJson("{film{title, director{favActors}}}")
+        val map = deserialize(result)
+        assertThat(map["data"], notNullValue())
+        assertThat(map["errors"], nullValue())
+        assertEquals(extract<String>(map, "data/film/title"), testFilm.title)
+        assertEquals(extract<String>(map, "data/film/director/name"), testFilm.director.name)
+        assertEquals(extract<Int>(map, "data/film/director/age"), testFilm.director.age)
     }
 
     @Test
-    fun testBasicJsonQueryNotHandlingCollectionsYet(){
-        val result = testedSchema.handleRequestAsJson("{film{title, director{[favActors]}}}")
+    fun testCollections(){
+        val result = testedSchema.handleRequest("{film{title, director{favActors}}}")
+
+        val map = deserialize(result)
+        assertThat(map["data"], notNullValue())
+        assertThat(map["errors"], nullValue())
+        assertEquals(extract<Map<*,*>>(map, "data/film/director/favActors[0]"), mapOf(
+                "name" to testFilm.director.favActors[0].name,
+                "age" to testFilm.director.favActors[0].age)
+        )
+    }
+
+    /**
+     *  Failing test: properties on collections are not properly handled yet
+     */
+    @Test
+    fun testScalar(){
+        val result = testedSchema.handleRequest("{film{id}}")
+
+        val map = deserialize(result)
+        assertThat(map["data"], notNullValue())
+        assertThat(map["errors"], nullValue())
+        assertEquals(extract<String>(map, "data/film/id"), "${testFilm.id.literal}:${testFilm.id.numeric}")
+    }
+
+    @Test
+    @Ignore("To be implemented: properties on collections are not properly handled yet")
+    fun testCollectionEntriesProperties(){
+        val result = testedSchema.handleRequest("{film{title, director{favActors{name}}}}")
+
+        val map = deserialize(result)
+        assertThat(map["data"], notNullValue())
+        assertThat(map["errors"], nullValue())
+        assertEquals(extract<Map<*,*>>(map, "data/film/director/favActors[0]"), mapOf(
+                "name" to testFilm.director.favActors[0].name,
+                "age" to null)
+        )
+    }
+
+    @Test
+    fun testInvalidPropertyName(){
+        val result = testedSchema.handleRequest("{film{title, director{name,[favActors]}}}")
+        val map = deserialize(result)
+        assertThat(map["data"], nullValue())
+        assertThat(map["errors"], notNullValue())
+        assertThat(extract<String>(map, "errors/message"), notNullValue())
     }
 }

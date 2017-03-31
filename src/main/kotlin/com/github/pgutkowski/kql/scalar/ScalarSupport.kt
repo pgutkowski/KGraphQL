@@ -14,7 +14,7 @@ interface ScalarSupport<T> {
     /**
      * strategy for scalar deserialization
      */
-    fun deserialize(input : T) : ByteArray
+    fun deserialize(input : T) : String
 
     /**
      * strategy for validation of serialized representation of scalar, returns true if input is valid

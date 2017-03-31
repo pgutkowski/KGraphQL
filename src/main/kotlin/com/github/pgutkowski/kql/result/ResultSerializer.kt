@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonSerializer
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.github.pgutkowski.kql.Graph
 import com.github.pgutkowski.kql.schema.impl.DefaultSchema
+import com.github.pgutkowski.kql.schema.impl.KQLObject
 import kotlin.reflect.full.memberProperties
 
 
@@ -32,6 +33,7 @@ class ResultSerializer(val schema: DefaultSchema) : JsonSerializer<Result>() {
         gen.writeEndObject()
     }
 
+    //TODO: investigate how jackson internal serializers are implemented to improve this implementation
     private fun serialize(value: Any, gen: JsonGenerator, serializers: SerializerProvider, schema: Graph?){
         if(schema != null){
             serializeWithSchema(value, gen, serializers, schema)
@@ -47,6 +49,7 @@ class ResultSerializer(val schema: DefaultSchema) : JsonSerializer<Result>() {
     private fun serializeWithSchema(value: Any, gen: JsonGenerator, serializers: SerializerProvider, schema: Graph) {
         gen.writeStartObject()
         for((key, subSchema) in schema){
+
             val kProperty = value.javaClass.kotlin.memberProperties.find { it.name == key }
             if(kProperty == null) {
                 serializers.reportMappingProblem("Cannot find property: $key on type: ${value.javaClass}")
@@ -57,7 +60,7 @@ class ResultSerializer(val schema: DefaultSchema) : JsonSerializer<Result>() {
         gen.writeEndObject()
     }
 
-    private fun writeProperty(key : String, actualValue: Any?, gen: JsonGenerator, serializers: SerializerProvider, schema: Any?) {
+    private fun writeProperty(key : String, actualValue: Any?, gen: JsonGenerator, serializers: SerializerProvider, serializationSchema: Any?) {
         gen.writeFieldName(key)
         if (actualValue == null) {
             gen.writeNull()
@@ -67,13 +70,31 @@ class ResultSerializer(val schema: DefaultSchema) : JsonSerializer<Result>() {
                 is Int -> gen.writeNumber(actualValue)
                 is Float -> gen.writeNumber(actualValue)
                 else -> {
-                    if (schema is Graph || schema == null) {
-                        serialize(actualValue, gen, serializers, schema as Graph?)
-                    } else {
-                        serializers.reportMappingProblem("JSON schema not matching expected type \'${Graph::class}?\'")
-                    }
+                    writeComplexPropertyValue(actualValue, gen, serializers, serializationSchema)
                 }
             }
+        }
+    }
+
+    private fun writeComplexPropertyValue(actualValue: Any, gen: JsonGenerator, serializers: SerializerProvider, serializationSchema: Any?) {
+        val scalar = schema.scalars.find { it.kClass.isInstance(actualValue) }
+        if (scalar != null) {
+            writeScalarValue(scalar, actualValue, gen, serializers)
+        } else {
+            if (serializationSchema is Graph || serializationSchema == null) {
+                serialize(actualValue, gen, serializers, serializationSchema as Graph?)
+            } else {
+                serializers.reportMappingProblem("JSON serializationSchema not matching expected type \'${Graph::class}?\'")
+            }
+        }
+    }
+
+    private fun <T : Any>writeScalarValue(scalar: KQLObject.Scalar<T>, actualValue: Any, gen: JsonGenerator, serializers: SerializerProvider){
+        try{
+            @Suppress("UNCHECKED_CAST")
+            gen.writeString(scalar.scalarSupport.deserialize(actualValue as T))
+        } catch (e : Exception){
+            serializers.reportMappingProblem(e, "Failed to serialize value: $actualValue")
         }
     }
 }

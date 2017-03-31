@@ -40,12 +40,20 @@ class DefaultSchema(
         )
     }
 
-    override fun handleRequestAsJson(request: String): String {
-        return objectMapper.writeValueAsString(handleRequest(request))
+    //TODO: fix error handling on stage of serializing
+    override fun handleRequest(request: String): String {
+        try{
+            return objectMapper.writeValueAsString(createResult(request))
+        } catch(e : Exception){
+            return "{\"errors\" : { \"message\": \"Caught ${e.javaClass.canonicalName}: ${e.message}\"}}"
+        }
     }
 
-    override fun handleRequest(request: String): Result {
-        try {
+    /**
+     * this method is only fetching data
+     * TODO: decide how to handle exceptions
+     */
+    fun createResult(request: String): Result {
             val parsedRequest = requestParser.parse(request)
             val data = Graph()
             when(parsedRequest.action){
@@ -61,9 +69,6 @@ class DefaultSchema(
                 else -> throw IllegalArgumentException("Not supported action: ${parsedRequest.action}")
             }
             return Result(parsedRequest, data, null)
-        } catch (e : Exception){
-            return Result(null, null, Errors("${e.javaClass}: ${e.message}"))
-        }
     }
 
     private fun findQueryFunction(query: String): QueryFunction {

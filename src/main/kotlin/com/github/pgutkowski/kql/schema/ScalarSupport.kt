@@ -1,4 +1,4 @@
-package com.github.pgutkowski.kql.scalar
+package com.github.pgutkowski.kql.schema
 
 /**
  * Scalar resolves to a single scalar object, and can't have sub-selections in the request.

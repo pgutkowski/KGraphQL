@@ -5,9 +5,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.pgutkowski.kql.Graph
 import com.github.pgutkowski.kql.SyntaxException
 import com.github.pgutkowski.kql.annotation.method.ResolvingFunction
-import com.github.pgutkowski.kql.request.*
+import com.github.pgutkowski.kql.request.Request
+import com.github.pgutkowski.kql.request.RequestParser
 import com.github.pgutkowski.kql.resolve.QueryResolver
-import com.github.pgutkowski.kql.result.Errors
 import com.github.pgutkowski.kql.result.Result
 import com.github.pgutkowski.kql.result.ResultSerializer
 import com.github.pgutkowski.kql.schema.Schema
@@ -51,7 +51,6 @@ class DefaultSchema(
 
     /**
      * this method is only fetching data
-     * TODO: decide how to handle exceptions
      */
     fun createResult(request: String): Result {
             val parsedRequest = requestParser.parse(request)

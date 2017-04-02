@@ -4,7 +4,7 @@ import com.github.pgutkowski.kql.annotation.method.ResolvingFunction
 import com.github.pgutkowski.kql.resolve.FieldResolver
 import com.github.pgutkowski.kql.resolve.MutationResolver
 import com.github.pgutkowski.kql.resolve.QueryResolver
-import com.github.pgutkowski.kql.scalar.ScalarSupport
+import com.github.pgutkowski.kql.schema.ScalarSupport
 import com.github.pgutkowski.kql.schema.Schema
 import com.github.pgutkowski.kql.schema.SchemaBuilder
 import kotlin.reflect.KClass

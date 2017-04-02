@@ -3,7 +3,7 @@ package com.github.pgutkowski.kql.schema.impl
 import com.github.pgutkowski.kql.resolve.FieldResolver
 import com.github.pgutkowski.kql.resolve.MutationResolver
 import com.github.pgutkowski.kql.resolve.QueryResolver
-import com.github.pgutkowski.kql.scalar.ScalarSupport
+import com.github.pgutkowski.kql.schema.ScalarSupport
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 

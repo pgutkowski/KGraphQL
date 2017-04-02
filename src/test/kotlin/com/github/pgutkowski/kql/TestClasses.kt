@@ -2,7 +2,7 @@ package com.github.pgutkowski.kql
 
 import com.github.pgutkowski.kql.annotation.type.Input
 import com.github.pgutkowski.kql.annotation.type.Query
-import com.github.pgutkowski.kql.scalar.ScalarSupport
+import com.github.pgutkowski.kql.schema.ScalarSupport
 
 
 class TestClasses {

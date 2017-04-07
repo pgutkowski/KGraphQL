@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kql
 
-import com.github.pgutkowski.kql.annotation.method.ResolvingFunction
+import com.github.pgutkowski.kql.annotation.method.Query
 import com.github.pgutkowski.kql.resolve.MutationResolver
 import com.github.pgutkowski.kql.resolve.QueryResolver
 import com.github.pgutkowski.kql.schema.impl.DefaultSchema
@@ -26,7 +26,7 @@ class SchemaCreationTest {
     fun testMutation(){
         val schema = DefaultSchemaBuilder()
                 .addMutations(object : MutationResolver {
-                    @ResolvingFunction
+                    @Query
                     fun createUser(id: String, name: String): String {
                         return id
                     }

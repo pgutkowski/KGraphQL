@@ -1,6 +1,7 @@
 package com.github.pgutkowski.kql.request
 
-import com.github.pgutkowski.kql.Graph
+import com.github.pgutkowski.kql.leaf
+import com.github.pgutkowski.kql.request.Graph
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.hasSize
@@ -45,6 +46,6 @@ class RequestParserTest {
         val result = requestParser.parse("query CoolQuery { literal, name }")
         assertThat(result.action, equalTo(Request.Action.QUERY))
         assertThat(result.name, equalTo("CoolQuery"))
-        assertThat(result.graph, equalTo(Graph("literal" to null, "name" to null)))
+        assertThat(result.graph, equalTo(Graph(leaf("literal"), leaf("name"))))
     }
 }

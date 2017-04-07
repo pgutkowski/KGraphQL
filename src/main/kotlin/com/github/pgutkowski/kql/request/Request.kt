@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kql.request
 
-import com.github.pgutkowski.kql.Graph
+import com.github.pgutkowski.kql.request.Graph
 
 
 class Request(val action : Action, val graph : Graph, val name : String = "") {

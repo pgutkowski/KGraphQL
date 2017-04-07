@@ -9,7 +9,7 @@ import org.junit.Test
 class MutationSchemaTest : BaseSchemaTest() {
 
     @Test
-    fun testCollectionEntriesProperties(){
+    fun testSimpleMutation(){
         val result = testedSchema.handleRequest("mutation {createActor(name: \"Michael Caine\", age: 72)}")
         val map = deserialize(result)
         assertNoErrors(map)

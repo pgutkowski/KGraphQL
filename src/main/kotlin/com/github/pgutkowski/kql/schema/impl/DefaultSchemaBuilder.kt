@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kql.schema.impl
 
-import com.github.pgutkowski.kql.annotation.method.ResolvingFunction
+import com.github.pgutkowski.kql.annotation.method.Query
 import com.github.pgutkowski.kql.resolve.FieldResolver
 import com.github.pgutkowski.kql.resolve.MutationResolver
 import com.github.pgutkowski.kql.resolve.QueryResolver
@@ -38,7 +38,7 @@ open class DefaultSchemaBuilder : SchemaBuilder {
     }
 
     override fun addMutations(mutationResolver: MutationResolver): SchemaBuilder {
-        val mutationFunctions = mutationResolver.javaClass.kotlin.functions.filter { func -> func.annotations.any { it is ResolvingFunction } }
+        val mutationFunctions = mutationResolver.javaClass.kotlin.functions.filter { func -> func.annotations.any { it is com.github.pgutkowski.kql.annotation.method.Query } }
         val mutation = KQLObject.Mutation(mutationResolver.javaClass.simpleName!!.decapitalize(), mutationResolver, mutationFunctions)
         mutations.add(mutation)
         addType(mutation)

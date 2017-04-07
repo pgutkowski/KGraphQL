@@ -1,6 +1,9 @@
 package com.github.pgutkowski.kql
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.github.pgutkowski.kql.request.Arguments
+import com.github.pgutkowski.kql.request.Graph
+import com.github.pgutkowski.kql.request.GraphNode
 
 val objectMapper = jacksonObjectMapper()
 
@@ -29,4 +32,11 @@ fun <T>extract(map: Map<*,*>, path : String) : T {
         throw IllegalArgumentException("Path: $path does not exist in map: $map", e)
     }
 }
+
+//graph DSL convenient methods
+fun leaf(key : String) = GraphNode.Leaf(key)
+
+fun branch(key: String, vararg nodes: GraphNode) = GraphNode.ToGraph(key, Graph(*nodes))
+
+fun argLeaf(key: String, vararg args:  Pair<String, String>) = GraphNode.ToArguments(key, Arguments(*args))
 

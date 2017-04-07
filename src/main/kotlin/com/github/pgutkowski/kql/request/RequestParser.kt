@@ -5,7 +5,7 @@ import com.github.pgutkowski.kql.SyntaxException
 
 class RequestParser(private val actionResolver: (String) -> Request.Action) {
 
-    val graphDeserializer: GraphParser = DefaultGraphParser()
+    val graphDeserializer: GraphParser = GraphParser()
 
     fun parse(request: String) : Request {
         /**
@@ -37,7 +37,7 @@ class RequestParser(private val actionResolver: (String) -> Request.Action) {
 
         val body = graphDeserializer.parse(requestBody)
 
-        val actions = body.keys
+        val actions = body.map { it.key }
         if(actions.isEmpty()) throw SyntaxException("Invalid query: $requestBody, no fields specified")
 
         if(actions.size == 1){

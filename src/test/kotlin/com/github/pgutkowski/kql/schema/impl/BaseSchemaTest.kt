@@ -1,7 +1,8 @@
 package com.github.pgutkowski.kql.schema.impl
 
 import com.github.pgutkowski.kql.TestClasses
-import com.github.pgutkowski.kql.annotation.method.ResolvingFunction
+import com.github.pgutkowski.kql.annotation.method.Mutation
+import com.github.pgutkowski.kql.annotation.method.Query
 import com.github.pgutkowski.kql.resolve.MutationResolver
 import com.github.pgutkowski.kql.resolve.QueryResolver
 import org.hamcrest.CoreMatchers
@@ -27,10 +28,10 @@ abstract class BaseSchemaTest {
     val testedSchema = DefaultSchemaBuilder()
             .addInput(TestClasses.InputClass::class)
             .addQueryField(TestClasses.Film::class, listOf(object: QueryResolver<TestClasses.Film> {
-                @ResolvingFunction fun getQueryClass() : TestClasses.Film = testFilm
+                @Query fun getQueryClass() : TestClasses.Film = testFilm
             }))
             .addMutations(object : MutationResolver{
-                @ResolvingFunction
+                @Mutation
                 fun createActor(name: String, age: Int) : TestClasses.Actor{
                     val actor = TestClasses.Actor(name, age)
                     actors.add(actor)
@@ -44,7 +45,7 @@ abstract class BaseSchemaTest {
     fun cleanup() = actors.clear()
 
     fun assertNoErrors(map : Map<*,*>) {
-        MatcherAssert.assertThat(map["data"], CoreMatchers.notNullValue())
-        MatcherAssert.assertThat(map["errors"], CoreMatchers.nullValue())
+        if(map["errors"] != null) throw AssertionError("Errors encountered: ${map["errors"]}")
+        if(map["data"] == null) throw AssertionError("Data is null")
     }
 }

@@ -1,8 +1,123 @@
 package com.github.pgutkowski.kql.request
 
-import com.github.pgutkowski.kql.Graph
+import com.github.pgutkowski.kql.request.Graph
+import com.github.pgutkowski.kql.SyntaxException
 
+/**
+ * TODO: resolve vulnerability for special characters in keys
+ * TODO: could be bottleneck in query handling, lots of memory allocation
+ */
+class GraphParser {
 
-interface GraphParser {
-    fun parse(input: String): Graph
+    companion object {
+        private val delimiters = arrayOf('{', '}', '\n', ',', '(', ')')
+    }
+
+    fun parse(input: String): Graph {
+        validateInput(input)
+        val map = Graph()
+        extractKeys(map, input)
+        return map
+    }
+
+    private fun extractKeys(map: Graph, inputWithBrackets: String) {
+        var input = inputWithBrackets.dropBrackets()
+
+        while(input.isNotBlank()){
+            when {
+                input.startsWith(',') -> {
+                    input = input.removePrefix(",").trim()
+                }
+                input.startsWith('}') -> {
+                    throw IllegalArgumentException("No matching opening bracket for closing bracket at \"...$input\"")
+                }
+                else -> {
+                    val unTrimmedKey = input.takeWhile { delimiters.notContains(it) }
+                    input = input.removePrefix(unTrimmedKey).trim()
+                    val key = unTrimmedKey.trim()
+
+                    var value : Any? = null
+                    if(input.startsWith('{')) {
+                        val subMap = Graph()
+                        //input format is {...}, so '}' has of be contained as well
+                        val endIndex = indexOfClosingBracket(input)+1
+                        extractKeys(subMap, input.substring(0, endIndex))
+                        value = subMap
+                        input = input.drop(endIndex)
+                    } else if(input.startsWith('(')){
+                        //function invocation, content of parenthesis has of be split according of pattern (key: value,...)
+                        val endIndex = input.indexOf(')')+1
+                        value = extractArguments(input.substring(0, endIndex))
+                        input = input.drop(endIndex)
+                    }
+
+                    if(key.isNotBlank()) map.add(GraphNode.of(key, value))
+                }
+            }
+        }
+    }
+
+    /**
+     * input has of not contain parenthesis, assumed format: '(key: value,...)'
+     */
+    private fun extractArguments(inputWithParenthesis: String) : Arguments {
+        val input = inputWithParenthesis.dropParenthesis()
+        val arguments = Arguments()
+        input.split(',').forEach {
+            val tokens = it.split(':')
+            arguments.put(tokens[0].trim(), tokens[1].trim())
+        }
+        return arguments
+    }
+
+    /**
+     * Assumption: input format is '{...}', or with nested clauses: '{...{...}}'
+     */
+    fun indexOfClosingBracket(input: String): Int {
+        //drop first '{'
+        var openingIndex = input.indexOf('{', 1)
+        var closingIndex = input.indexOf('}')
+
+        if(closingIndex == -1) throw SyntaxException("$input does not contain any closing bracket")
+        //simple case: {...} or {...}...
+        if(openingIndex == -1 || closingIndex < openingIndex){
+            return closingIndex
+        }
+
+        //handle nested clauses
+        var nestedClauses = 1
+        for(i in openingIndex..input.length){
+            when(input[i]){
+                '{' -> ++nestedClauses
+                '}' -> --nestedClauses
+            }
+            if(nestedClauses == 0){
+                return i
+            }
+        }
+        throw SyntaxException("$input does not contain matching closing bracket")
+    }
+
+    private fun validateInput(string: String) {
+        val trimmedString = string.trim()
+        if (!trimmedString.startsWith("{") || !trimmedString.endsWith("}")) {
+            throw SyntaxException("passed string $string does not represent valid MultiMap")
+        }
+    }
+
+    fun String.dropBrackets(): String {
+        if(startsWith('{') && endsWith('}')){
+            return this.drop(1).dropLast(1)
+        } else throw SyntaxException("Cannot drop outer brackets build string: $this, because brackets are not on first and last index")
+    }
+
+    fun String.dropParenthesis(): String {
+        if(startsWith('(') && endsWith(')')){
+            return this.drop(1).dropLast(1)
+        } else throw SyntaxException("Cannot drop outer brackets build string: $this, because parenthesis are not on first and last index")
+    }
+
+    fun Array<Char>.notContains(char : Char): Boolean {
+        return !contains(char)
+    }
 }

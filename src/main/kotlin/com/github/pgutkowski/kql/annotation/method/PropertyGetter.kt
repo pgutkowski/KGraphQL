@@ -1,7 +1,7 @@
 package com.github.pgutkowski.kql.annotation.method
 
 /**
- * Denotes FieldResolver's method, which is used to fetch/transform given property data
+ * Denotes FieldResolver's method, which is used of fetch/transform given property data
  */
 annotation class PropertyGetter(
         /**

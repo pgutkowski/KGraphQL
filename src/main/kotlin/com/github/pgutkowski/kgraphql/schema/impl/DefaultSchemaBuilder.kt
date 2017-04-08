@@ -9,7 +9,7 @@ import kotlin.reflect.KClass
 class DefaultSchemaBuilder : SchemaBuilder {
 
     override fun build(): Schema {
-        return DefaultSchema(queries, mutations, simpleTypes, inputs, scalars)
+        return DefaultSchema(queries, mutations, simpleTypes, scalars)
     }
 
     val simpleTypes = arrayListOf<KQLObject.Simple<*>>()
@@ -19,8 +19,6 @@ class DefaultSchemaBuilder : SchemaBuilder {
     val scalars = arrayListOf<KQLObject.Scalar<*>>()
 
     val mutations = arrayListOf<KQLObject.Mutation<*>>()
-
-    val inputs = arrayListOf<KQLObject.Input<*>>()
 
     override fun <T> mutation(name: String, function: () -> T) : SchemaBuilder{
         mutations.add(KQLObject.Mutation(name, FunctionWrapper.on(function)))
@@ -69,12 +67,6 @@ class DefaultSchemaBuilder : SchemaBuilder {
 
     override fun <T, R, E, W, Q> query(name: String, function: (R, E, W, Q) -> T) : SchemaBuilder {
         queries.add(KQLObject.Query(name, FunctionWrapper.on(function)))
-        return this
-    }
-
-    override fun <T: Any> input(kClass: KClass<T>): SchemaBuilder {
-        val input = KQLObject.Input(kClass.typeName(), kClass)
-        inputs.add(input)
         return this
     }
 

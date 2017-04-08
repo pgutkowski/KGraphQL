@@ -29,7 +29,6 @@ interface SchemaBuilder {
     /**
      * ####### types ######
      */
-    fun <T: Any> input(kClass: KClass<T>): SchemaBuilder
     fun <T: Any> scalar(kClass: KClass<T>, scalarSupport: ScalarSupport<T>): SchemaBuilder
     fun <T : Any> type(kClass: KClass<T>) : SchemaBuilder
 }

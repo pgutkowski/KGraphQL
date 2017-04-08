@@ -13,14 +13,31 @@ import com.github.pgutkowski.kgraphql.schema.Schema
 import kotlin.reflect.full.starProjectedType
 
 class DefaultSchema(
-        queries: ArrayList<KQLObject.Query<*>>,
-        mutations: ArrayList<KQLObject.Mutation<*>>,
-        simpleTypes : ArrayList<KQLObject.Simple<*>>,
-        inputs: ArrayList<KQLObject.Input<*>>,
-        scalars: ArrayList<KQLObject.Scalar<*>>
-) : Schema, DefaultSchemaStructure(
-        queries, mutations, simpleTypes, inputs, scalars
-) {
+        val queries: ArrayList<KQLObject.Query<*>>,
+
+        val mutations: ArrayList<KQLObject.Mutation<*>>,
+
+        val types : ArrayList<KQLObject.Simple<*>>,
+
+        val scalars: ArrayList<KQLObject.Scalar<*>>
+) : Schema {
+
+    companion object {
+        val BUILT_IN_TYPES = arrayOf(String::class, Int::class, Double::class, Float::class, Boolean::class)
+    }
+
+    val descriptor = SchemaDescriptor.forSchema(this)
+
+    /**
+     * KQLObjects stored in convenient data structures
+     */
+    private val queriesByName: Map<String, KQLObject.Query<*>> = queries.associate { it.name to it }
+
+    private val mutationsByName: Map<String, KQLObject.Mutation<*>> = mutations.associate { it.name to it }
+
+    /**
+     * objects for request handling
+     */
     private val requestParser = RequestParser { resolveActionType(it) }
 
     val objectMapper = jacksonObjectMapper()
@@ -47,15 +64,18 @@ class DefaultSchema(
         val data: MutableMap<String, Any?> = mutableMapOf()
         when (parsedRequest.action) {
             Request.Action.QUERY -> {
-                for (query in parsedRequest.graph.map { it.key }) {
-                    val queryFunction = findQuery(query, Arguments())
-                    data.put(query, queryFunction.invoke())
+                descriptor.validateQueryGraph(parsedRequest.graph)
+                for (query in parsedRequest.graph) {
+                    val args = extractArguments(query)
+                    val queryFunction = findQuery(query.key)
+                    data.put(query.key, queryFunction.invoke())
                 }
             }
             Request.Action.MUTATION -> {
+                descriptor.validateMutationGraph(parsedRequest.graph)
                 for (mutation in parsedRequest.graph) {
                     val args = extractArguments(mutation)
-                    val mutationFunction = findMutation(mutation.key, args)
+                    val mutationFunction = findMutation(mutation.key)
                     data.put(mutation.key, invokeWithArgs(mutationFunction, args))
                 }
             }
@@ -65,6 +85,15 @@ class DefaultSchema(
     }
 
     fun <T> invokeWithArgs(functionWrapper: FunctionWrapper<T>, args: Arguments): Any? {
+        if(functionWrapper.arity() != args.size){
+
+            functionWrapper as KQLObject
+
+            throw SyntaxException(
+                "Mutation ${functionWrapper.name} does support arguments: ${functionWrapper.kFunction.parameters.map { it.name }}. found arguments: ${args.keys}"
+            )
+        }
+
         val transformedArgs : MutableList<Any?> = mutableListOf()
         functionWrapper.kFunction.parameters.forEach { parameter ->
             val value = args[parameter.name!!]
@@ -74,7 +103,8 @@ class DefaultSchema(
                 } else {
                     transformedArgs.add(null)
                 }
-            } else {
+            } else if(value is String) {
+
                 val transformedValue : Any = when(parameter.type){
                     Int::class.starProjectedType ->{
                         try {
@@ -87,6 +117,8 @@ class DefaultSchema(
                 }
 
                 transformedArgs.add(transformedValue)
+            } else {
+                throw SyntaxException("Non string arguments are not supported yet")
             }
 
         }
@@ -103,4 +135,31 @@ class DefaultSchema(
     }
 
     fun String.dropQuotes() : String = if(startsWith('\"') && endsWith('\"')) drop(1).dropLast(1) else this
+
+    /**
+     * @param name - name of mutation function to find
+     */
+    fun findMutation(name: String): KQLObject.Mutation<*> {
+        return mutationsByName[name] ?: throw SyntaxException("Mutation: $name is not supported by this schema")
+    }
+
+    /**
+     * @param name - name of query function to find
+     */
+    fun findQuery(name: String): KQLObject.Query<*> {
+        return queriesByName[name] ?: throw SyntaxException("Query: $name is not supported by this schema")
+    }
+
+    /**
+     * returns Scalar for passed instance, or null if not found
+     */
+    fun findScalarByInstance(any : Any) : KQLObject.Scalar<*>? {
+        return scalars.find{it.kClass.isInstance(any)}
+    }
+
+    fun resolveActionType(token: String): Request.Action {
+        if (queries.any { it.name.equals(token, true) }) return Request.Action.QUERY
+        if (mutations.any { it.name.equals(token, true) }) return Request.Action.MUTATION
+        throw IllegalArgumentException("Cannot infer request type for name $token")
+    }
 }

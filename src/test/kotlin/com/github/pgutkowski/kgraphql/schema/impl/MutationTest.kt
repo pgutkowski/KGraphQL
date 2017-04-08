@@ -3,8 +3,6 @@ package com.github.pgutkowski.kgraphql.schema.impl
 import com.github.pgutkowski.kgraphql.TestClasses
 import com.github.pgutkowski.kgraphql.deserialize
 import com.github.pgutkowski.kgraphql.extract
-import junit.framework.Assert
-import junit.framework.Assert.assertEquals
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
@@ -51,7 +49,7 @@ class MutationTest : BaseSchemaTest() {
                 "mutation {createBanana(name: \"${testActor.name}\", age: ${testActor.age}){age}}"
         )
         val map = deserialize(result)
-        assertError(map, "SyntaxException: Mutation: createBanana is not supported by this schema")
+        assertError(map, "java.lang.IllegalArgumentException", "createBanana")
     }
 
     @Test
@@ -69,6 +67,6 @@ class MutationTest : BaseSchemaTest() {
                 "mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}, bananan: \"fwfwf\"){age}}"
         )
         val map = deserialize(result)
-        assertError(map, "SyntaxException: Mutation function createActor with arguments: [name, bananan, age] not found")
+        assertError(map, "SyntaxException: Mutation createActor does support arguments: [name, age]. found arguments: [name, bananan, age]")
     }
 }

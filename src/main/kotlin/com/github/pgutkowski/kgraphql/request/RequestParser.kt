@@ -12,7 +12,7 @@ class RequestParser(private val actionResolver: (String) -> Request.Action) {
          * at first check if request is named and easily categorized as query or mutations
          */
         val requestHeaderTokens = getRequestHeaderTokens(request)
-        var name : String? = null
+        val name : String?
         var action : Request.Action? = null
 
         when(requestHeaderTokens.size){

@@ -10,6 +10,8 @@ open class Graph() : ArrayList<GraphNode>(){
             return keys.map { GraphNode.Leaf(it) }.toTypedArray()
         }
 
+        fun branch(key: String, graph: Graph) = GraphNode.ToGraph(key, graph)
+
         fun branch(key: String, vararg nodes: GraphNode) = GraphNode.ToGraph(key, Graph(*nodes))
 
         fun argLeaf(key: String, args:  Arguments) = GraphNode.ToArguments(key, args)
@@ -18,6 +20,10 @@ open class Graph() : ArrayList<GraphNode>(){
 
         fun argBranch(key: String, args: Arguments, vararg nodes: GraphNode): GraphNode.ToArguments {
             return GraphNode.ToArguments(key, args, if(nodes.isNotEmpty()) Graph(*nodes) else null)
+        }
+
+        fun argBranch(key: String, args: Arguments, graph : Graph?): GraphNode.ToArguments {
+            return GraphNode.ToArguments(key, args, graph)
         }
     }
 

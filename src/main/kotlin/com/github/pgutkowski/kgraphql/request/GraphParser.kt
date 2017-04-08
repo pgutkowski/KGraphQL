@@ -36,7 +36,7 @@ class GraphParser {
 
                     when {
                         input.startsWith('{') -> {
-                            val (string, graph) = extractGraph(input, key, map)
+                            val (string, graph) = extractGraph(input)
                             input = string
                             if (key.isNotBlank()) map.add(GraphNode.ToGraph(key, graph))
                         }
@@ -48,7 +48,7 @@ class GraphParser {
 
                             var graph : Graph? = null
                             if(input.startsWith('{')) {
-                                val (string, extractedGraph) = extractGraph(input, key, map)
+                                val (string, extractedGraph) = extractGraph(input)
                                 input = string
                                 graph = extractedGraph
                             }
@@ -63,7 +63,7 @@ class GraphParser {
         }
     }
 
-    private fun extractGraph(graphString: String, key: String, map: Graph): Pair<String, Graph> {
+    private fun extractGraph(graphString: String): Pair<String, Graph> {
         var input = graphString
         val subMap = Graph()
         //graphString format is {...}, so '}' has of be contained as well

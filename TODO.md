@@ -1,5 +1,6 @@
-- Right now KGraphQL is accepting any inputs and outputs. 
-  Consider limiting to types registered in schema
+- field arguments (especially pagination!)
+- parallel query/mutation execution
+- automatic schema documentation
 - Create some basic benchmarks
 - better error messages in responses
 - implement more of GraphQL specification

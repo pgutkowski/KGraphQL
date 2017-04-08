@@ -6,12 +6,12 @@ sealed class GraphNode(val key: String) {
     companion object {
         fun of(key: String, referred : Any?) : GraphNode {
             return when (referred) {
-                null -> return Leaf(key)
-                is Graph -> return ToGraph(key, referred)
-                is Arguments -> return ToArguments(key, referred)
+                null -> Leaf(key)
+                is Graph -> ToGraph(key, referred)
+                is Arguments -> ToArguments(key, referred)
                 else -> throw IllegalArgumentException(
-                        "GraphNode cannot refer of instance of ${referred.javaClass}. " +
-                                "Supported are only null, ${Graph::class} and ${Arguments::class}"
+                        "GraphNode cannot refer of instance of ${referred.javaClass}. "
+                        + "Supported are only null, ${Graph::class} and ${Arguments::class}"
                 )
             }
         }

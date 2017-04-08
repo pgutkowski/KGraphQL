@@ -10,7 +10,7 @@ import kotlin.reflect.KFunction
  */
 sealed class KQLObject(val name : String) {
 
-    class Mutation<T>(name : String, val wrapper: FunctionWrapper<T>) : KQLObject(name), FunctionWrapper<T>{
+    class Mutation<T>(name : String, private val wrapper: FunctionWrapper<T>) : KQLObject(name), FunctionWrapper<T>{
 
         override fun invoke(vararg args: Any?): T? = wrapper.invoke(*args)
 
@@ -19,7 +19,7 @@ sealed class KQLObject(val name : String) {
         override fun arity(): Int = wrapper.arity()
     }
 
-    class Query<T>(name: String, val wrapper: FunctionWrapper<T>) : KQLObject(name), FunctionWrapper<T>{
+    class Query<T>(name: String, private val wrapper: FunctionWrapper<T>) : KQLObject(name), FunctionWrapper<T>{
 
         override fun invoke(vararg args: Any?): T? = wrapper.invoke(*args)
 
@@ -35,8 +35,6 @@ sealed class KQLObject(val name : String) {
             val kClass: KClass<T>,
             val scalarSupport : ScalarSupport<T>
     ) : KQLObject(name)
-
-    class Input<T : Any>(name : String, val kClass: KClass<T>) : KQLObject(name)
 
     class Interface<T : Any>(name : String, val kClass: KClass<T>) : KQLObject(name)
 }

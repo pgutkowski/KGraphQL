@@ -30,8 +30,6 @@ abstract class BaseSchemaTest {
                 actor
             })
             .scalar(TestClasses.Id::class, TestClasses.IdScalarSupport())
-            .input(TestClasses.FilmInput::class)
-
             .build() as DefaultSchema
 
     @Before

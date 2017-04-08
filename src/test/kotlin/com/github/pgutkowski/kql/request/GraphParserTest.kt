@@ -1,8 +1,6 @@
 package com.github.pgutkowski.kql.request
 
-import com.github.pgutkowski.kql.argLeaf
-import com.github.pgutkowski.kql.branch
-import com.github.pgutkowski.kql.leaf
+import com.github.pgutkowski.kql.*
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
@@ -77,10 +75,7 @@ class GraphParserTest {
     fun mutationArgumentsParsing(){
         val map = graphParser.parse("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\")}")
         val expected = Graph (
-                argLeaf("createHero",
-                        "name" to "\"Batman\"",
-                        "appearsIn" to "\"The Dark Knight\""
-                )
+                argLeaf("createHero", args("name" to "\"Batman\"", "appearsIn" to "\"The Dark Knight\""))
         )
         assertThat(map, equalTo(expected))
     }
@@ -91,9 +86,32 @@ class GraphParserTest {
         val expected = Graph(
                 branch("hero",
                         leaf("name"),
-                        argLeaf("height",
-                                "unit" to "FOOT"
-                        )
+                        argLeaf("height", args("unit" to "FOOT"))
+                )
+        )
+        assertThat(map, equalTo(expected))
+    }
+
+    @Test
+    fun mutationFieldsParsing(){
+        val map = graphParser.parse("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\"){id, name, timestamp}}")
+        val expected = Graph (
+                argBranch("createHero",
+                        args("name" to "\"Batman\"", "appearsIn" to "\"The Dark Knight\""),
+                        *leafs("id", "name", "timestamp")
+                )
+        )
+        assertThat(map, equalTo(expected))
+    }
+
+    @Test
+    fun mutationNestedFieldsParsing(){
+        val map = graphParser.parse("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\"){id, name {real, asHero}}}")
+        val expected = Graph (
+                argBranch("createHero",
+                        args("name" to "\"Batman\"", "appearsIn" to "\"The Dark Knight\""),
+                        leaf("id"),
+                        branch("name", *leafs("real", "asHero"))
                 )
         )
         assertThat(map, equalTo(expected))

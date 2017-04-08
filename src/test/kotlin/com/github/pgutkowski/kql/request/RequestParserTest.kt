@@ -1,7 +1,6 @@
 package com.github.pgutkowski.kql.request
 
 import com.github.pgutkowski.kql.leaf
-import com.github.pgutkowski.kql.request.Graph
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.hasSize

@@ -33,10 +33,20 @@ fun <T>extract(map: Map<*,*>, path : String) : T {
     }
 }
 
-//graph DSL convenient methods
 fun leaf(key : String) = GraphNode.Leaf(key)
+
+fun leafs(vararg keys : String): Array<GraphNode.Leaf> {
+    return keys.map { GraphNode.Leaf(it) }.toTypedArray()
+}
 
 fun branch(key: String, vararg nodes: GraphNode) = GraphNode.ToGraph(key, Graph(*nodes))
 
-fun argLeaf(key: String, vararg args:  Pair<String, String>) = GraphNode.ToArguments(key, Arguments(*args))
+fun argLeaf(key: String, args:  Arguments) = GraphNode.ToArguments(key, args)
+
+fun args(vararg args: Pair<String, String>) = Arguments(*args)
+
+fun argBranch(key: String, args: Arguments, vararg nodes: GraphNode): GraphNode.ToArguments {
+    return GraphNode.ToArguments(key, args, if(nodes.isNotEmpty()) Graph(*nodes) else null)
+}
+
 

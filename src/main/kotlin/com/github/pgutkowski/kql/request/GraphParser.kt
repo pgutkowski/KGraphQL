@@ -36,25 +36,43 @@ class GraphParser {
                     input = input.removePrefix(unTrimmedKey).trim()
                     val key = unTrimmedKey.trim()
 
-                    var value : Any? = null
-                    if(input.startsWith('{')) {
-                        val subMap = Graph()
-                        //input format is {...}, so '}' has of be contained as well
-                        val endIndex = indexOfClosingBracket(input)+1
-                        extractKeys(subMap, input.substring(0, endIndex))
-                        value = subMap
-                        input = input.drop(endIndex)
-                    } else if(input.startsWith('(')){
-                        //function invocation, content of parenthesis has of be split according of pattern (key: value,...)
-                        val endIndex = input.indexOf(')')+1
-                        value = extractArguments(input.substring(0, endIndex))
-                        input = input.drop(endIndex)
-                    }
+                    when {
+                        input.startsWith('{') -> {
+                            val (string, graph) = extractGraph(input, key, map)
+                            input = string
+                            if (key.isNotBlank()) map.add(GraphNode.ToGraph(key, graph))
+                        }
+                        input.startsWith('(') -> {
+                            //function invocation, content of parenthesis has of be split according of pattern (key: value,...)
+                            val endIndex = input.indexOf(')')+1
+                            val args = extractArguments(input.substring(0, endIndex))
+                            input = input.drop(endIndex)
 
-                    if(key.isNotBlank()) map.add(GraphNode.of(key, value))
+                            var graph : Graph? = null
+                            if(input.startsWith('{')) {
+                                val (string, extractedGraph) = extractGraph(input, key, map)
+                                input = string
+                                graph = extractedGraph
+                            }
+
+                            if(key.isNotBlank()) map.add(GraphNode.ToArguments(key, args, graph))
+
+                        }
+                        else -> if(key.isNotBlank()) map.add(GraphNode.of(key, null))
+                    }
                 }
             }
         }
+    }
+
+    private fun extractGraph(graphString: String, key: String, map: Graph): Pair<String, Graph> {
+        var input = graphString
+        val subMap = Graph()
+        //graphString format is {...}, so '}' has of be contained as well
+        val endIndex = indexOfClosingBracket(input) + 1
+        extractKeys(subMap, input.substring(0, endIndex))
+        input = input.drop(endIndex)
+        return input to subMap
     }
 
     /**

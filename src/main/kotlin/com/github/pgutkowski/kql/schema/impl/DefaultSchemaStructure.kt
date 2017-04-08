@@ -54,13 +54,13 @@ open class DefaultSchemaStructure(
 
     protected fun findMutationFunction(mutation: String, args: Arguments): MutationFunction {
         val functions = mutationResolvingFunctions[mutation] ?: throw SyntaxException("Mutation: $mutation is not supported by this schema")
-        val queryFunction = functions.find { it.arity == args.size } ?: throw SyntaxException("No mutation function with arguments: '' found")
+        val queryFunction = functions.find { it.arity == args.size } ?: throw SyntaxException("Mutation function $mutation with arguments: ${args.keys} not found")
         return queryFunction
     }
 
     protected fun findQueryFunction(query: String, args: Arguments): QueryFunction {
         val functions = queryResolvingFunctions[query] ?: throw SyntaxException("Query: $query is not supported by this schema")
-        val queryFunction = functions.find { it.arity == args.size } ?: throw SyntaxException("No query function with arguments: '' found")
+        val queryFunction = functions.find { it.arity == args.size } ?: throw SyntaxException("No query function with arguments: $args found")
         return queryFunction
     }
 

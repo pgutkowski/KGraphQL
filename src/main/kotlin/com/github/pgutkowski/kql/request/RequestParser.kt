@@ -5,7 +5,7 @@ import com.github.pgutkowski.kql.SyntaxException
 
 class RequestParser(private val actionResolver: (String) -> Request.Action) {
 
-    val graphDeserializer: GraphParser = GraphParser()
+    val graphParser: GraphParser = GraphParser()
 
     fun parse(request: String) : Request {
         /**
@@ -35,19 +35,19 @@ class RequestParser(private val actionResolver: (String) -> Request.Action) {
             action = actionResolver.invoke(requestBody.trim().split(" ", ",").first())
         }*/
 
-        val body = graphDeserializer.parse(requestBody)
+        val body = graphParser.parse(requestBody)
 
         val actions = body.map { it.key }
         if(actions.isEmpty()) throw SyntaxException("Invalid query: $requestBody, no fields specified")
 
         if(actions.size == 1){
             if(action == null){
-                action = actionResolver.invoke(actions.first())
+                action = actionResolver((actions.first()))
             }
         } else {
-            action = actionResolver.invoke(actions.first())
+            action = actionResolver(actions.first())
             //ensure that all fields represent same action
-            if(!actions.all { actionResolver.invoke(it) == action }){
+            if(!actions.all { actionResolver(it) == action }){
                 throw SyntaxException("Cannot execute mutations with queries in single request")
             }
         }

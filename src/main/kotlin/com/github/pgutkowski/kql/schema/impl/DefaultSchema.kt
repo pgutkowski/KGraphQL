@@ -2,6 +2,7 @@ package com.github.pgutkowski.kql.schema.impl
 
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.github.pgutkowski.kql.SyntaxException
 import com.github.pgutkowski.kql.request.Arguments
 import com.github.pgutkowski.kql.request.GraphNode
 import com.github.pgutkowski.kql.request.Request
@@ -68,7 +69,7 @@ class DefaultSchema(
     fun <T> invokeWithArgs(functionWrapper: FunctionWrapper<T>, args: Arguments): Any? {
         val transformedArgs : MutableList<Any?> = mutableListOf()
         //drop first because it is receiver, instance of declaring class
-        functionWrapper.function.parameters.drop(1).forEachIndexed { i, parameter ->
+        functionWrapper.function.parameters.drop(1).forEach { parameter ->
             val value = args[parameter.name!!]
             if(value == null){
                 if(!parameter.isOptional){
@@ -78,8 +79,14 @@ class DefaultSchema(
                 }
             } else {
                 val transformedValue : Any = when(parameter.type){
-                    Int::class.starProjectedType -> value.toInt()
-                    else -> value
+                    Int::class.starProjectedType ->{
+                        try {
+                            value.toInt()
+                        } catch(e : Exception){
+                            throw SyntaxException("argument \'${value.dropQuotes()}\' is not value of type: ${Int::class}")
+                        }
+                    }
+                    else -> value.dropQuotes()
                 }
 
                 transformedArgs.add(transformedValue)
@@ -104,4 +111,5 @@ class DefaultSchema(
         throw IllegalArgumentException("Cannot infer request type for name $token")
     }
 
+    fun String.dropQuotes() : String = if(startsWith('\"') && endsWith('\"')) drop(1).dropLast(1) else this
 }

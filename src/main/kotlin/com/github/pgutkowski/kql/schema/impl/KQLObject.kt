@@ -1,8 +1,5 @@
 package com.github.pgutkowski.kql.schema.impl
 
-import com.github.pgutkowski.kql.resolve.FieldResolver
-import com.github.pgutkowski.kql.resolve.MutationResolver
-import com.github.pgutkowski.kql.resolve.QueryResolver
 import com.github.pgutkowski.kql.schema.ScalarSupport
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -10,16 +7,25 @@ import kotlin.reflect.KFunction
 
 sealed class KQLObject(val name : String) {
 
+    class Mutation<T>(name : String, val wrapper: FunctionWrapper<T>) : KQLObject(name), FunctionWrapper<T>{
+
+        override fun invoke(vararg args: Any?): T? = wrapper.invoke(*args)
+
+        override val kFunction: KFunction<T> = wrapper.kFunction
+
+        override fun arity(): Int = wrapper.arity()
+    }
+
+    class Query<T>(name: String, val wrapper: FunctionWrapper<T>) : KQLObject(name), FunctionWrapper<T>{
+
+        override fun invoke(vararg args: Any?): T? = wrapper.invoke(*args)
+
+        override val kFunction: KFunction<T> = wrapper.kFunction
+
+        override fun arity(): Int = wrapper.arity()
+    }
+
     class Simple<T : Any>(name : String, val kClass: KClass<T>) : KQLObject(name)
-
-    class Mutation(name : String, val resolver: MutationResolver, val functions: List<KFunction<*>>) : KQLObject(name)
-
-    class QueryField<T : Any>(
-            name: String,
-            val kClass: KClass<T>,
-            val resolvers: List<QueryResolver<T>>,
-            val fieldsResolvers: List<FieldResolver<T>>
-    ) : KQLObject(name)
 
     class Scalar<T : Any>(
             name : String,

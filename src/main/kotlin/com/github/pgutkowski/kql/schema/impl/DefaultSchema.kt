@@ -10,17 +10,16 @@ import com.github.pgutkowski.kql.request.RequestParser
 import com.github.pgutkowski.kql.result.Result
 import com.github.pgutkowski.kql.result.ResultSerializer
 import com.github.pgutkowski.kql.schema.Schema
-import com.github.pgutkowski.kql.schema.impl.function.FunctionWrapper
 import kotlin.reflect.full.starProjectedType
 
 class DefaultSchema(
-        types: HashMap<String, MutableList<KQLObject>>,
-        queries: ArrayList<KQLObject.QueryField<*>>,
-        mutations: ArrayList<KQLObject.Mutation>,
+        queries: ArrayList<KQLObject.Query<*>>,
+        mutations: ArrayList<KQLObject.Mutation<*>>,
+        simpleTypes : ArrayList<KQLObject.Simple<*>>,
         inputs: ArrayList<KQLObject.Input<*>>,
         scalars: ArrayList<KQLObject.Scalar<*>>
 ) : Schema, DefaultSchemaStructure(
-        types, queries, mutations, inputs, scalars
+        queries, mutations, simpleTypes, inputs, scalars
 ) {
     private val requestParser = RequestParser { resolveActionType(it) }
 
@@ -68,12 +67,11 @@ class DefaultSchema(
 
     fun <T> invokeWithArgs(functionWrapper: FunctionWrapper<T>, args: Arguments): Any? {
         val transformedArgs : MutableList<Any?> = mutableListOf()
-        //drop first because it is receiver, instance of declaring class
-        functionWrapper.function.parameters.drop(1).forEach { parameter ->
+        functionWrapper.kFunction.parameters.forEach { parameter ->
             val value = args[parameter.name!!]
             if(value == null){
                 if(!parameter.isOptional){
-                    throw IllegalArgumentException("${functionWrapper.function.name} argument ${parameter.name} is not optional, value cannot be null")
+                    throw IllegalArgumentException("${functionWrapper.kFunction.name} argument ${parameter.name} is not optional, value cannot be null")
                 } else {
                     transformedArgs.add(null)
                 }
@@ -106,8 +104,8 @@ class DefaultSchema(
     }
 
     fun resolveActionType(token: String): Request.Action {
-        if (queries.any { it.name.equals(token, true) }) return Request.Action.QUERY
-        if (mutations.flatMap { it.functions }.any { it.name.equals(token, true) }) return Request.Action.MUTATION
+        if (queries.values.any { it.name.equals(token, true) }) return Request.Action.QUERY
+        if (mutations.values.any { it.name.equals(token, true) }) return Request.Action.MUTATION
         throw IllegalArgumentException("Cannot infer request type for name $token")
     }
 

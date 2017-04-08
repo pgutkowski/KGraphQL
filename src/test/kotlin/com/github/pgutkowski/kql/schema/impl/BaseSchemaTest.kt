@@ -1,11 +1,7 @@
 package com.github.pgutkowski.kql.schema.impl
 
 import com.github.pgutkowski.kql.TestClasses
-import com.github.pgutkowski.kql.annotation.method.Mutation
-import com.github.pgutkowski.kql.annotation.method.Query
 import com.github.pgutkowski.kql.extract
-import com.github.pgutkowski.kql.resolve.MutationResolver
-import com.github.pgutkowski.kql.resolve.QueryResolver
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.junit.Before
@@ -27,19 +23,14 @@ abstract class BaseSchemaTest {
     val actors = mutableListOf<TestClasses.Actor>()
 
     val testedSchema = DefaultSchemaBuilder()
-            .addInput(TestClasses.InputClass::class)
-            .addQueryField(TestClasses.Film::class, listOf(object: QueryResolver<TestClasses.Film> {
-                @Query fun getQueryClass() : TestClasses.Film = testFilm
-            }))
-            .addMutations(object : MutationResolver{
-                @Mutation
-                fun createActor(name: String, age: Int) : TestClasses.Actor{
-                    val actor = TestClasses.Actor(name, age)
-                    actors.add(actor)
-                    return actor
-                }
+            .input(TestClasses.InputClass::class)
+            .query( "film", { -> testFilm } )
+            .mutation("createActor", { name : String, age : Int ->
+                val actor = TestClasses.Actor(name, age)
+                actors.add(actor)
+                actor
             })
-            .addScalar(TestClasses.Id::class, TestClasses.IdScalarSupport())
+            .scalar(TestClasses.Id::class, TestClasses.IdScalarSupport())
             .build() as DefaultSchema
 
     @Before

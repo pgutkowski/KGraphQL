@@ -94,7 +94,7 @@ class ResultSerializer(val schema: DefaultSchema) : JsonSerializer<Result>() {
             if(graphNode is GraphNode.Leaf){
                 writeScalarValue(scalar, actualValue, gen, serializers)
             } else {
-                serializers.reportMappingProblem("Cannot query properties on scalar types")
+                serializers.reportMappingProblem("Cannot query properties on scalar simpleTypes")
             }
         } else {
             when(graphNode){

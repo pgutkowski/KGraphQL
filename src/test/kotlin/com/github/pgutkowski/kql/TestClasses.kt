@@ -1,13 +1,10 @@
 package com.github.pgutkowski.kql
 
-import com.github.pgutkowski.kql.annotation.type.Input
-import com.github.pgutkowski.kql.annotation.type.Query
 import com.github.pgutkowski.kql.schema.ScalarSupport
 
 
 class TestClasses {
 
-    @Query
     class Film(val id : Id, val year: Int, val title: String, val director: Director)
 
     abstract class Person(val name: String, val age: Int)
@@ -24,12 +21,9 @@ class TestClasses {
         override fun validate(input: String) : Boolean = input.isNotEmpty() && input.contains(':')
     }
 
-    @Input
     class InputClass
 
-    @Query
     class WithCollection(val cases: List<String>)
 
-    @Query
     class WithNullableCollection(val cases: List<String?>)
 }

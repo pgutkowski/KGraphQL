@@ -43,7 +43,7 @@ class GraphParser {
                             if (key.isNotBlank()) map.add(GraphNode.ToGraph(key, graph))
                         }
                         input.startsWith('(') -> {
-                            //function invocation, content of parenthesis has of be split according of pattern (key: value,...)
+                            //kFunction invocation, content of parenthesis has of be split according of pattern (key: value,...)
                             val endIndex = input.indexOf(')')+1
                             val args = extractArguments(input.substring(0, endIndex))
                             input = input.drop(endIndex)

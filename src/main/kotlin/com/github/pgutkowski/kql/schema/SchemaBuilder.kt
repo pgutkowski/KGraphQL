@@ -1,9 +1,5 @@
 package com.github.pgutkowski.kql.schema
 
-import com.github.pgutkowski.kql.resolve.FieldResolver
-import com.github.pgutkowski.kql.resolve.MutationResolver
-import com.github.pgutkowski.kql.resolve.QueryResolver
-import com.github.pgutkowski.kql.schema.ScalarSupport
 import kotlin.reflect.KClass
 
 
@@ -11,13 +7,19 @@ interface SchemaBuilder {
 
     fun build() : Schema
 
-    fun <T: Any> addQueryField(kClass: KClass<T>, queryResolvers: List<QueryResolver<T>>, fieldSupports: List<FieldResolver<T>> = emptyList()): SchemaBuilder
+    fun <T> mutation(name: String, function: () -> T): SchemaBuilder
+    fun <T, R> mutation(name: String, function: (R) -> T): SchemaBuilder
+    fun <T, R, E> mutation(name: String, function: (R, E) -> T): SchemaBuilder
+    fun <T, R, E, W> mutation(name: String, function: (R, E, W) -> T): SchemaBuilder
+    fun <T, R, E, W, Q> mutation(name: String, function: (R, E, W, Q) -> T): SchemaBuilder
 
-    fun <T: Any> addQueryField(name: String, kClass: KClass<T>, queryResolvers: List<QueryResolver<T>>, fieldSupports: List<FieldResolver<T>> = emptyList()): SchemaBuilder
+    fun <T> query(name: String, function: () -> T): SchemaBuilder
+    fun <T, R> query(name: String, function: (R) -> T): SchemaBuilder
+    fun <T, R, E> query(name: String, function: (R, E) -> T): SchemaBuilder
+    fun <T, R, E, W> query(name: String, function: (R, E, W) -> T): SchemaBuilder
+    fun <T, R, E, W, Q> query(name: String, function: (R, E, W, Q) -> T): SchemaBuilder
 
-    fun addMutations(mutationResolver: MutationResolver): SchemaBuilder
-
-    fun <T: Any>addInput(kClass: KClass<T>): SchemaBuilder
-
-    fun <T: Any>addScalar(kClass: KClass<T>, scalarSupport: ScalarSupport<T>): SchemaBuilder
+    fun <T: Any> input(kClass: KClass<T>): SchemaBuilder
+    fun <T: Any> scalar(kClass: KClass<T>, scalarSupport: ScalarSupport<T>): SchemaBuilder
+    fun <T : Any> type(kClass: KClass<T>) : SchemaBuilder
 }

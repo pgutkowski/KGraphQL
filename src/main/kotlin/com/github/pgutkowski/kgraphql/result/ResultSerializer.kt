@@ -25,7 +25,7 @@ class ResultSerializer(val schema: DefaultSchema) : JsonSerializer<Result>() {
                 val graphSchema = value.request.graph
                 val valueMap = value.data ?: throw IllegalArgumentException("Cannot serialize null data")
                 for(node in graphSchema){
-                    writeProperty(valueMap[node.key], gen, serializers, node)
+                    writeProperty(valueMap[node.aliasOrKey], gen, serializers, node)
                 }
                 gen.writeEndObject()
             } else {
@@ -60,7 +60,7 @@ class ResultSerializer(val schema: DefaultSchema) : JsonSerializer<Result>() {
     }
 
     private fun writeProperty(actualValue: Any?, gen: JsonGenerator, serializers: SerializerProvider, graphNode: GraphNode) {
-        gen.writeFieldName(graphNode.key)
+        gen.writeFieldName(graphNode.aliasOrKey)
         writeValue(actualValue, gen, serializers, graphNode)
     }
 

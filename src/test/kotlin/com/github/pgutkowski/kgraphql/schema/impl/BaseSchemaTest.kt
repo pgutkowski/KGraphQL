@@ -1,6 +1,7 @@
 package com.github.pgutkowski.kgraphql.schema.impl
 
 import com.github.pgutkowski.kgraphql.TestClasses
+import com.github.pgutkowski.kgraphql.deserialize
 import com.github.pgutkowski.kgraphql.extract
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
@@ -20,10 +21,28 @@ abstract class BaseSchemaTest {
             )
     )
 
+    val testFilm2 = TestClasses.Film(
+            TestClasses.Id("Se7en", 1995),
+            1995, "Se7en",
+            TestClasses.Director(
+                    "David Fincher", 43,
+                    listOf (
+                            TestClasses.Actor("Brad Pitt", 763),
+                            TestClasses.Actor("Morgan Freeman", 1212),
+                            TestClasses.Actor("Kevin Spacey", 2132)
+                    )
+            )
+    )
+
     val actors = mutableListOf<TestClasses.Actor>()
 
     val testedSchema = DefaultSchemaBuilder()
             .query( "film", { -> testFilm } )
+            .query("filmByRank", { rank: Int -> when(rank){
+                1 -> testFilm
+                2 -> testFilm2
+                else -> null
+            }})
             .mutation("createActor", { name : String, age : Int ->
                 val actor = TestClasses.Actor(name, age)
                 actors.add(actor)
@@ -48,4 +67,6 @@ abstract class BaseSchemaTest {
                 .filterNot { errorMessage.contains(it) }
                 .forEach { throw AssertionError("Expected error message to contain $it, but was: $errorMessage") }
     }
+
+    fun execute(query: String) = deserialize(testedSchema.handleRequest(query))
 }

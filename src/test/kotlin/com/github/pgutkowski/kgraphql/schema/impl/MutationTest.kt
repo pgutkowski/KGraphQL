@@ -1,7 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.impl
 
 import com.github.pgutkowski.kgraphql.TestClasses
-import com.github.pgutkowski.kgraphql.deserialize
 import com.github.pgutkowski.kgraphql.extract
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
@@ -15,58 +14,54 @@ class MutationTest : BaseSchemaTest() {
 
     @Test
     fun testSimpleMutation(){
-        val result = testedSchema.handleRequest(
-                "mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age})}"
-        )
-        val map = deserialize(result)
+        val map = execute("mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age})}")
         assertNoErrors(map)
         assertThat(extract<Map<String, Any>>(map, "data/createActor"), equalTo(mapOf("name" to testActor.name, "age" to testActor.age)))
     }
 
     @Test
     fun testSimpleMutationWithFields(){
-        val result = testedSchema.handleRequest(
-                "mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}){name}}"
-        )
-        val map = deserialize(result)
+        val map = execute("mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}){name}}")
         assertNoErrors(map)
         assertThat(extract<Map<String, Any>>(map, "data/createActor"), equalTo(mapOf<String, Any>("name" to testActor.name)))
     }
 
     @Test
     fun testSimpleMutationWithFields2(){
-        val result = testedSchema.handleRequest(
-                "mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}){age}}"
-        )
-        val map = deserialize(result)
+        val map = execute("mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}){age}}")
         assertNoErrors(map)
         assertThat(extract<Map<String, Any>>(map, "data/createActor"), equalTo(mapOf<String, Any>("age" to testActor.age)))
     }
 
     @Test
     fun testInvalidMutationName(){
-        val result = testedSchema.handleRequest(
-                "mutation {createBanana(name: \"${testActor.name}\", age: ${testActor.age}){age}}"
-        )
-        val map = deserialize(result)
+        val map = execute("mutation {createBanana(name: \"${testActor.name}\", age: ${testActor.age}){age}}")
         assertError(map, "java.lang.IllegalArgumentException", "createBanana")
     }
 
     @Test
     fun testInvalidArgumentType(){
-        val result = testedSchema.handleRequest(
-                "mutation {createActor(name: \"${testActor.name}\", age: \"fwfwf\"){age}}"
-        )
-        val map = deserialize(result)
-        assertError(map, "SyntaxException: argument 'fwfwf' is not value of type: class kotlin.Int")
+        val map = execute("mutation {createActor(name: \"${testActor.name}\", age: \"fwfwf\"){age}}")
+        assertError(map, "SyntaxException: argument 'fwfwf' is not value of type: kotlin.Int")
     }
 
     @Test
     fun testInvalidArgumentNumber(){
-        val result = testedSchema.handleRequest(
-                "mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}, bananan: \"fwfwf\"){age}}"
-        )
-        val map = deserialize(result)
+        val map = execute("mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}, bananan: \"fwfwf\"){age}}")
         assertError(map, "SyntaxException: Mutation createActor does support arguments: [name, age]. found arguments: [name, bananan, age]")
+    }
+
+    @Test
+    fun testSimpleMutationWithAlias(){
+        val map = execute("{caine : createActor(name: \"${testActor.name}\", age: ${testActor.age}){age}}")
+        assertNoErrors(map)
+        assertThat(extract<Map<String, Any>>(map, "data/caine"), equalTo(mapOf<String, Any>("age" to testActor.age)))
+    }
+
+    @Test
+    fun testSimpleMutationWithFieldAlias(){
+        val map = execute("mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}){howOld: age}}")
+        assertNoErrors(map)
+        assertThat(extract<Map<String, Any>>(map, "data/createActor"), equalTo(mapOf<String, Any>("howOld" to testActor.age)))
     }
 }

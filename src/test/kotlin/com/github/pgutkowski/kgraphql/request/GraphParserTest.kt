@@ -17,7 +17,7 @@ class GraphParserTest {
 
     @Test
     fun nestedQueryParsing() {
-        val map = graphParser.parse("{hero{name, appearsIn}\nvillain{name, [deeds]}}")
+        val map = graphParser.parse("{hero{name, appearsIn}\nvillain{name, deeds}}")
         val expected = Graph(
                 branch( "hero",
                         leaf("name"),
@@ -25,7 +25,7 @@ class GraphParserTest {
                 ),
                 branch( "villain",
                         leaf("name"),
-                        leaf("[deeds]")
+                        leaf("deeds")
                 )
         )
 
@@ -34,7 +34,7 @@ class GraphParserTest {
 
     @Test
     fun doubleNestedQueryParsing() {
-        val map = graphParser.parse("{hero{name, appearsIn{title, year}}\nvillain{name, [deeds]}}")
+        val map = graphParser.parse("{hero{name, appearsIn{title, year}}\nvillain{name, deeds}}")
 
         val expected = Graph(
                 branch( "hero",
@@ -46,7 +46,7 @@ class GraphParserTest {
                 ),
                 branch( "villain",
                         leaf("name"),
-                        leaf("[deeds]")
+                        leaf("deeds")
                 )
         )
 
@@ -55,7 +55,7 @@ class GraphParserTest {
 
     @Test
     fun tripleNestedQueryParsing() {
-        val map = graphParser.parse("{hero{name, appearsIn{title{abbr, full}, year}}\nvillain{name, [deeds]}}")
+        val map = graphParser.parse("{hero{name, appearsIn{title{abbr, full}, year}}\nvillain{name, deeds}}")
 
         val expected = Graph(
                 branch( "hero",
@@ -69,7 +69,49 @@ class GraphParserTest {
                 ),
                 branch( "villain",
                         leaf("name"),
-                        leaf("[deeds]")
+                        leaf("deeds")
+                )
+        )
+
+        assertThat(map, equalTo(expected))
+    }
+
+    @Test
+    fun queryWithArguments() {
+        val map = graphParser.parse("{hero(name: \"Batman\"){ power }}")
+
+        val expected = Graph(
+                argBranch("hero",
+                        args("name" to "\"Batman\""),
+                        leaf("power")
+                )
+        )
+
+        assertThat(map, equalTo(expected))
+    }
+
+    @Test
+    fun queryWithAlias() {
+        val map = graphParser.parse("{batman: hero(name: \"Batman\"){ power }}")
+
+        val expected = Graph(
+                argBranch("hero", "batman",
+                        args("name" to "\"Batman\""),
+                        leaf("power")
+                )
+        )
+
+        assertThat(map, equalTo(expected))
+    }
+
+    @Test
+    fun queryWithFieldAlias() {
+        val map = graphParser.parse("{batman: hero(name: \"Batman\"){ skills : powers }}")
+
+        val expected = Graph(
+                argBranch("hero", "batman",
+                        args("name" to "\"Batman\""),
+                        leaf("powers", "skills")
                 )
         )
 
@@ -125,7 +167,7 @@ class GraphParserTest {
     @Test
     fun testIndexOfClosingBracket(){
         fun executeTest(input : String, expected: Int? = null){
-            val result = graphParser.indexOfClosingBracket(input)
+            val result = GraphParser().indexOfClosingBracket(input)
             assertThat(result, equalTo(expected ?: input.length -1))
         }
         executeTest("{hero{name, appearsIn{title, year}}}")

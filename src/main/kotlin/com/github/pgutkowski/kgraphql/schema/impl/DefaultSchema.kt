@@ -10,6 +10,8 @@ import com.github.pgutkowski.kgraphql.request.RequestParser
 import com.github.pgutkowski.kgraphql.result.Result
 import com.github.pgutkowski.kgraphql.result.ResultSerializer
 import com.github.pgutkowski.kgraphql.schema.Schema
+import kotlin.reflect.KClass
+import kotlin.reflect.KType
 import kotlin.reflect.full.starProjectedType
 
 class DefaultSchema(
@@ -24,6 +26,13 @@ class DefaultSchema(
 
     companion object {
         val BUILT_IN_TYPES = arrayOf(String::class, Int::class, Double::class, Float::class, Boolean::class)
+
+        private val BUILT_IN_TYPE_TRANSFORMATIONS = mapOf<KType, (String)->Any>(
+                Int::class.starProjectedType to String::toInt,
+                Double::class.starProjectedType to String::toDouble,
+                Float::class.starProjectedType to String::toFloat,
+                Boolean::class.starProjectedType to String::toBoolean
+        )
     }
 
     val descriptor = SchemaDescriptor.forSchema(this)
@@ -66,17 +75,13 @@ class DefaultSchema(
             Request.Action.QUERY -> {
                 descriptor.validateQueryGraph(parsedRequest.graph)
                 for (query in parsedRequest.graph) {
-                    val args = extractArguments(query)
-                    val queryFunction = findQuery(query.key)
-                    data.put(query.key, queryFunction.invoke())
+                    data.put(query.aliasOrKey, invokeWithArgs(findQuery(query.key), extractArguments(query)))
                 }
             }
             Request.Action.MUTATION -> {
                 descriptor.validateMutationGraph(parsedRequest.graph)
                 for (mutation in parsedRequest.graph) {
-                    val args = extractArguments(mutation)
-                    val mutationFunction = findMutation(mutation.key)
-                    data.put(mutation.key, invokeWithArgs(mutationFunction, args))
+                    data.put(mutation.aliasOrKey, invokeWithArgs(findMutation(mutation.key), extractArguments(mutation)))
                 }
             }
             else -> throw IllegalArgumentException("Not supported action: ${parsedRequest.action}")
@@ -106,14 +111,17 @@ class DefaultSchema(
             } else if(value is String) {
 
                 val transformedValue : Any = when(parameter.type){
-                    Int::class.starProjectedType ->{
+                    String::class.starProjectedType -> value.dropQuotes()
+                    in BUILT_IN_TYPE_TRANSFORMATIONS -> {
                         try {
-                            value.toInt()
-                        } catch(e : Exception){
-                            throw SyntaxException("argument \'${value.dropQuotes()}\' is not value of type: ${Int::class}")
+                            BUILT_IN_TYPE_TRANSFORMATIONS[parameter.type]!!.invoke(value)
+                        } catch (e : Exception){
+                            throw SyntaxException("argument \'${value.dropQuotes()}\' is not value of type: ${parameter.type}")
                         }
                     }
-                    else -> value.dropQuotes()
+                    else -> {
+                        throw UnsupportedOperationException("Not supported yet")
+                    }
                 }
 
                 transformedArgs.add(transformedValue)

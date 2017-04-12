@@ -4,7 +4,7 @@ package com.github.pgutkowski.kgraphql.request
 open class Graph() : ArrayList<GraphNode>(){
 
     companion object {
-        fun leaf(key : String) = GraphNode.Leaf(key)
+        fun leaf(key : String, alias: String? = null) = GraphNode.Leaf(key, alias)
 
         fun leafs(vararg keys : String): Array<GraphNode.Leaf> {
             return keys.map { GraphNode.Leaf(it) }.toTypedArray()
@@ -22,8 +22,8 @@ open class Graph() : ArrayList<GraphNode>(){
             return GraphNode.ToArguments(key, args, if(nodes.isNotEmpty()) Graph(*nodes) else null)
         }
 
-        fun argBranch(key: String, args: Arguments, graph : Graph?): GraphNode.ToArguments {
-            return GraphNode.ToArguments(key, args, graph)
+        fun argBranch(key: String, alias: String, args: Arguments, vararg nodes: GraphNode): GraphNode.ToArguments {
+            return GraphNode.ToArguments(key, args, if(nodes.isNotEmpty()) Graph(*nodes) else null, alias)
         }
     }
 

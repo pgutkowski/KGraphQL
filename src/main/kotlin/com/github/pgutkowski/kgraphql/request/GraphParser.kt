@@ -1,6 +1,7 @@
 package com.github.pgutkowski.kgraphql.request
 
 import com.github.pgutkowski.kgraphql.SyntaxException
+import kotlin.system.measureTimeMillis
 
 /**
  * TODO: could be bottleneck in query handling, lots of memory allocation
@@ -18,7 +19,7 @@ class GraphParser {
         return map
     }
 
-    private fun extractKeys(map: Graph, inputWithBrackets: String) {
+    private fun extractKeys(graph: Graph, inputWithBrackets: String) {
         var input = inputWithBrackets.dropBrackets()
 
         while(input.isNotBlank()){
@@ -32,34 +33,60 @@ class GraphParser {
                 else -> {
                     val unTrimmedKey = input.takeWhile { delimiters.notContains(it) }
                     input = input.removePrefix(unTrimmedKey).trim()
-                    val key = unTrimmedKey.trim()
-
-                    when {
-                        input.startsWith('{') -> {
-                            val (string, graph) = extractGraph(input)
-                            input = string
-                            if (key.isNotBlank()) map.add(GraphNode.ToGraph(key, graph))
-                        }
-                        input.startsWith('(') -> {
-                            //kFunction invocation, content of parenthesis has of be split according of pattern (key: value,...)
-                            val endIndex = input.indexOf(')')+1
-                            val args = extractArguments(input.substring(0, endIndex))
-                            input = input.drop(endIndex)
-
-                            var graph : Graph? = null
-                            if(input.startsWith('{')) {
+                    val aliasAndKey = unTrimmedKey.trim()
+                    if(aliasAndKey.isNotBlank()){
+                        val (alias, key) = splitAliasAndKey(aliasAndKey)
+                        when {
+                            input.startsWith('{') -> {
                                 val (string, extractedGraph) = extractGraph(input)
                                 input = string
-                                graph = extractedGraph
+                                validateAndAdd(graph, GraphNode.ToGraph(key, extractedGraph, alias))
                             }
+                            input.startsWith('(') -> {
+                                //kFunction invocation, content of parenthesis has of be split according of pattern (key: value,...)
+                                val endIndex = input.indexOf(')')+1
+                                val args = extractArguments(input.substring(0, endIndex))
+                                input = input.drop(endIndex)
 
-                            if(key.isNotBlank()) map.add(GraphNode.ToArguments(key, args, graph))
+                                var subGraph : Graph? = null
+                                if(input.startsWith('{')) {
+                                    val (string, extractedGraph) = extractGraph(input)
+                                    input = string
+                                    subGraph = extractedGraph
+                                }
 
+                                validateAndAdd(graph, GraphNode.ToArguments(key, args, subGraph, alias))
+                            }
+                            else -> validateAndAdd(graph, GraphNode.Leaf(key, alias))
                         }
-                        else -> if(key.isNotBlank()) map.add(GraphNode.of(key, null))
                     }
                 }
             }
+        }
+    }
+
+    private fun validateAndAdd(graph: Graph, node: GraphNode){
+        when{
+            node.key.isBlank() -> throw SyntaxException("cannot handle blank property in object : $graph")
+            graph.any { it.aliasOrKey == node.aliasOrKey }-> throw SyntaxException("Duplicated property name/alias: ${node.aliasOrKey}")
+            else -> graph.add(node)
+        }
+    }
+
+    private fun splitAliasAndKey(aliasAndKey: String): Pair<String?, String> {
+        if(aliasAndKey.isBlank()){
+            throw IllegalArgumentException("Cannot split empty string")
+        }
+
+        if(aliasAndKey.contains(":")){
+            val tokens = aliasAndKey.split(":")
+            if(tokens.size == 2){
+                return tokens[0].trim() to tokens[1].trim()
+            } else {
+                throw IllegalArgumentException("Illegal alias and key string: $aliasAndKey. Should contain single \':\'")
+            }
+        } else {
+            return null to aliasAndKey
         }
     }
 

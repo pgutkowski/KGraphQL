@@ -163,18 +163,4 @@ class GraphParserTest {
         )
         assertThat(map, equalTo(expected))
     }
-
-    @Test
-    fun testIndexOfClosingBracket(){
-        fun executeTest(input : String, expected: Int? = null){
-            val result = GraphParser().indexOfClosingBracket(input)
-            assertThat(result, equalTo(expected ?: input.length -1))
-        }
-        executeTest("{hero{name, appearsIn{title, year}}}")
-        executeTest("{hero{name{first, second}, appearsIn{title, year}}}")
-        executeTest("{hero}")
-
-        executeTest("{hero}, movie{year, title}}", 5)
-        executeTest("{hero{powers{primary}}}\nvillain{deeds}}", 22)
-    }
 }

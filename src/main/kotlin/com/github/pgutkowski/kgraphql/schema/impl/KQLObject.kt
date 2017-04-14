@@ -37,4 +37,6 @@ sealed class KQLObject(val name : String) {
     ) : KQLObject(name)
 
     class Interface<T : Any>(name : String, val kClass: KClass<T>) : KQLObject(name)
+
+    class Enumeration<T : Enum<T>>(name: String, val kClass: KClass<T>, val values: Array<T>) : KQLObject(name)
 }

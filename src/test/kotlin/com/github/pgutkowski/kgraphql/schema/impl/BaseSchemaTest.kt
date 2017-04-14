@@ -3,12 +3,15 @@ package com.github.pgutkowski.kgraphql.schema.impl
 import com.github.pgutkowski.kgraphql.TestClasses
 import com.github.pgutkowski.kgraphql.deserialize
 import com.github.pgutkowski.kgraphql.extract
+import com.github.pgutkowski.kgraphql.schema.SchemaBuilder
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
+import org.junit.AssumptionViolatedException
 import org.junit.Before
 
 
 abstract class BaseSchemaTest {
+
     val testFilm = TestClasses.Film(
             TestClasses.Id("Prestige", 2006),
             2006, "Prestige",
@@ -36,19 +39,22 @@ abstract class BaseSchemaTest {
 
     val actors = mutableListOf<TestClasses.Actor>()
 
-    val testedSchema = DefaultSchemaBuilder()
+    val testedSchema = SchemaBuilder()
             .query( "film", { -> testFilm } )
             .query("filmByRank", { rank: Int -> when(rank){
                 1 -> testFilm
                 2 -> testFilm2
                 else -> null
             }})
+            .query("filmsByType", {type: TestClasses.FilmType -> listOf(testFilm, testFilm2) })
+
             .mutation("createActor", { name : String, age : Int ->
                 val actor = TestClasses.Actor(name, age)
                 actors.add(actor)
                 actor
             })
-            .scalar(TestClasses.Id::class, TestClasses.IdScalarSupport())
+            .scalar(TestClasses.IdScalarSupport())
+            .enum<TestClasses.FilmType>()
             .build() as DefaultSchema
 
     @Before

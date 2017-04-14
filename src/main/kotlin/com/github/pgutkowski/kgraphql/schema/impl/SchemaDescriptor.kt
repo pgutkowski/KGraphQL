@@ -1,6 +1,5 @@
 package com.github.pgutkowski.kgraphql.schema.impl
 
-import com.github.pgutkowski.kgraphql.request.Arguments
 import com.github.pgutkowski.kgraphql.request.Graph
 import com.github.pgutkowski.kgraphql.request.GraphNode
 import com.github.pgutkowski.kgraphql.schema.SchemaException
@@ -25,30 +24,44 @@ class SchemaDescriptor private constructor(private val queries: Map<String, Desc
                     }
                 }
 
+                fun <T : Any>handleComplexType(kClass: KClass<T>, createArguments: ()->Map<String, DescriptorNode>, isCollectionElement: Boolean): DescriptorNode.Branch {
+                    val cachedChildren = typeChildrenCache[kClass]
+                    val children : MutableMap<String, DescriptorNode> = mutableMapOf()
+                    if(cachedChildren == null){
+                        kClass.memberProperties.forEach { property ->
+                            children[property.name] = handleType(property.returnType, { emptyMap()})
+                        }
+                        typeChildrenCache.put(kClass, children)
+                    } else {
+                        children.putAll(cachedChildren)
+                    }
+                    return DescriptorNode.Branch(createArguments(), children, isCollectionElement)
+                }
+
                 val kClass = kType.jvmErasure
                 return when {
+                    /*BUILT IN TYPE:*/
                     kClass in DefaultSchema.BUILT_IN_TYPES -> {
                         DescriptorNode.Leaf(createArguments(), kType)
                     }
+
+                    /*Collections*/
                     kClass.isSubclassOf(Collection::class) -> {
                         val collectionType = kType.arguments.first().type
                                 ?: throw IllegalArgumentException("Failed to create descriptor for type: $kType")
 
                         handleType(collectionType, createArguments, true)
                     }
+
+                    /*Scalar*/
                     isScalar(kClass) -> DescriptorNode.Leaf(createArguments(), kType)
+
+                    /*Enums*/
+                    kClass.isSubclassOf(Enum::class) -> DescriptorNode.Leaf(createArguments(), kType)
+
+                    /* every other type is treated as graph and split*/
                     else -> {
-                        val cachedChildren = typeChildrenCache[kClass]
-                        val children : MutableMap<String, DescriptorNode> = mutableMapOf()
-                        if(cachedChildren == null){
-                            kClass.memberProperties.forEach { property ->
-                                children[property.name] = handleType(property.returnType, { emptyMap()})
-                            }
-                            typeChildrenCache.put(kClass, children)
-                        } else {
-                            children.putAll(cachedChildren)
-                        }
-                        DescriptorNode.Branch(createArguments(), children, isCollectionElement)
+                        handleComplexType(kClass, createArguments, isCollectionElement)
                     }
                 }
             }

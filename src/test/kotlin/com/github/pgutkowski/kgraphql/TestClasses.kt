@@ -5,7 +5,7 @@ import com.github.pgutkowski.kgraphql.schema.ScalarSupport
 
 class TestClasses {
 
-    class Film(val id : Id, val year: Int, val title: String, val director: Director)
+    class Film(val id : Id, val year: Int, val title: String, val director: Director, val type: FilmType = FilmType.FULL_LENGTH)
 
     abstract class Person(val name: String, val age: Int)
 
@@ -21,5 +21,5 @@ class TestClasses {
         override fun validate(input: String) : Boolean = input.isNotEmpty() && input.contains(':')
     }
 
-    class FilmInput
+    enum class FilmType {FULL_LENGTH, SHORT_LENGTH}
 }

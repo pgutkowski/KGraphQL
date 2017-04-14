@@ -10,18 +10,16 @@ import com.github.pgutkowski.kgraphql.request.RequestParser
 import com.github.pgutkowski.kgraphql.result.Result
 import com.github.pgutkowski.kgraphql.result.ResultSerializer
 import com.github.pgutkowski.kgraphql.schema.Schema
-import kotlin.reflect.KClass
 import kotlin.reflect.KType
+import kotlin.reflect.full.createType
 import kotlin.reflect.full.starProjectedType
 
 class DefaultSchema(
-        val queries: ArrayList<KQLObject.Query<*>>,
-
-        val mutations: ArrayList<KQLObject.Mutation<*>>,
-
-        val types : ArrayList<KQLObject.Simple<*>>,
-
-        val scalars: ArrayList<KQLObject.Scalar<*>>
+        val queries: List<KQLObject.Query<*>>,
+        val mutations: List<KQLObject.Mutation<*>>,
+        val types : List<KQLObject.Simple<*>>,
+        val scalars: List<KQLObject.Scalar<*>>,
+        val enums : List<KQLObject.Enumeration<*>>
 ) : Schema {
 
     companion object {
@@ -43,6 +41,8 @@ class DefaultSchema(
     private val queriesByName: Map<String, KQLObject.Query<*>> = queries.associate { it.name to it }
 
     private val mutationsByName: Map<String, KQLObject.Mutation<*>> = mutations.associate { it.name to it }
+
+    private val enumsByType = enums.associate { it.kClass.createType() to it }
 
     /**
      * objects for request handling
@@ -110,7 +110,7 @@ class DefaultSchema(
                 }
             } else if(value is String) {
 
-                val transformedValue : Any = when(parameter.type){
+                val transformedValue : Any? = when(parameter.type){
                     String::class.starProjectedType -> value.dropQuotes()
                     in BUILT_IN_TYPE_TRANSFORMATIONS -> {
                         try {
@@ -118,6 +118,9 @@ class DefaultSchema(
                         } catch (e : Exception){
                             throw SyntaxException("argument \'${value.dropQuotes()}\' is not value of type: ${parameter.type}")
                         }
+                    }
+                    in enumsByType.keys -> {
+                        enumsByType[parameter.type]?.values?.find { it.name == value }
                     }
                     else -> {
                         throw UnsupportedOperationException("Not supported yet")

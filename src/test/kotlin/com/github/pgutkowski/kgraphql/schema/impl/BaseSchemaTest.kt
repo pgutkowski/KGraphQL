@@ -74,5 +74,5 @@ abstract class BaseSchemaTest {
                 .forEach { throw AssertionError("Expected error message to contain $it, but was: $errorMessage") }
     }
 
-    fun execute(query: String) = deserialize(testedSchema.handleRequest(query))
+    fun execute(query: String, variables : String? = null) = deserialize(testedSchema.handleRequest(query, variables))
 }

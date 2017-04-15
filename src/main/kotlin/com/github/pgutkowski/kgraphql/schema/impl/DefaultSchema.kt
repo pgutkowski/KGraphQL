@@ -3,16 +3,15 @@ package com.github.pgutkowski.kgraphql.schema.impl
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.pgutkowski.kgraphql.SyntaxException
-import com.github.pgutkowski.kgraphql.request.Arguments
-import com.github.pgutkowski.kgraphql.request.GraphNode
-import com.github.pgutkowski.kgraphql.request.Request
-import com.github.pgutkowski.kgraphql.request.RequestParser
+import com.github.pgutkowski.kgraphql.request.*
 import com.github.pgutkowski.kgraphql.result.Result
 import com.github.pgutkowski.kgraphql.result.ResultSerializer
 import com.github.pgutkowski.kgraphql.schema.Schema
+import kotlin.reflect.KParameter
 import kotlin.reflect.KType
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.starProjectedType
+import kotlin.reflect.jvm.jvmErasure
 
 class DefaultSchema(
         val queries: List<KQLObject.Query<*>>,
@@ -44,12 +43,12 @@ class DefaultSchema(
 
     private val enumsByType = enums.associate { it.kClass.createType() to it }
 
+    val objectMapper = jacksonObjectMapper()
+
     /**
      * objects for request handling
      */
     private val requestParser = RequestParser { resolveActionType(it) }
-
-    val objectMapper = jacksonObjectMapper()
 
     init {
         objectMapper.registerModule(
@@ -57,9 +56,9 @@ class DefaultSchema(
         )
     }
 
-    override fun handleRequest(request: String): String {
+    override fun handleRequest(request: String, variables: String?): String {
         try {
-            return objectMapper.writeValueAsString(createResult(request))
+            return objectMapper.writeValueAsString(createResult(request, variables))
         } catch(e: Exception) {
             return "{\"errors\" : { \"message\": \"Caught ${e.javaClass.canonicalName}: ${e.message}\"}}"
         }
@@ -68,20 +67,23 @@ class DefaultSchema(
     /**
      * this method is only fetching data
      */
-    fun createResult(request: String): Result {
+    fun createResult(request: String, variablesJson: String? = null): Result {
+        val jsonNode = if(variablesJson != null) objectMapper.readTree(variablesJson) else null
+        val variables = Variables(objectMapper, jsonNode)
         val parsedRequest = requestParser.parse(request)
+
         val data: MutableMap<String, Any?> = mutableMapOf()
         when (parsedRequest.action) {
             Request.Action.QUERY -> {
                 descriptor.validateQueryGraph(parsedRequest.graph)
                 for (query in parsedRequest.graph) {
-                    data.put(query.aliasOrKey, invokeWithArgs(findQuery(query.key), extractArguments(query)))
+                    data.put(query.aliasOrKey, invokeFunWrapper(findQuery(query.key), extractArguments(query), variables))
                 }
             }
             Request.Action.MUTATION -> {
                 descriptor.validateMutationGraph(parsedRequest.graph)
                 for (mutation in parsedRequest.graph) {
-                    data.put(mutation.aliasOrKey, invokeWithArgs(findMutation(mutation.key), extractArguments(mutation)))
+                    data.put(mutation.aliasOrKey, invokeFunWrapper(findMutation(mutation.key), extractArguments(mutation), variables))
                 }
             }
             else -> throw IllegalArgumentException("Not supported action: ${parsedRequest.action}")
@@ -89,7 +91,7 @@ class DefaultSchema(
         return Result(parsedRequest, data, null)
     }
 
-    fun <T> invokeWithArgs(functionWrapper: FunctionWrapper<T>, args: Arguments): Any? {
+    fun invokeFunWrapper(functionWrapper: FunctionWrapper<*>, args: Arguments, variables: Variables): Any? {
         if(functionWrapper.arity() != args.size){
 
             functionWrapper as KQLObject
@@ -109,24 +111,7 @@ class DefaultSchema(
                     transformedArgs.add(null)
                 }
             } else if(value is String) {
-
-                val transformedValue : Any? = when(parameter.type){
-                    String::class.starProjectedType -> value.dropQuotes()
-                    in BUILT_IN_TYPE_TRANSFORMATIONS -> {
-                        try {
-                            BUILT_IN_TYPE_TRANSFORMATIONS[parameter.type]!!.invoke(value)
-                        } catch (e : Exception){
-                            throw SyntaxException("argument \'${value.dropQuotes()}\' is not value of type: ${parameter.type}")
-                        }
-                    }
-                    in enumsByType.keys -> {
-                        enumsByType[parameter.type]?.values?.find { it.name == value }
-                    }
-                    else -> {
-                        throw UnsupportedOperationException("Not supported yet")
-                    }
-                }
-
+                val transformedValue: Any? = transformValue(parameter, value, variables)
                 transformedArgs.add(transformedValue)
             } else {
                 throw SyntaxException("Non string arguments are not supported yet")
@@ -135,6 +120,37 @@ class DefaultSchema(
         }
 
         return functionWrapper.invoke(*transformedArgs.toTypedArray())
+    }
+
+    private fun transformValue(parameter: KParameter, value: String, variables: Variables): Any? {
+
+        if(value.startsWith("$")){
+            return variables.getVariable(parameter.type.jvmErasure, value.substring(1))
+        }
+
+        return when (parameter.type) {
+
+            /*simple string*/
+            String::class.starProjectedType -> value.dropQuotes()
+
+            /*One of other build in types, string needs to be parsed*/
+            in BUILT_IN_TYPE_TRANSFORMATIONS -> {
+                try {
+                    BUILT_IN_TYPE_TRANSFORMATIONS[parameter.type]!!.invoke(value)
+                } catch (e: Exception) {
+                    throw SyntaxException("argument \'${value.dropQuotes()}\' is not value of type: ${parameter.type}")
+                }
+            }
+
+            /* check if enum */
+            in enumsByType.keys -> {
+                enumsByType[parameter.type]?.values?.find { it.name == value }
+            }
+
+            else -> {
+                throw UnsupportedOperationException("Not supported yet")
+            }
+        }
     }
 
     fun extractArguments(graphNode: GraphNode): Arguments {

@@ -1,6 +1,7 @@
 package com.github.pgutkowski.kgraphql.request
 
-import com.github.pgutkowski.kgraphql.request.Graph.Companion.leaf
+import com.github.pgutkowski.kgraphql.graph.Graph
+import com.github.pgutkowski.kgraphql.graph.Graph.Companion.leaf
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.hasSize

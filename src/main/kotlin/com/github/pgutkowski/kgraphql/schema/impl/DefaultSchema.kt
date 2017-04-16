@@ -3,6 +3,7 @@ package com.github.pgutkowski.kgraphql.schema.impl
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.pgutkowski.kgraphql.SyntaxException
+import com.github.pgutkowski.kgraphql.graph.GraphNode
 import com.github.pgutkowski.kgraphql.request.*
 import com.github.pgutkowski.kgraphql.result.Result
 import com.github.pgutkowski.kgraphql.result.ResultSerializer
@@ -73,15 +74,14 @@ class DefaultSchema(
         val parsedRequest = requestParser.parse(request)
 
         val data: MutableMap<String, Any?> = mutableMapOf()
+        descriptor.validateRequestGraph(parsedRequest.graph)
         when (parsedRequest.action) {
             Request.Action.QUERY -> {
-                descriptor.validateQueryGraph(parsedRequest.graph)
                 for (query in parsedRequest.graph) {
                     data.put(query.aliasOrKey, invokeFunWrapper(findQuery(query.key), extractArguments(query), variables))
                 }
             }
             Request.Action.MUTATION -> {
-                descriptor.validateMutationGraph(parsedRequest.graph)
                 for (mutation in parsedRequest.graph) {
                     data.put(mutation.aliasOrKey, invokeFunWrapper(findMutation(mutation.key), extractArguments(mutation), variables))
                 }
@@ -154,11 +154,7 @@ class DefaultSchema(
     }
 
     fun extractArguments(graphNode: GraphNode): Arguments {
-        if(graphNode is GraphNode.ToArguments){
-            return graphNode.arguments
-        } else {
-            return Arguments()
-        }
+        return graphNode.arguments ?: Arguments()
     }
 
     fun String.dropQuotes() : String = if(startsWith('\"') && endsWith('\"')) drop(1).dropLast(1) else this

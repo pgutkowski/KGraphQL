@@ -1,6 +1,8 @@
 package com.github.pgutkowski.kgraphql.request
 
 import com.github.pgutkowski.kgraphql.SyntaxException
+import com.github.pgutkowski.kgraphql.graph.Graph
+import com.github.pgutkowski.kgraphql.graph.GraphNode
 import java.util.*
 
 
@@ -25,7 +27,7 @@ class GraphParser {
                 when (tokens.getOrNull(index + 1)) {
                     "{" -> {
                         val subGraphTokens = objectSubTokens(tokens, index+1)
-                        validateAndAdd(graph, GraphNode.ToGraph(key, buildGraph(subGraphTokens), alias))
+                        validateAndAdd(graph, GraphNode(key, alias, buildGraph(subGraphTokens)))
                         index += subGraphTokens.size + 2 //subtokens do not contain '{' and '}'
                     }
                     "(" -> {
@@ -39,16 +41,16 @@ class GraphParser {
                             subGraph = buildGraph(subGraphTokens)
                             index += subGraphTokens.size + 2 //subtokens do not contain '{' and '}'
                         }
-                        validateAndAdd(graph, GraphNode.ToArguments(key, arguments, subGraph, alias))
+                        validateAndAdd(graph, GraphNode(key, alias, subGraph, arguments))
                     }
                     "}" -> {
-                        throw SyntaxException("No matching opening bracket for closing bracket at ${getIndexOfTokenInString(tokens, index)}")
+                        throw SyntaxException("No matching opening bracket for closing bracket at ${getIndexOfTokenInString(tokens)}")
                     }
                     ")" -> {
-                        throw SyntaxException("No matching opening parenthesis for closing parenthesis at ${getIndexOfTokenInString(tokens, index)}")
+                        throw SyntaxException("No matching opening parenthesis for closing parenthesis at ${getIndexOfTokenInString(tokens)}")
                     }
                     else -> {
-                        validateAndAdd(graph, GraphNode.Leaf(key, alias))
+                        validateAndAdd(graph, GraphNode(key, alias))
                     }
                 }
             }
@@ -84,7 +86,7 @@ class GraphParser {
         throw SyntaxException("Couldn't find matching closing token")
     }
 
-    private fun getIndexOfTokenInString(tokens: List<String>, tokenIndex: Int) : Int{
+    private fun getIndexOfTokenInString(tokens: List<String>) : Int{
         return tokens.fold(0, {index, token -> index + token.length })
     }
 

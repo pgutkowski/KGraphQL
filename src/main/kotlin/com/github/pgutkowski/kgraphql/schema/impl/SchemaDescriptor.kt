@@ -1,7 +1,7 @@
 package com.github.pgutkowski.kgraphql.schema.impl
 
-import com.github.pgutkowski.kgraphql.request.Graph
-import com.github.pgutkowski.kgraphql.request.GraphNode
+import com.github.pgutkowski.kgraphql.graph.DescriptorNode
+import com.github.pgutkowski.kgraphql.graph.Graph
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -9,14 +9,14 @@ import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
 
 
-class SchemaDescriptor private constructor(private val queries: Map<String, DescriptorNode>, private val mutations: Map<String, DescriptorNode>) {
+class SchemaDescriptor private constructor(private val graph : Graph, internal val typeMap: Map<KClass<*>, Graph>) {
 
     companion object {
         fun forSchema (schema: DefaultSchema): SchemaDescriptor {
 
-            val typeChildrenCache: MutableMap<KClass<*>, Map<String, DescriptorNode>> = mutableMapOf()
+            val typeChildren: MutableMap<KClass<*>, Graph> = mutableMapOf()
 
-            fun handleType(kType: KType, createArguments: ()->Map<String, DescriptorNode>, isCollectionElement: Boolean = false) : DescriptorNode {
+            fun handleType(key : String, kType: KType, createArguments: ()->Map<String, KType>, isCollectionElement: Boolean = false) : DescriptorNode {
 
                 fun <T : Any>isScalar(kClass: KClass<T>): Boolean {
                     return schema.scalars.any { scalar ->
@@ -24,25 +24,26 @@ class SchemaDescriptor private constructor(private val queries: Map<String, Desc
                     }
                 }
 
-                fun <T : Any>handleComplexType(kClass: KClass<T>, createArguments: ()->Map<String, DescriptorNode>, isCollectionElement: Boolean): DescriptorNode.Branch {
-                    val cachedChildren = typeChildrenCache[kClass]
-                    val children : MutableMap<String, DescriptorNode> = mutableMapOf()
+                fun <T : Any>handleComplexType(key : String, kClass: KClass<T>, createArguments: ()->Map<String, KType>, isCollectionElement: Boolean): DescriptorNode {
+                    val cachedChildren = typeChildren[kClass]
+                    val children : Graph
                     if(cachedChildren == null){
+                        children = Graph()
                         kClass.memberProperties.forEach { property ->
-                            children[property.name] = handleType(property.returnType, { emptyMap()})
+                            children.add(handleType(property.name, property.returnType, { emptyMap()}))
                         }
-                        typeChildrenCache.put(kClass, children)
+                        typeChildren.put(kClass, children)
                     } else {
-                        children.putAll(cachedChildren)
+                        children = cachedChildren
                     }
-                    return DescriptorNode.Branch(createArguments(), children, isCollectionElement)
+                    return DescriptorNode(key, kClass, children, createArguments(), isCollectionElement)
                 }
 
                 val kClass = kType.jvmErasure
                 return when {
                     /*BUILT IN TYPE:*/
                     kClass in DefaultSchema.BUILT_IN_TYPES -> {
-                        DescriptorNode.Leaf(createArguments(), kType)
+                        DescriptorNode(key, kType, createArguments())
                     }
 
                     /*Collections*/
@@ -50,29 +51,29 @@ class SchemaDescriptor private constructor(private val queries: Map<String, Desc
                         val collectionType = kType.arguments.first().type
                                 ?: throw IllegalArgumentException("Failed to create descriptor for type: $kType")
 
-                        handleType(collectionType, createArguments, true)
+                        handleType(key, collectionType, createArguments, true)
                     }
 
                     /*Scalar*/
-                    isScalar(kClass) -> DescriptorNode.Leaf(createArguments(), kType)
+                    isScalar(kClass) -> DescriptorNode(key, kType, createArguments())
 
                     /*Enums*/
-                    kClass.isSubclassOf(Enum::class) -> DescriptorNode.Leaf(createArguments(), kType)
+                    kClass.isSubclassOf(Enum::class) -> DescriptorNode(key, kType, createArguments())
 
                     /* every other type is treated as graph and split*/
                     else -> {
-                        handleComplexType(kClass, createArguments, isCollectionElement)
+                        handleComplexType(key, kClass, createArguments, isCollectionElement)
                     }
                 }
             }
 
             fun <T>handleFunctionWrapper(function: FunctionWrapper<T>): DescriptorNode {
 
-                fun createArguments(): MutableMap<String, DescriptorNode> {
-                    val arguments : MutableMap<String, DescriptorNode> = mutableMapOf()
+                fun createArguments(): MutableMap<String, KType> {
+                    val arguments : MutableMap<String, KType> = mutableMapOf()
                     function.kFunction.valueParameters.forEach { parameter ->
                         if(parameter.name == null) throw SchemaException("Cannot create descriptor for nameless field on function: ${function.kFunction}")
-                        arguments[parameter.name!!] = handleType(parameter.type, createArguments = { emptyMap() })
+                        arguments[parameter.name!!] = parameter.type
                     }
                     return arguments
                 }
@@ -81,58 +82,22 @@ class SchemaDescriptor private constructor(private val queries: Map<String, Desc
                     throw SchemaException("Schema cannot use class methods, please use local or lambda functions to wrap them")
                 }
 
-                return handleType(function.kFunction.returnType, ::createArguments)
+                return handleType(function.kFunction.name, function.kFunction.returnType, ::createArguments)
             }
 
-            val queries : MutableMap<String, DescriptorNode> = mutableMapOf()
-            for(query in schema.queries){
-                queries.put(query.name, handleFunctionWrapper(query))
-            }
-
-            val mutations : MutableMap<String, DescriptorNode> = mutableMapOf()
-            for(mutation in schema.mutations){
-                mutations.put(mutation.name, handleFunctionWrapper(mutation))
-            }
-
-            return SchemaDescriptor(queries, mutations)
+            val graph = Graph()
+            schema.queries.forEach { query -> graph.add(handleFunctionWrapper(query)) }
+            schema.mutations.forEach { mutation -> graph.add(handleFunctionWrapper(mutation)) }
+            return SchemaDescriptor(graph, typeChildren)
         }
     }
 
-    private sealed class DescriptorNode(val arguments: Map<String, DescriptorNode>?, val isCollection : Boolean) {
-        class Branch(
-                arguments: Map<String, DescriptorNode>?,
-                val children: Map<String, DescriptorNode>,
-                isCollection : Boolean = false
-        ) : DescriptorNode(arguments, isCollection)
+    fun <T : Any>get(key: KClass<T>) = this.typeMap[key]
 
-        class Leaf(
-                arguments: Map<String, DescriptorNode>?,
-                val type: KType, isCollection :
-                Boolean = false
-        ) : DescriptorNode(arguments, isCollection)
-    }
-
-    fun validateQueryGraph(graph: Graph){
-        validateGraph(graph, queries)
-    }
-
-    fun validateMutationGraph(graph: Graph){
-        validateGraph(graph, mutations)
-    }
-
-    private fun validateGraph(graph : Graph, descriptors: Map<String, DescriptorNode>){
+    fun validateRequestGraph(graph: Graph){
         for(node in graph){
-            val query = descriptors[node.key] ?: throw IllegalArgumentException("${node.key} does not exist in this schema")
-            validateArguments(query, node)
-            validateChildren(query, node)
+            graph[node.aliasOrKey] ?: throw IllegalArgumentException("${node.key} does not exist in this schema")
+            //should validate children and arguments
         }
-    }
-
-    private fun validateChildren(descriptor: DescriptorNode, node: GraphNode) {
-        //TODO
-    }
-
-    private fun validateArguments(query: DescriptorNode, node: GraphNode) {
-        //TODO
     }
 }

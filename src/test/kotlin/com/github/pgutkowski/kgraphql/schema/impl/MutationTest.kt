@@ -9,7 +9,6 @@ import org.junit.Test
 
 class MutationTest : BaseSchemaTest() {
 
-
     val testActor = TestClasses.Actor("Michael Caine", 72)
 
     @Test
@@ -36,7 +35,7 @@ class MutationTest : BaseSchemaTest() {
     @Test
     fun testInvalidMutationName(){
         val map = execute("mutation {createBanana(name: \"${testActor.name}\", age: ${testActor.age}){age}}")
-        assertError(map, "java.lang.IllegalArgumentException", "createBanana")
+        assertError(map, "SyntaxException: Mutation: createBanana is not supported by this schema")
     }
 
     @Test

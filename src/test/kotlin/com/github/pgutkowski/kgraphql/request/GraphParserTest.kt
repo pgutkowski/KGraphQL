@@ -1,11 +1,12 @@
 package com.github.pgutkowski.kgraphql.request
 
-import com.github.pgutkowski.kgraphql.request.Graph.Companion.argBranch
-import com.github.pgutkowski.kgraphql.request.Graph.Companion.argLeaf
-import com.github.pgutkowski.kgraphql.request.Graph.Companion.args
-import com.github.pgutkowski.kgraphql.request.Graph.Companion.branch
-import com.github.pgutkowski.kgraphql.request.Graph.Companion.leaf
-import com.github.pgutkowski.kgraphql.request.Graph.Companion.leafs
+import com.github.pgutkowski.kgraphql.graph.Graph
+import com.github.pgutkowski.kgraphql.graph.Graph.Companion.argBranch
+import com.github.pgutkowski.kgraphql.graph.Graph.Companion.argLeaf
+import com.github.pgutkowski.kgraphql.graph.Graph.Companion.args
+import com.github.pgutkowski.kgraphql.graph.Graph.Companion.branch
+import com.github.pgutkowski.kgraphql.graph.Graph.Companion.leaf
+import com.github.pgutkowski.kgraphql.graph.Graph.Companion.leafs
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test

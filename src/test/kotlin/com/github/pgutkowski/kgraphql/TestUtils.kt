@@ -2,8 +2,8 @@ package com.github.pgutkowski.kgraphql
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.pgutkowski.kgraphql.request.Arguments
-import com.github.pgutkowski.kgraphql.request.Graph
-import com.github.pgutkowski.kgraphql.request.GraphNode
+import com.github.pgutkowski.kgraphql.graph.Graph
+import com.github.pgutkowski.kgraphql.graph.GraphNode
 
 val objectMapper = jacksonObjectMapper()
 

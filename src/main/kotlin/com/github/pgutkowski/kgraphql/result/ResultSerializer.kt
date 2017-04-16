@@ -3,12 +3,11 @@ package com.github.pgutkowski.kgraphql.result
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.JsonSerializer
 import com.fasterxml.jackson.databind.SerializerProvider
-import com.github.pgutkowski.kgraphql.request.Graph
 import com.github.pgutkowski.kgraphql.TypeException
-import com.github.pgutkowski.kgraphql.request.GraphNode
+import com.github.pgutkowski.kgraphql.graph.Graph
+import com.github.pgutkowski.kgraphql.graph.GraphNode
 import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.impl.KQLObject
-import com.sun.javaws.exceptions.InvalidArgumentException
 import kotlin.reflect.full.memberProperties
 
 
@@ -36,27 +35,21 @@ class ResultSerializer(val schema: DefaultSchema) : JsonSerializer<Result>() {
     }
 
     //TODO: investigate how jackson internal serializers are implemented to check if this implementation can be improved
-    private fun serialize(value: Any, gen: JsonGenerator, serializers: SerializerProvider, schema: Graph?){
-        if(schema != null){
-            gen.writeStartObject()
-            for(node in schema){
+    private fun serialize(value: Any, gen: JsonGenerator, serializers: SerializerProvider, graph: Graph?){
 
-                val kProperty = value.javaClass.kotlin.memberProperties.find { it.name == node.key }
-                if(kProperty == null) {
-                    serializers.reportMappingProblem("Cannot find property: ${node.key} on type: ${value.javaClass}")
-                } else {
-                    writeProperty(kProperty.get(value) , gen, serializers, node)
-                }
+        val schemaGraph = graph ?: schema.descriptor.get(value.javaClass.kotlin) ?: throw Exception("Cannot handle serialization of value : $value")
+
+        gen.writeStartObject()
+        for(node in schemaGraph){
+
+            val kProperty = value.javaClass.kotlin.memberProperties.find { it.name == node.key }
+            if(kProperty == null) {
+                serializers.reportMappingProblem("Cannot find property: ${node.key} on type: ${value.javaClass}")
+            } else {
+                writeProperty(kProperty.get(value) , gen, serializers, node)
             }
-            gen.writeEndObject()
-        } else {
-            /**
-             * Still not sure if serializing without schema should be executed at all.
-             * Maybe there should at least be validation with schema,
-             * so client code had of pass ALL classes in schema (?)
-             */
-            gen.writeObject(value)
         }
+        gen.writeEndObject()
     }
 
     private fun writeProperty(actualValue: Any?, gen: JsonGenerator, serializers: SerializerProvider, graphNode: GraphNode) {
@@ -80,6 +73,7 @@ class ResultSerializer(val schema: DefaultSchema) : JsonSerializer<Result>() {
                     }
                     gen.writeEndArray()
                 }
+                is Enum<*> -> gen.writeString(actualValue.name)
                 else -> {
                     writeComplexValue(actualValue, gen, serializers, graphNode)
                 }
@@ -87,22 +81,21 @@ class ResultSerializer(val schema: DefaultSchema) : JsonSerializer<Result>() {
         }
     }
 
-    private fun writeComplexValue(actualValue: Any, gen: JsonGenerator, serializers: SerializerProvider, graphNode: GraphNode?) {
+    private fun writeComplexValue(actualValue: Any, gen: JsonGenerator, serializers: SerializerProvider, graphNode: GraphNode) {
         val scalar = schema.findScalarByInstance(actualValue)
 
         if(scalar != null){
-            if(graphNode is GraphNode.Leaf){
+            if(graphNode.isLeaf){
                 writeScalarValue(scalar, actualValue, gen, serializers)
             } else {
                 serializers.reportMappingProblem("Cannot query properties on scalar simpleTypes")
             }
         } else {
-            when(graphNode){
-                is GraphNode.Leaf -> serialize(actualValue, gen, serializers, null)
-                is GraphNode.ToGraph -> serialize(actualValue, gen, serializers, graphNode.graph)
-                //handle mutation result
-                is GraphNode.ToArguments -> serialize(actualValue, gen, serializers, graphNode.graph)
-                else -> serializers.reportMappingProblem("Cannot handle GraphNode of type ${graphNode?.javaClass}")
+            when{
+                graphNode.hasArguments -> serialize(actualValue, gen, serializers, graphNode.children)
+                graphNode.isLeaf -> serialize(actualValue, gen, serializers, null)
+                graphNode.isBranch-> serialize(actualValue, gen, serializers, graphNode.children)
+                else -> serializers.reportMappingProblem("Cannot handle : $graphNode")
             }
         }
     }

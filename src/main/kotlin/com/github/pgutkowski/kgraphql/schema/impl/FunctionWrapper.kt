@@ -3,6 +3,7 @@
 package com.github.pgutkowski.kgraphql.schema.impl
 
 import kotlin.reflect.KFunction
+import kotlin.reflect.KType
 import kotlin.reflect.jvm.reflect
 
 

@@ -34,6 +34,13 @@ class QueryTest : BaseSchemaTest() {
     }
 
     @Test
+    fun testScalarImplicit(){
+        val map = execute("{film}")
+        assertNoErrors(map)
+        assertThat(extract<String>(map, "data/film/id"), equalTo("${testFilm.id.literal}:${testFilm.id.numeric}"))
+    }
+
+    @Test
     fun testCollectionEntriesProperties(){
         val map = execute("{film{title, director{favActors{name}}}}")
         assertNoErrors(map)

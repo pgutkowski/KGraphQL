@@ -3,7 +3,7 @@ package com.github.pgutkowski.kgraphql.schema
 import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.impl.FunctionWrapper
 import com.github.pgutkowski.kgraphql.schema.impl.KQLObject
-import kotlin.reflect.KClass
+import com.github.pgutkowski.kgraphql.typeName
 
 
 class SchemaBuilder {
@@ -91,6 +91,4 @@ class SchemaBuilder {
             return this
         }
     }
-
-    fun <T : Any> KClass<T>.typeName() = this.simpleName!!.decapitalize()
 }

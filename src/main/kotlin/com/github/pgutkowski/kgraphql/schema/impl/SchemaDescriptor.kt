@@ -9,7 +9,7 @@ import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
 
 
-class SchemaDescriptor private constructor(private val graph : Graph, internal val typeMap: Map<KClass<*>, Graph>) {
+class SchemaDescriptor private constructor(val queries: Graph, val mutations: Graph, internal val typeMap: Map<KClass<*>, Graph>, val enums: List<KQLObject.Enumeration<*>>) {
 
     companion object {
         fun forSchema (schema: DefaultSchema): SchemaDescriptor {
@@ -58,7 +58,9 @@ class SchemaDescriptor private constructor(private val graph : Graph, internal v
                     isScalar(kClass) -> DescriptorNode(key, kType, createArguments())
 
                     /*Enums*/
-                    kClass.isSubclassOf(Enum::class) -> DescriptorNode(key, kType, createArguments())
+                    kClass.isSubclassOf(Enum::class) -> {
+                        DescriptorNode(key, kType, createArguments())
+                    }
 
                     /* every other type is treated as graph and split*/
                     else -> {
@@ -67,7 +69,7 @@ class SchemaDescriptor private constructor(private val graph : Graph, internal v
                 }
             }
 
-            fun <T>handleFunctionWrapper(function: FunctionWrapper<T>): DescriptorNode {
+            fun <T>handleFunctionWrapper(name: String, function: FunctionWrapper<T>): DescriptorNode {
 
                 fun createArguments(): MutableMap<String, KType> {
                     val arguments : MutableMap<String, KType> = mutableMapOf()
@@ -82,13 +84,14 @@ class SchemaDescriptor private constructor(private val graph : Graph, internal v
                     throw SchemaException("Schema cannot use class methods, please use local or lambda functions to wrap them")
                 }
 
-                return handleType(function.kFunction.name, function.kFunction.returnType, ::createArguments)
+                return handleType(name, function.kFunction.returnType, ::createArguments)
             }
 
-            val graph = Graph()
-            schema.queries.forEach { query -> graph.add(handleFunctionWrapper(query)) }
-            schema.mutations.forEach { mutation -> graph.add(handleFunctionWrapper(mutation)) }
-            return SchemaDescriptor(graph, typeChildren)
+            val queries = Graph()
+            val mutations = Graph()
+            schema.queries.forEach { query -> queries.add(handleFunctionWrapper(query.name, query)) }
+            schema.mutations.forEach { mutation -> mutations.add(handleFunctionWrapper(mutation.name, mutation)) }
+            return SchemaDescriptor(queries, mutations, typeChildren, schema.enums)
         }
     }
 

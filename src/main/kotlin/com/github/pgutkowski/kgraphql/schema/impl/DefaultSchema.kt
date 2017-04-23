@@ -33,7 +33,7 @@ class DefaultSchema(
         )
     }
 
-    val descriptor = SchemaDescriptor.forSchema(this)
+    override val descriptor = SchemaDescriptor.forSchema(this)
 
     /**
      * KQLObjects stored in convenient data structures

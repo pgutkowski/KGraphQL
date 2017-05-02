@@ -1,12 +1,6 @@
 package com.github.pgutkowski.kgraphql.request
 
-import com.github.pgutkowski.kgraphql.graph.Graph
-import com.github.pgutkowski.kgraphql.graph.Graph.Companion.argBranch
-import com.github.pgutkowski.kgraphql.graph.Graph.Companion.argLeaf
-import com.github.pgutkowski.kgraphql.graph.Graph.Companion.args
-import com.github.pgutkowski.kgraphql.graph.Graph.Companion.branch
-import com.github.pgutkowski.kgraphql.graph.Graph.Companion.leaf
-import com.github.pgutkowski.kgraphql.graph.Graph.Companion.leafs
+import com.github.pgutkowski.kgraphql.graph.*
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
@@ -18,7 +12,7 @@ class GraphParserTest {
 
     @Test
     fun nestedQueryParsing() {
-        val map = graphParser.parse("{hero{name, appearsIn}\nvillain{name, deeds}}")
+        val map = graphParser.parse("{hero{name appearsIn}\nvillain{name deeds}}")
         val expected = Graph(
                 branch( "hero",
                         leaf("name"),
@@ -35,7 +29,7 @@ class GraphParserTest {
 
     @Test
     fun doubleNestedQueryParsing() {
-        val map = graphParser.parse("{hero{name, appearsIn{title, year}}\nvillain{name, deeds}}")
+        val map = graphParser.parse("{hero{name appearsIn{title, year}}\nvillain{name deeds}}")
 
         val expected = Graph(
                 branch( "hero",
@@ -56,7 +50,7 @@ class GraphParserTest {
 
     @Test
     fun tripleNestedQueryParsing() {
-        val map = graphParser.parse("{hero{name, appearsIn{title{abbr, full}, year}}\nvillain{name, deeds}}")
+        val map = graphParser.parse("{hero{name appearsIn{title{abbr full} year}}\nvillain{name deeds}}")
 
         val expected = Graph(
                 branch( "hero",
@@ -130,7 +124,7 @@ class GraphParserTest {
 
     @Test
     fun fieldArgumentsParsing(){
-        val map = graphParser.parse("{hero{name, height(unit: FOOT)}}")
+        val map = graphParser.parse("{hero{name height(unit: FOOT)}}")
         val expected = Graph(
                 branch("hero",
                         leaf("name"),
@@ -142,7 +136,7 @@ class GraphParserTest {
 
     @Test
     fun mutationFieldsParsing(){
-        val map = graphParser.parse("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\"){id, name, timestamp}}")
+        val map = graphParser.parse("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\"){id name timestamp}}")
         val expected = Graph (
                 argBranch("createHero",
                         args("name" to "\"Batman\"", "appearsIn" to "\"The Dark Knight\""),
@@ -154,7 +148,7 @@ class GraphParserTest {
 
     @Test
     fun mutationNestedFieldsParsing(){
-        val map = graphParser.parse("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\"){id, name {real, asHero}}}")
+        val map = graphParser.parse("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\"){id name {real asHero}}}")
         val expected = Graph (
                 argBranch("createHero",
                         args("name" to "\"Batman\"", "appearsIn" to "\"The Dark Knight\""),

@@ -7,7 +7,12 @@ open class GraphNode(
         val alias: String? = null,
         val children: Graph? = null,
         val arguments : Arguments? = null
-) {
+) : Comparable<GraphNode> {
+
+    override fun compareTo(other: GraphNode): Int {
+        return this.aliasOrKey.compareTo(other.aliasOrKey)
+    }
+
     val aliasOrKey = alias ?: key
 
     val isLeaf: Boolean
@@ -21,8 +26,8 @@ open class GraphNode(
 
     override fun toString(): String {
         val builder = StringBuilder(aliasOrKey)
-        if(children != null) builder.append(" ").append(children)
-        if(arguments != null) builder.append(" args: ").append(arguments)
+        if(children != null) builder.append(" {").append(children).append("} ")
+        if(arguments != null) builder.append(" args: ").append("{").append(arguments).append("}")
         return builder.toString()
     }
 

@@ -5,6 +5,7 @@ import com.github.pgutkowski.kgraphql.TestClasses
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.MatcherAssert.assertThat
+import org.junit.Ignore
 import org.junit.Test
 
 
@@ -14,21 +15,21 @@ class SchemaInternalsTest : BaseSchemaTest() {
     fun testBasicResult(){
         val result = testedSchema.createResult("{film{title}}")
         assertThat(result.errors, nullValue())
-        assertThat(result.data!!["film"] as TestClasses.Film, equalTo(testFilm))
+        assertThat(result.data!!["film"] as TestClasses.Film, equalTo(prestige))
     }
 
     @Test
     fun testBasicResultWithImpliedFields(){
         val result = testedSchema.createResult("{film}")
         assertThat(result.errors, nullValue())
-        assertThat(result.data!!["film"] as TestClasses.Film, equalTo(testFilm))
+        assertThat(result.data!!["film"] as TestClasses.Film, equalTo(prestige))
     }
 
     @Test
     fun testNamedBasicResult(){
         val result = testedSchema.createResult("query Named {film{title}}")
         assertThat(result.errors, nullValue())
-        assertThat(result.data!!["film"] as TestClasses.Film, equalTo(testFilm))
+        assertThat(result.data!!["film"] as TestClasses.Film, equalTo(prestige))
     }
 
     @Test(expected = SyntaxException::class)

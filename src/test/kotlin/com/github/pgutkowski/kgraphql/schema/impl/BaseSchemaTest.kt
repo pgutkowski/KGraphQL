@@ -12,42 +12,29 @@ import org.junit.Before
 
 abstract class BaseSchemaTest {
 
-    val testFilm = TestClasses.Film(
-            TestClasses.Id("Prestige", 2006),
-            2006, "Prestige",
-            TestClasses.Director(
-                    "Christopher Nolan", 43,
-                    listOf (
-                            TestClasses.Actor("Tom Hardy", 232),
-                            TestClasses.Actor("Christian Bale", 232)
-                    )
-            )
-    )
+    val tomHardy = TestClasses.Actor("Tom Hardy", 232)
+    val christianBale = TestClasses.Actor("Christian Bale", 232)
+    val christopherNolan = TestClasses.Director("Christopher Nolan", 43, listOf(tomHardy, christianBale))
+    val prestige = TestClasses.Film(TestClasses.Id("Prestige", 2006), 2006, "Prestige", christopherNolan)
 
-    val testFilm2 = TestClasses.Film(
-            TestClasses.Id("Se7en", 1995),
-            1995, "Se7en",
-            TestClasses.Director(
-                    "David Fincher", 43,
-                    listOf (
-                            TestClasses.Actor("Brad Pitt", 763),
-                            TestClasses.Actor("Morgan Freeman", 1212),
-                            TestClasses.Actor("Kevin Spacey", 2132)
-                    )
-            )
-    )
+    val bradPitt = TestClasses.Actor("Brad Pitt", 763)
+    val morganFreeman = TestClasses.Actor("Morgan Freeman", 1212)
+    val kevinSpacey = TestClasses.Actor("Kevin Spacey", 2132)
+    val davidFincher = TestClasses.Director("David Fincher", 43, listOf(bradPitt, morganFreeman, kevinSpacey))
+    val se7en = TestClasses.Film(TestClasses.Id("Se7en", 1995), 1995, "Se7en", davidFincher)
 
     val actors = mutableListOf<TestClasses.Actor>()
 
     val testedSchema = SchemaBuilder()
-            .query( "film", { -> testFilm } )
+            .query( "film", { -> prestige } )
             .query("filmByRank", { rank: Int -> when(rank){
-                1 -> testFilm
-                2 -> testFilm2
+                1 -> prestige
+                2 -> se7en
                 else -> null
             }})
-            .query("filmsByType", {type: TestClasses.FilmType -> listOf(testFilm, testFilm2) })
-
+            .query("filmsByType", {type: TestClasses.FilmType -> listOf(prestige, se7en) })
+            .query("people", { -> listOf(davidFincher, bradPitt, morganFreeman, christianBale, christopherNolan) })
+            .query("randomPerson", { -> davidFincher /*no really random*/})
             .mutation("createActor", { name : String, age : Int ->
                 val actor = TestClasses.Actor(name, age)
                 actors.add(actor)

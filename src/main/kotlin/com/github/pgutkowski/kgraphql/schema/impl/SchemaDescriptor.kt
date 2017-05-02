@@ -2,6 +2,7 @@ package com.github.pgutkowski.kgraphql.schema.impl
 
 import com.github.pgutkowski.kgraphql.graph.DescriptorNode
 import com.github.pgutkowski.kgraphql.graph.Graph
+import com.github.pgutkowski.kgraphql.graph.GraphBuilder
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -28,10 +29,11 @@ class SchemaDescriptor private constructor(val queries: Graph, val mutations: Gr
                     val cachedChildren = typeChildren[kClass]
                     val children : Graph
                     if(cachedChildren == null){
-                        children = Graph()
+                        val childrenBuilder = GraphBuilder()
                         kClass.memberProperties.forEach { property ->
-                            children.add(handleType(property.name, property.returnType, { emptyMap()}))
+                            childrenBuilder.add(handleType(property.name, property.returnType, { emptyMap()}))
                         }
+                        children = childrenBuilder.build()
                         typeChildren.put(kClass, children)
                     } else {
                         children = cachedChildren
@@ -87,11 +89,11 @@ class SchemaDescriptor private constructor(val queries: Graph, val mutations: Gr
                 return handleType(name, function.kFunction.returnType, ::createArguments)
             }
 
-            val queries = Graph()
-            val mutations = Graph()
+            val queries = GraphBuilder()
+            val mutations = GraphBuilder()
             schema.queries.forEach { query -> queries.add(handleFunctionWrapper(query.name, query)) }
             schema.mutations.forEach { mutation -> mutations.add(handleFunctionWrapper(mutation.name, mutation)) }
-            return SchemaDescriptor(queries, mutations, typeChildren, schema.enums)
+            return SchemaDescriptor(queries.build(), mutations.build(), typeChildren, schema.enums)
         }
     }
 

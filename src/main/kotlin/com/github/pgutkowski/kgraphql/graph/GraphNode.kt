@@ -33,7 +33,8 @@ open class GraphNode(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other?.javaClass != javaClass) return false
+        //hack to allow DescriptorNode to be equal to GraphNode
+        if (other?.javaClass?.isNotAssignableFrom(javaClass) ?: true) return false
 
         other as GraphNode
 
@@ -44,6 +45,8 @@ open class GraphNode(
 
         return true
     }
+
+    private fun <T>Class<T>.isNotAssignableFrom(clazz: Class<*>) = !isAssignableFrom(clazz)
 
     override fun hashCode(): Int {
         var result = key.hashCode()

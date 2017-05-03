@@ -1,6 +1,9 @@
 package com.github.pgutkowski.kgraphql.schema.impl
 
 import com.github.pgutkowski.kgraphql.extract
+import com.github.pgutkowski.kgraphql.graph.Graph
+import com.github.pgutkowski.kgraphql.graph.branch
+import com.github.pgutkowski.kgraphql.graph.leaf
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
@@ -57,7 +60,7 @@ class QueryTest : BaseSchemaTest() {
     @Test
     fun testInvalidPropertyName(){
         val map = execute("{film{title, director{name,[favActors]}}}")
-        assertError(map, "Cannot find property", "[favActors]")
+        assertError(map, "director doesn't have property", "[favActors]")
     }
 
     @Test
@@ -100,5 +103,23 @@ class QueryTest : BaseSchemaTest() {
     fun testInvalidQueryWithDuplicatedAliases(){
         val map = execute("{bestFilm: filmByRank(rank: 1){title}, bestFilm: filmByRank(rank: 2){title}}")
         assertError(map, "SyntaxException: Duplicated property name/alias: bestFilm")
+    }
+
+    @Test
+    fun testCastToSuperclass(){
+        val map = execute("{randomPerson}")
+        assertThat(extract<Map<String, String>>(map, "data/randomPerson"), equalTo(mapOf(
+                "name" to davidFincher.name,
+                "age" to davidFincher.age)
+        ))
+    }
+
+    @Test
+    fun testCastListElementsToSuperclass(){
+        val map = execute("{people}")
+        assertThat(extract<Map<String, String>>(map, "data/people[0]"), equalTo(mapOf(
+                "name" to davidFincher.name,
+                "age" to davidFincher.age)
+        ))
     }
 }

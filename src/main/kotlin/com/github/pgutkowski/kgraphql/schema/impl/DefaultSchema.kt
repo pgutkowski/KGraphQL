@@ -74,7 +74,7 @@ class DefaultSchema(
         val parsedRequest = requestParser.parse(request)
 
         val data: MutableMap<String, Any?> = mutableMapOf()
-        descriptor.validateRequestGraph(parsedRequest.graph)
+        val intersectedSchema = descriptor.intersect(parsedRequest.graph)
         when (parsedRequest.action) {
             Request.Action.QUERY -> {
                 for (query in parsedRequest.graph) {
@@ -88,7 +88,7 @@ class DefaultSchema(
             }
             else -> throw IllegalArgumentException("Not supported action: ${parsedRequest.action}")
         }
-        return Result(parsedRequest, data, null)
+        return Result(parsedRequest, intersectedSchema, data, null)
     }
 
     fun invokeFunWrapper(functionWrapper: FunctionWrapper<*>, args: Arguments, variables: Variables): Any? {

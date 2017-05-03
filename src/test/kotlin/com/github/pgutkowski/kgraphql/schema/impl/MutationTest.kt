@@ -35,7 +35,7 @@ class MutationTest : BaseSchemaTest() {
     @Test
     fun testInvalidMutationName(){
         val map = execute("mutation {createBanana(name: \"${testActor.name}\", age: ${testActor.age}){age}}")
-        assertError(map, "SyntaxException: Mutation: createBanana is not supported by this schema")
+        assertError(map, "SyntaxException: createBanana is not supported by this schema")
     }
 
     @Test
@@ -47,7 +47,7 @@ class MutationTest : BaseSchemaTest() {
     @Test
     fun testInvalidArgumentNumber(){
         val map = execute("mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}, bananan: \"fwfwf\"){age}}")
-        assertError(map, "SyntaxException: Mutation createActor does support arguments: [name, age]. found arguments: [name, bananan, age]")
+        assertError(map, "createActor does support arguments: [name, age]. found arguments: [name, bananan, age]")
     }
 
     @Test

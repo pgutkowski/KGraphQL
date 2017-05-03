@@ -1,7 +1,9 @@
 package com.github.pgutkowski.kgraphql.request
 
 val DELIMITERS = "{}\n(): "
+
 val IGNORED_CHARACTERS = "\n\t, "
+
 val OPERANDS = "{}():"
 
 fun tokenizeRequest(input : String) : List<String> {

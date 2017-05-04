@@ -6,15 +6,15 @@ import com.github.pgutkowski.kgraphql.graph.Graph
 import com.github.pgutkowski.kgraphql.graph.GraphBuilder
 import com.github.pgutkowski.kgraphql.graph.GraphNode
 import com.github.pgutkowski.kgraphql.request.Arguments
-import com.github.pgutkowski.kgraphql.schema.Schema
-import com.github.pgutkowski.kgraphql.schema.SchemaException
 import kotlin.reflect.KClass
-import kotlin.reflect.KType
-import kotlin.reflect.full.*
-import kotlin.reflect.jvm.jvmErasure
 
 
-class SchemaDescriptor internal constructor(val queries: Graph, val mutations: Graph, internal val typeMap: Map<KClass<*>, Graph>, val enums: List<KQLObject.Enumeration<*>>) {
+class SchemaDescriptor internal constructor(
+        val schema: DefaultSchema,
+        val queries: Graph,
+        val mutations: Graph,
+        val typeMap: Map<KClass<*>, Graph>
+) {
 
     companion object {
         fun forSchema (schema: DefaultSchema): SchemaDescriptor {

@@ -18,7 +18,7 @@ class SchemaDescriptorBuilder(val schema: DefaultSchema) {
         val mutations = GraphBuilder()
         schema.queries.forEach { query -> queries.add(handleFunctionWrapper(query.name, query)) }
         schema.mutations.forEach { mutation -> mutations.add(handleFunctionWrapper(mutation.name, mutation)) }
-        return SchemaDescriptor(queries.build(), mutations.build(), typeChildren, schema.enums)
+        return SchemaDescriptor(schema, queries.build(), mutations.build(), typeChildren)
     }
 
     //TODO: refactor to reduce complexity
@@ -57,7 +57,9 @@ class SchemaDescriptorBuilder(val schema: DefaultSchema) {
             }
 
         /*Scalar*/
-            schema.isScalar(kClass) -> DescriptorNode(key, kType, createArguments())
+            schema.isScalar(kClass) -> {
+                DescriptorNode(key, kType, createArguments())
+            }
 
         /*Enums*/
             kClass.isSubclassOf(Enum::class) -> {

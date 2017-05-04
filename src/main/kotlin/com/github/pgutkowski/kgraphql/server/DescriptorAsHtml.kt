@@ -29,13 +29,36 @@ fun SchemaDescriptor.asHTML(path : List<String>) : String {
     }
 }
 
+private fun List<KQLObject>.findByName(name : String): KQLObject? {
+    return find { it.name.equals(name, true)  }
+}
+
 private fun SchemaDescriptor.writeTypeDescriptor(typeName : String) : String {
     val typeByName = findDescribedTypeByName(typeName, typeMap)
     if(typeByName != null){
-        return writeHTMLGraph(typeName, typeByName)
+        return writeHTMLGraph(typeName, typeByName, schema.types.findByName(typeName)?.description)
     } else {
-        val enumByName = findDescribedEnumByName(typeName, enums) ?: throw IllegalArgumentException("Type: $typeName not found")
-        return writeEnumTypeDescriptor(enumByName, typeName)
+        val enumByName = findDescribedEnumByName(typeName, schema.enums)
+        if(enumByName != null){
+            return writeEnumTypeDescriptor(enumByName)
+        } else {
+            val scalarByName = findDescribedScalarByName(typeName, schema.scalars) ?: throw IllegalArgumentException("Type: $typeName not found")
+            return writeScalarTypeDescriptor(scalarByName)
+        }
+    }
+}
+
+fun writeScalarTypeDescriptor(scalarByName: KQLObject.Scalar<*>): String {
+    return writeHTML {
+        h1 { +scalarByName.name }
+        hr {}
+
+        if(scalarByName.description != null){
+            p {+ scalarByName.description }
+            hr {}
+        }
+
+        p { +"Scalar type declared for this schema." }
     }
 }
 
@@ -47,10 +70,16 @@ private fun writeBuiltInTypeDescriptor(name : String) : String {
     }
 }
 
-private fun writeEnumTypeDescriptor(enumByName: KQLObject.Enumeration<*>, typeName: String): String {
+private fun writeEnumTypeDescriptor(enumByName: KQLObject.Enumeration<*>): String {
     return writeHTML {
-        h1 { +(typeName + " (ENUM)") }
+        h1 { +(enumByName.name + " (ENUM)") }
         hr {}
+
+        if(enumByName.description != null){
+            p {+enumByName.description}
+            hr {}
+        }
+
         for (value in enumByName.values) {
             p {
                 +value.name
@@ -59,14 +88,24 @@ private fun writeEnumTypeDescriptor(enumByName: KQLObject.Enumeration<*>, typeNa
     }
 }
 
-private fun writeHTMLGraph(title: String, root: Graph): String {
+private fun writeHTMLGraph(title: String, root: Graph, description: String? = null): String {
     return writeHTML {
         h1 { +title }
         hr {}
+
+        if(description != null){
+            p {+description}
+            hr {}
+        }
+
         for (node in root) {
             field(node as DescriptorNode)
         }
     }
+}
+
+private fun findDescribedScalarByName(typeName: String, scalars: List<KQLObject.Scalar<*>>): KQLObject.Scalar<*>? {
+    return scalars.firstOrNull{it.name.equals(typeName, true)}
 }
 
 private fun findDescribedEnumByName(name: String, enums: List<KQLObject.Enumeration<*>>) : KQLObject.Enumeration<*>? {

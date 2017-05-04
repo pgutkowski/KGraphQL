@@ -3,10 +3,9 @@ package com.github.pgutkowski.kgraphql.schema.impl
 import com.github.pgutkowski.kgraphql.TestClasses
 import com.github.pgutkowski.kgraphql.deserialize
 import com.github.pgutkowski.kgraphql.extract
-import com.github.pgutkowski.kgraphql.schema.SchemaBuilder
+import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilderDSL
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
-import org.junit.AssumptionViolatedException
 import org.junit.Before
 
 
@@ -28,24 +27,50 @@ abstract class BaseSchemaTest {
     //new actors created via mutations in schema
     val createdActors = mutableListOf<TestClasses.Actor>()
 
-    val testedSchema = SchemaBuilder()
-            .query( "film", { -> prestige } )
-            .query("filmByRank", { rank: Int -> when(rank){
+    val testedSchema = SchemaBuilderDSL {
+        query {
+            name = "film"
+            description = "mock film"
+            resolver { -> prestige }
+        }
+        query {
+            name = "filmByRank"
+            description = "ranked films"
+            resolver { rank: Int -> when(rank){
                 1 -> prestige
                 2 -> se7en
                 else -> null
-            }})
-            .query("filmsByType", {type: TestClasses.FilmType -> listOf(prestige, se7en) })
-            .query("people", { -> listOf(davidFincher, bradPitt, morganFreeman, christianBale, christopherNolan) })
-            .query("randomPerson", { -> davidFincher as TestClasses.Person /*not really random*/})
-            .mutation("createActor", { name : String, age : Int ->
+            }}
+        }
+        query {
+            name = "filmsByType"
+            description = "film categorized by type"
+            resolver {type: TestClasses.FilmType -> listOf(prestige, se7en) }
+        }
+        query {
+            name = "people"
+            description = "List of all people"
+            resolver { -> listOf(davidFincher, bradPitt, morganFreeman, christianBale, christopherNolan) }
+        }
+        query {
+            name = "randomPerson"
+            description = "not really random person"
+            resolver { -> davidFincher as TestClasses.Person /*not really random*/}
+        }
+        mutation {
+            name = "createActor"
+            description = "create new actor"
+            resolver { name : String, age : Int ->
                 val actor = TestClasses.Actor(name, age)
                 createdActors.add(actor)
                 actor
-            })
-            .scalar(TestClasses.IdScalarSupport())
-            .enum<TestClasses.FilmType>()
-            .build() as DefaultSchema
+            }
+        }
+        scalar(TestClasses.IdScalarSupport(), "unique, concise representation of film")
+        enum<TestClasses.FilmType>("type of film, base on its length")
+
+        type<TestClasses.Person>("Common data for any person")
+    }.build() as DefaultSchema
 
     @Before
     fun cleanup() = createdActors.clear()

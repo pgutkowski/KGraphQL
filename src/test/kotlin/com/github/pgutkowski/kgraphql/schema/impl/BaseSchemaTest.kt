@@ -3,10 +3,11 @@ package com.github.pgutkowski.kgraphql.schema.impl
 import com.github.pgutkowski.kgraphql.TestClasses
 import com.github.pgutkowski.kgraphql.deserialize
 import com.github.pgutkowski.kgraphql.extract
-import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilderDSL
+import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilder
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.junit.Before
+import java.util.*
 
 
 abstract class BaseSchemaTest {
@@ -27,7 +28,7 @@ abstract class BaseSchemaTest {
     //new actors created via mutations in schema
     val createdActors = mutableListOf<TestClasses.Actor>()
 
-    val testedSchema = SchemaBuilderDSL {
+    val testedSchema = SchemaBuilder {
         query {
             name = "film"
             description = "mock film"
@@ -66,10 +67,23 @@ abstract class BaseSchemaTest {
                 actor
             }
         }
-        scalar(TestClasses.IdScalarSupport(), "unique, concise representation of film")
-        enum<TestClasses.FilmType>("type of film, base on its length")
 
-        type<TestClasses.Person>("Common data for any person")
+        scalar<TestClasses.Id> {
+            description = "unique, concise representation of film"
+            support = TestClasses.IdScalarSupport()
+        }
+
+        scalar<UUID> {
+            description = "unique identifier of object"
+            serialize = { uuid : String -> UUID.fromString(uuid) }
+            deserialize = UUID::toString
+            validate = String::isNotBlank
+        }
+
+        enum<TestClasses.FilmType>{ description = "type of film, base on its length" }
+
+        type<TestClasses.Person>{ description = "Common data for any person"}
+
     }.build() as DefaultSchema
 
     @Before

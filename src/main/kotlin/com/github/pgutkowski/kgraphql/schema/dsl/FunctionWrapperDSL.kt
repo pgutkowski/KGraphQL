@@ -2,15 +2,15 @@ package com.github.pgutkowski.kgraphql.schema.dsl
 
 import com.github.pgutkowski.kgraphql.schema.impl.FunctionWrapper
 
-class FunctionWrapperDSL(init: FunctionWrapperDSL.() -> Unit) {
+class FunctionWrapperDSL(init: FunctionWrapperDSL.() -> Unit) : AbstractItemDSL() {
 
     init {
         init()
     }
 
-    internal lateinit var functionWrapper : FunctionWrapper<*>
     lateinit var name : String
-    lateinit var description : String
+
+    internal lateinit var functionWrapper : FunctionWrapper<*>
 
     fun <T>resolver(function: () -> T){
         functionWrapper = FunctionWrapper.on(function)

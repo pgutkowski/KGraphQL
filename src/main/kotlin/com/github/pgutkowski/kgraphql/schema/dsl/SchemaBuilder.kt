@@ -15,7 +15,7 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
         return DefaultSchema(queries, mutations, simpleTypes, scalars, enums)
     }
 
-    private val simpleTypes = arrayListOf<KQLObject.Simple<*>>()
+    private val simpleTypes = arrayListOf<KQLObject.Object<*>>()
 
     private val queries = arrayListOf<KQLObject.Query<*>>()
 
@@ -25,13 +25,13 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
 
     private val enums = arrayListOf<KQLObject.Enumeration<*>>()
 
-    fun query(init: FunctionWrapperDSL.() -> Unit){
-        val wrapperDSL = FunctionWrapperDSL(init)
+    fun query(init: OperationDSL.() -> Unit){
+        val wrapperDSL = OperationDSL(init)
         queries.add(KQLObject.Query(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))
     }
 
-    fun mutation(init: FunctionWrapperDSL.() -> Unit){
-        val wrapperDSL = FunctionWrapperDSL(init)
+    fun mutation(init: OperationDSL.() -> Unit){
+        val wrapperDSL = OperationDSL(init)
         mutations.add(KQLObject.Mutation(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))
     }
 
@@ -73,7 +73,7 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
 
     fun <T : Any>type(kClass: KClass<T>, block: TypeDSL<T>.() -> Unit){
         val type = TypeDSL(kClass, block)
-        simpleTypes.add(KQLObject.Simple(type.name, kClass, type.description))
+        simpleTypes.add(KQLObject.Object(type.name, kClass, type.ignoredProperties.toList(), type.description))
     }
 
     inline fun <reified T : Any> type(noinline block: TypeDSL<T>.() -> Unit) {

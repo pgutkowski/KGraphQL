@@ -1,8 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.impl
 
-import com.github.pgutkowski.kgraphql.TestClasses
-import com.github.pgutkowski.kgraphql.deserialize
-import com.github.pgutkowski.kgraphql.extract
+import com.github.pgutkowski.kgraphql.*
 import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilder
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
@@ -13,20 +11,20 @@ import java.util.*
 abstract class BaseSchemaTest {
 
     //test film 1
-    val tomHardy = TestClasses.Actor("Tom Hardy", 232)
-    val christianBale = TestClasses.Actor("Christian Bale", 232)
-    val christopherNolan = TestClasses.Director("Christopher Nolan", 43, listOf(tomHardy, christianBale))
-    val prestige = TestClasses.Film(TestClasses.Id("Prestige", 2006), 2006, "Prestige", christopherNolan)
+    val tomHardy = Actor("Tom Hardy", 232)
+    val christianBale = Actor("Christian Bale", 232)
+    val christopherNolan = Director("Christopher Nolan", 43, listOf(tomHardy, christianBale))
+    val prestige = Film(Id("Prestige", 2006), 2006, "Prestige", christopherNolan)
 
     //test film 2
-    val bradPitt = TestClasses.Actor("Brad Pitt", 763)
-    val morganFreeman = TestClasses.Actor("Morgan Freeman", 1212)
-    val kevinSpacey = TestClasses.Actor("Kevin Spacey", 2132)
-    val davidFincher = TestClasses.Director("David Fincher", 43, listOf(bradPitt, morganFreeman, kevinSpacey))
-    val se7en = TestClasses.Film(TestClasses.Id("Se7en", 1995), 1995, "Se7en", davidFincher)
+    val bradPitt = Actor("Brad Pitt", 763)
+    val morganFreeman = Actor("Morgan Freeman", 1212)
+    val kevinSpacey = Actor("Kevin Spacey", 2132)
+    val davidFincher = Director("David Fincher", 43, listOf(bradPitt, morganFreeman, kevinSpacey))
+    val se7en = Film(Id("Se7en", 1995), 1995, "Se7en", davidFincher)
 
     //new actors created via mutations in schema
-    val createdActors = mutableListOf<TestClasses.Actor>()
+    val createdActors = mutableListOf<Actor>()
 
     val testedSchema = SchemaBuilder {
         query {
@@ -46,7 +44,7 @@ abstract class BaseSchemaTest {
         query {
             name = "filmsByType"
             description = "film categorized by type"
-            resolver {type: TestClasses.FilmType -> listOf(prestige, se7en) }
+            resolver {type: FilmType -> listOf(prestige, se7en) }
         }
         query {
             name = "people"
@@ -56,34 +54,36 @@ abstract class BaseSchemaTest {
         query {
             name = "randomPerson"
             description = "not really random person"
-            resolver { -> davidFincher as TestClasses.Person /*not really random*/}
+            resolver { -> davidFincher as Person /*not really random*/}
         }
         mutation {
             name = "createActor"
             description = "create new actor"
             resolver { name : String, age : Int ->
-                val actor = TestClasses.Actor(name, age)
+                val actor = Actor(name, age)
                 createdActors.add(actor)
                 actor
             }
         }
-
-        scalar<TestClasses.Id> {
-            description = "unique, concise representation of film"
-            support = TestClasses.IdScalarSupport()
+        query {
+            name = "scenario"
+            resolver { -> Scenario("Gamil Kalus", "TOO LONG") }
         }
-
+        scalar<Id> {
+            description = "unique, concise representation of film"
+            support = IdScalarSupport()
+        }
         scalar<UUID> {
             description = "unique identifier of object"
             serialize = { uuid : String -> UUID.fromString(uuid) }
             deserialize = UUID::toString
             validate = String::isNotBlank
         }
-
-        enum<TestClasses.FilmType>{ description = "type of film, base on its length" }
-
-        type<TestClasses.Person>{ description = "Common data for any person"}
-
+        enum<FilmType>{ description = "type of film, base on its length" }
+        type<Person>{ description = "Common data for any person"}
+        type<Scenario>{
+            ignore(Scenario::author)
+        }
     }.build() as DefaultSchema
 
     @Before

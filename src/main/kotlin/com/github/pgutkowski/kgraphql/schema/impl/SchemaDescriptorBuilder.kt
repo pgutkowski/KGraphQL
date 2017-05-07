@@ -5,6 +5,7 @@ import com.github.pgutkowski.kgraphql.graph.Graph
 import com.github.pgutkowski.kgraphql.graph.GraphBuilder
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
@@ -24,13 +25,20 @@ class SchemaDescriptorBuilder(val schema: DefaultSchema) {
     //TODO: refactor to reduce complexity
     fun handleType(key : String, kType: KType, createArguments: ()->Map<String, KType>, isCollectionElement: Boolean = false) : DescriptorNode {
 
+        fun <T : Any> notIgnored(property: KProperty1<T, *>, objectDefinition: KQLObject.Object<*>?): Boolean {
+            return !(objectDefinition?.ignoredProperties?.contains(property) ?: false)
+        }
+
         fun <T : Any>handleComplexType(key : String, kClass: KClass<T>, createArguments: ()->Map<String, KType>, isCollectionElement: Boolean): DescriptorNode {
             val cachedChildren = typeChildren[kClass]
             val children : Graph
             if(cachedChildren == null){
+                val objectDefinition = schema.types.find { it.kClass == kClass }
                 val childrenBuilder = GraphBuilder()
                 kClass.memberProperties.forEach { property ->
-                    childrenBuilder.add(handleType(property.name, property.returnType, { emptyMap() }))
+                    if(notIgnored(property, objectDefinition)){
+                        childrenBuilder.add(handleType(property.name, property.returnType, { emptyMap() }))
+                    }
                 }
                 children = childrenBuilder.build()
                 typeChildren.put(kClass, children)

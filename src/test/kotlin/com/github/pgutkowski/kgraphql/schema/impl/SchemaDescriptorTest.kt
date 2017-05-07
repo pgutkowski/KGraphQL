@@ -1,12 +1,15 @@
 package com.github.pgutkowski.kgraphql.schema.impl
 
-import com.github.pgutkowski.kgraphql.TestClasses
+import com.github.pgutkowski.kgraphql.Actor
+import com.github.pgutkowski.kgraphql.Director
+import com.github.pgutkowski.kgraphql.Scenario
 import com.github.pgutkowski.kgraphql.graph.DescriptorNode
 import com.github.pgutkowski.kgraphql.graph.Graph
 import com.github.pgutkowski.kgraphql.graph.branch
 import com.github.pgutkowski.kgraphql.graph.leaf
 import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 
@@ -66,7 +69,7 @@ class SchemaDescriptorTest : BaseSchemaTest() {
 
     @Test
     fun testActorDescriptor(){
-        val actorDescriptor = testedSchema.descriptor.get(TestClasses.Actor::class)
+        val actorDescriptor = testedSchema.descriptor.get(Actor::class)
         assertThat(actorDescriptor, equalTo(Graph(
                 DescriptorNode.leaf<Int>("age"),
                 DescriptorNode.leaf<String>("name")
@@ -75,9 +78,9 @@ class SchemaDescriptorTest : BaseSchemaTest() {
 
     @Test
     fun testDirectorDescriptor(){
-        val directorDescriptor = testedSchema.descriptor.get(TestClasses.Director::class)
+        val directorDescriptor = testedSchema.descriptor.get(Director::class)
         assertThat(directorDescriptor, equalTo(Graph(
-                DescriptorNode.branch<TestClasses.Actor>("favActors",
+                DescriptorNode.branch<Actor>("favActors",
                         DescriptorNode.leaf<Int>("age"),
                         DescriptorNode.leaf<String>("name")
                 ),
@@ -87,8 +90,14 @@ class SchemaDescriptorTest : BaseSchemaTest() {
     }
 
     @Test
-    fun testInvalidClassDescriptor(){
+    fun testNotRegisteredClassDescriptor(){
         val nullDescriptor = testedSchema.descriptor.get(DescriptorNode::class)
-        assertThat(nullDescriptor, CoreMatchers.nullValue())
+        assertThat(nullDescriptor, nullValue())
+    }
+
+    @Test
+    fun testIgnoredProperty(){
+        val scenarioDescriptor = testedSchema.descriptor.get(Scenario::class)!!
+        assertThat(scenarioDescriptor["author"], nullValue())
     }
 }

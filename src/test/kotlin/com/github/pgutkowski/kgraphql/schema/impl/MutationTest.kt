@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.impl
 
-import com.github.pgutkowski.kgraphql.TestClasses
+import com.github.pgutkowski.kgraphql.Actor
 import com.github.pgutkowski.kgraphql.extract
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
@@ -9,7 +9,7 @@ import org.junit.Test
 
 class MutationTest : BaseSchemaTest() {
 
-    val testActor = TestClasses.Actor("Michael Caine", 72)
+    val testActor = Actor("Michael Caine", 72)
 
     @Test
     fun testSimpleMutation(){

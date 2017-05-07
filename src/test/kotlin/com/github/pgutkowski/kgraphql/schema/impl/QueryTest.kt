@@ -1,9 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.impl
 
 import com.github.pgutkowski.kgraphql.extract
-import com.github.pgutkowski.kgraphql.graph.Graph
-import com.github.pgutkowski.kgraphql.graph.branch
-import com.github.pgutkowski.kgraphql.graph.leaf
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test

@@ -17,7 +17,7 @@ import kotlin.reflect.jvm.jvmErasure
 class DefaultSchema(
         val queries: List<KQLObject.Query<*>>,
         val mutations: List<KQLObject.Mutation<*>>,
-        val types : List<KQLObject.Simple<*>>,
+        val types : List<KQLObject.Object<*>>,
         val scalars: List<KQLObject.Scalar<*>>,
         val enums : List<KQLObject.Enumeration<*>>
 ) : Schema {

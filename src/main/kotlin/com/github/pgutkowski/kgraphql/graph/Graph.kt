@@ -19,7 +19,6 @@ class Graph(vararg graphNodes: GraphNode) : Collection<GraphNode> {
 
     val nodes = graphNodes
 
-    /*collection interface*/
     override fun contains(element: GraphNode) = nodes.contains(element)
 
     override fun containsAll(elements: Collection<GraphNode>) : Boolean {
@@ -32,10 +31,8 @@ class Graph(vararg graphNodes: GraphNode) : Collection<GraphNode> {
 
     override fun iterator(): Iterator<GraphNode> = nodes.iterator()
 
-    /*custom graph logic*/
     operator fun get(aliasOrKey: String) = find { it.aliasOrKey == aliasOrKey }
 
-    /*Any interface*/
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other?.javaClass != javaClass) return false

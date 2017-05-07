@@ -4,7 +4,9 @@ import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 
-
+/**
+ * Not lots of tests, as tokenization is mostly covered by Query and Mutation tests
+ */
 class RequestTokenizationTest {
 
     fun testTokenization(input : String, expected : List<String>) {

@@ -67,17 +67,11 @@ abstract class BaseSchemaTest {
         }
         query {
             name = "scenario"
-            resolver { -> Scenario("Gamil Kalus", "TOO LONG") }
+            resolver { -> Scenario(Id("GKalus", 234234), "Gamil Kalus", "TOO LONG") }
         }
-        scalar<Id> {
+        supportedScalar<Id> {
             description = "unique, concise representation of film"
             support = IdScalarSupport()
-        }
-        scalar<UUID> {
-            description = "unique identifier of object"
-            serialize = { uuid : String -> UUID.fromString(uuid) }
-            deserialize = UUID::toString
-            validate = String::isNotBlank
         }
         enum<FilmType>{ description = "type of film, base on its length" }
         type<Person>{ description = "Common data for any person"}

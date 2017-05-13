@@ -10,7 +10,7 @@ import kotlin.reflect.jvm.jvmErasure
 
 class KGraphQL {
     companion object {
-        fun newSchema(init : SchemaBuilder.() -> Unit) : Schema {
+        fun schema(init : SchemaBuilder.() -> Unit) : Schema {
             return SchemaBuilder(init).build()
         }
 

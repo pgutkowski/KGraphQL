@@ -4,6 +4,8 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.pgutkowski.kgraphql.request.Arguments
 import com.github.pgutkowski.kgraphql.graph.Graph
 import com.github.pgutkowski.kgraphql.graph.GraphNode
+import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilder
+import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
 
 val objectMapper = jacksonObjectMapper()
 
@@ -31,6 +33,10 @@ fun <T>extract(map: Map<*,*>, path : String) : T {
     } catch (e : Exception){
         throw IllegalArgumentException("Path: $path does not exist in map: $map", e)
     }
+}
+
+fun defaultSchema(block: SchemaBuilder.() -> Unit): DefaultSchema {
+    return SchemaBuilder(block).build() as DefaultSchema
 }
 
 

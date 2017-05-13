@@ -1,6 +1,7 @@
 package com.github.pgutkowski.kgraphql.server
 
 import com.github.pgutkowski.kgraphql.schema.Schema
+import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.ChannelOption
@@ -26,7 +27,7 @@ class NettyServer {
                         .localAddress(port)
                         .group(workerGroup)
                         .handler(LoggingHandler())
-                        .childHandler(NettyServerPipelineConfig(HttpRequestHandler(schema)))
+                        .childHandler(NettyServerPipelineConfig(HttpRequestHandler(schema as DefaultSchema)))
                         .option(ChannelOption.TCP_NODELAY, true)
                         .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                         .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)

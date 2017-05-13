@@ -1,35 +1,31 @@
 package com.github.pgutkowski.kgraphql.graph
 
+import com.github.pgutkowski.kgraphql.schema.model.KQLObject
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.full.starProjectedType
 
 
 class DescriptorNode(
-        key : String,
+        val kqlObject: KQLObject,
+        val key : String,
         val type: KType,
-        children: Graph?,
-        val argumentsDescriptor: Map<String, KType>?,
+        val children: Collection<DescriptorNode>,
         val isCollection : Boolean = false
-) : GraphNode (
-        key = key,
-        children = children,
-        alias = null,
-        arguments = null
 ) {
-    constructor(key : String, type: KType, argumentsDescriptor: Map<String, KType>?, isCollection: Boolean = false)
-            : this(key, type, null, argumentsDescriptor, isCollection)
+    constructor(kqlObject: KQLObject, key : String, type: KType, isCollection: Boolean = false)
+            : this(kqlObject, key, type, emptyList(), isCollection)
 
-    constructor(key : String, kClass: KClass<*>, children: Graph?, argumentsDescriptor: Map<String, KType>?, isCollection: Boolean)
-            : this(key, kClass.starProjectedType, children, argumentsDescriptor, isCollection)
+    constructor(kqlObject: KQLObject, key : String, kClass: KClass<*>, children: Collection<DescriptorNode>, isCollection: Boolean)
+            : this(kqlObject, key, kClass.starProjectedType, children, isCollection)
 
     companion object {
-        inline fun <reified T>leaf(key : String) : DescriptorNode {
-            return DescriptorNode(key, T::class.starProjectedType, emptyMap())
+        inline fun <reified T>leaf(kqlObject: KQLObject, key : String) : DescriptorNode {
+            return DescriptorNode(kqlObject, key, T::class.starProjectedType)
         }
 
-        inline fun <reified T>branch(key : String, vararg nodes : DescriptorNode): DescriptorNode {
-            return DescriptorNode(key, T::class.starProjectedType, Graph(*nodes), emptyMap())
+        inline fun <reified T>branch(kqlObject: KQLObject, key : String, vararg nodes : DescriptorNode): DescriptorNode {
+            return DescriptorNode(kqlObject, key, T::class.starProjectedType, listOf(*nodes))
         }
     }
 }

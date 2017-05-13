@@ -21,4 +21,4 @@ class IdScalarSupport : ScalarSupport<Id> {
 
 enum class FilmType { FULL_LENGTH, SHORT_LENGTH }
 
-class Scenario(val author : String, val content : String)
+class Scenario(val id : Id, val author : String, val content : String)

@@ -1,6 +1,4 @@
-- field arguments (especially pagination!)
 - parallel query/mutation execution
-- automatic schema documentation
 - Create some basic benchmarks
 - better error messages in responses
 - implement more of GraphQL specification

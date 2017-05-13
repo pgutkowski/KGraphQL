@@ -3,8 +3,10 @@ package com.github.pgutkowski.kgraphql.schema.dsl
 import com.github.pgutkowski.kgraphql.schema.ScalarSupport
 import com.github.pgutkowski.kgraphql.schema.Schema
 import com.github.pgutkowski.kgraphql.schema.SchemaException
+import com.github.pgutkowski.kgraphql.schema.builtin.BuiltInType
 import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
-import com.github.pgutkowski.kgraphql.schema.impl.KQLObject
+import com.github.pgutkowski.kgraphql.schema.model.*
+import com.github.pgutkowski.kgraphql.typeName
 import kotlin.reflect.KClass
 
 
@@ -12,59 +14,64 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
 
     fun build(): Schema {
         init()
-        return DefaultSchema(queries, mutations, simpleTypes, scalars, enums)
+        return DefaultSchema(queries, mutations, objects, scalars, enums, unions)
     }
 
-    private val simpleTypes = arrayListOf<KQLObject.Object<*>>()
+    internal val objects = arrayListOf<KQLType.Object<*>>()
 
-    private val queries = arrayListOf<KQLObject.Query<*>>()
+    internal val queries = arrayListOf<KQLQuery<*>>()
 
-    private val scalars = arrayListOf<KQLObject.Scalar<*>>()
+    internal val scalars = arrayListOf<KQLType.Scalar<*>>(
+            BuiltInType.STRING,
+            BuiltInType.BOOLEAN,
+            BuiltInType.DOUBLE,
+            BuiltInType.FLOAT,
+            BuiltInType.INT
+    )
 
-    private val mutations = arrayListOf<KQLObject.Mutation<*>>()
+    internal val mutations = arrayListOf<KQLMutation<*>>()
 
-    private val enums = arrayListOf<KQLObject.Enumeration<*>>()
+    internal val enums = arrayListOf<KQLType.Enumeration<*>>()
 
-    fun query(init: OperationDSL.() -> Unit){
-        val wrapperDSL = OperationDSL(init)
-        queries.add(KQLObject.Query(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))
+    internal val unions = arrayListOf<KQLType.Union>()
+
+    fun query(init: QueryOrMutationDSL.() -> Unit){
+        val wrapperDSL = QueryOrMutationDSL(init)
+        queries.add(KQLQuery(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))
     }
 
-    fun mutation(init: OperationDSL.() -> Unit){
-        val wrapperDSL = OperationDSL(init)
-        mutations.add(KQLObject.Mutation(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))
+    fun mutation(init: QueryOrMutationDSL.() -> Unit){
+        val wrapperDSL = QueryOrMutationDSL(init)
+        mutations.add(KQLMutation(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))
+    }
+
+    fun <T : Any>supportedScalar(kClass: KClass<T>, block: SupportedScalarDSL<T>.() -> Unit){
+        val scalar = SupportedScalarDSL(kClass, block)
+        val support = scalar.support ?: throw SchemaException("Please specify scalar support object")
+
+        scalars.add(KQLType.Scalar(scalar.name, kClass, support, scalar.description))
+    }
+
+    inline fun <reified T : Any> supportedScalar(noinline block: SupportedScalarDSL<T>.() -> Unit) {
+        supportedScalar(T::class, block)
     }
 
     fun <T : Any>scalar(kClass: KClass<T>, block: ScalarDSL<T>.() -> Unit){
         val scalar = ScalarDSL(kClass, block)
 
-        val support : ScalarSupport<T>
-        when {
-            scalar.support != null && scalar.hasSupportFunctions() -> {
-                throw IllegalArgumentException(
-                        "Please specify either support object OR support functions(serialize, deserialize, validate), NOT BOTH"
-                )
-            }
-            scalar.support != null -> support = scalar.support!!
-            scalar.hasSupportFunctions() -> {
-                support = object : ScalarSupport<T> {
-                    override fun serialize(input: String): T = scalar.serialize!!(input)
-                    override fun deserialize(input: T): String = scalar.deserialize!!(input)
-                    override fun validate(input: String): Boolean = scalar.validate!!(input)
-                }
-            }
-            else -> {
-                throw IllegalArgumentException(
-                        "Please specify either support object OR support functions(serialize, deserialize, validate)"
-                )
-            }
+        if(scalar.missingSupportFunction()) throw SchemaException("Please specify scalar support functions")
+
+        val support : ScalarSupport<T> = object : ScalarSupport<T> {
+            override fun serialize(input: String): T = scalar.serialize!!(input)
+            override fun deserialize(input: T): String = scalar.deserialize!!(input)
+            override fun validate(input: String): Boolean = scalar.validate!!(input)
         }
 
-        scalars.add(KQLObject.Scalar(scalar.name, kClass, support, scalar.description))
+        scalars.add(KQLType.Scalar(scalar.name, kClass, support, scalar.description))
     }
 
-    private fun <T : Any> ScalarDSL<T>.hasSupportFunctions(): Boolean {
-        return serialize != null || deserialize != null || validate != null
+    private fun <T : Any> ScalarDSL<T>.missingSupportFunction(): Boolean {
+        return serialize == null || deserialize == null || validate == null
     }
 
     inline fun <reified T : Any> scalar(noinline block: ScalarDSL<T>.() -> Unit) {
@@ -72,26 +79,39 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
     }
 
     fun <T : Any>type(kClass: KClass<T>, block: TypeDSL<T>.() -> Unit){
-        val type = TypeDSL(kClass, block)
-        simpleTypes.add(KQLObject.Object(type.name, kClass, type.ignoredProperties.toList(), type.description))
+        val type = TypeDSL(this.unions, kClass, block)
+        objects.add(type.toKQLObject())
     }
 
     inline fun <reified T : Any> type(noinline block: TypeDSL<T>.() -> Unit) {
         type(T::class, block)
     }
 
-    fun <T : Enum<T>>enum(kClass: KClass<T>, enumValues : Array<T>, block: TypeDSL<T>.() -> Unit){
-        val type = TypeDSL(kClass, block)
-        enums.add(KQLObject.Enumeration(type.name, kClass, enumValues, type.description))
+    fun <T : Enum<T>>enum(kClass: KClass<T>, enumValues : Array<T>, block: EnumDSL<T>.() -> Unit){
+        val type = EnumDSL(kClass, block)
+        enums.add(KQLType.Enumeration(type.name, kClass, enumValues, type.description))
     }
 
-    inline fun <reified T : Enum<T>> enum(noinline block: TypeDSL<T>.() -> Unit) {
+    inline fun <reified T : Enum<T>> enum(noinline block: EnumDSL<T>.() -> Unit) {
         val enumValues = enumValues<T>()
         if(enumValues.isEmpty()){
             throw SchemaException("Enum of type ${T::class} must have at least one value")
         } else {
             enum(T::class, enumValues<T>(), block)
         }
+    }
+
+    fun unionType(block : UnionTypeDSL.() -> Unit){
+        val union = UnionTypeDSL(block)
+        val possibleTypes = union.possibleTypes.map { kClass ->
+            var registeredObject = objects.find { it.kClass == kClass }
+            if(registeredObject == null){
+                registeredObject = KQLType.Object(kClass.typeName(), kClass)
+                objects.add(registeredObject)
+            }
+            registeredObject!!
+        }
+        unions.add(KQLType.Union(union.name, possibleTypes, union.description))
     }
 }
 

@@ -2,6 +2,7 @@ package com.github.pgutkowski.kgraphql.server
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.pgutkowski.kgraphql.schema.Schema
+import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
@@ -16,7 +17,7 @@ import java.util.logging.Logger
  * TODO: refactor and split to two handlers : for queries and for API docs
  */
 @ChannelHandler.Sharable
-class HttpRequestHandler(val schema : Schema) : SimpleChannelInboundHandler<FullHttpRequest>() {
+class HttpRequestHandler(val schema : DefaultSchema) : SimpleChannelInboundHandler<FullHttpRequest>() {
 
     val logger : Logger = Logger.getLogger( HttpRequestHandler::class.qualifiedName )
 
@@ -32,7 +33,7 @@ class HttpRequestHandler(val schema : Schema) : SimpleChannelInboundHandler<Full
 
     fun handleDocQuery(ctx: ChannelHandlerContext, msg: FullHttpRequest){
         val path = msg.uri().substring("/graphql/docs".length).split('/').filter(String::isNotBlank)
-        writeResponse(ctx, schema.descriptor.asHTML(path), AsciiString("text/html"))
+        writeResponse(ctx, schema.asHTML(path), AsciiString("text/html"))
     }
 
     private fun handleQuery(ctx: ChannelHandlerContext, msg: FullHttpRequest) {

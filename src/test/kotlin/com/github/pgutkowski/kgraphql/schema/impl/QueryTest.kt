@@ -18,7 +18,7 @@ class QueryTest : BaseSchemaTest() {
 
     @Test
     fun testCollections(){
-        val map = execute("{film{title, director{favActors}}}")
+        val map = execute("{film{title, director{favActors{name, age}}}}")
         assertNoErrors(map)
         assertThat(extract<Map<String, String>>(map, "data/film/director/favActors[0]"), equalTo(mapOf(
                 "name" to prestige.director.favActors[0].name,
@@ -29,13 +29,6 @@ class QueryTest : BaseSchemaTest() {
     @Test
     fun testScalar(){
         val map = execute("{film{id}}")
-        assertNoErrors(map)
-        assertThat(extract<String>(map, "data/film/id"), equalTo("${prestige.id.literal}:${prestige.id.numeric}"))
-    }
-
-    @Test
-    fun testScalarImplicit(){
-        val map = execute("{film}")
         assertNoErrors(map)
         assertThat(extract<String>(map, "data/film/id"), equalTo("${prestige.id.literal}:${prestige.id.numeric}"))
     }
@@ -56,8 +49,8 @@ class QueryTest : BaseSchemaTest() {
 
     @Test
     fun testInvalidPropertyName(){
-        val map = execute("{film{title, director{name,[favActors]}}}")
-        assertError(map, "director doesn't have property", "[favActors]")
+        val map = execute("{film{title, director{name, [favActors]}}}")
+        assertError(map, "property [favActors] on Director does not exist")
     }
 
     @Test
@@ -104,7 +97,7 @@ class QueryTest : BaseSchemaTest() {
 
     @Test
     fun testCastToSuperclass(){
-        val map = execute("{randomPerson}")
+        val map = execute("{randomPerson{name \n age}}")
         assertThat(extract<Map<String, String>>(map, "data/randomPerson"), equalTo(mapOf(
                 "name" to davidFincher.name,
                 "age" to davidFincher.age)
@@ -113,7 +106,7 @@ class QueryTest : BaseSchemaTest() {
 
     @Test
     fun testCastListElementsToSuperclass(){
-        val map = execute("{people}")
+        val map = execute("{people{name, age}}")
         assertThat(extract<Map<String, String>>(map, "data/people[0]"), equalTo(mapOf(
                 "name" to davidFincher.name,
                 "age" to davidFincher.age)

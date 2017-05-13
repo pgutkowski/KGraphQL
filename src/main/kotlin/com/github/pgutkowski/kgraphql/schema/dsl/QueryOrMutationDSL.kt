@@ -2,10 +2,10 @@ package com.github.pgutkowski.kgraphql.schema.dsl
 
 import com.github.pgutkowski.kgraphql.schema.impl.FunctionWrapper
 
-class OperationDSL(init: OperationDSL.() -> Unit) : AbstractItemDSL() {
 
+class QueryOrMutationDSL(block : QueryOrMutationDSL.() -> Unit) : ItemDSL() {
     init {
-        init()
+        block()
     }
 
     internal lateinit var functionWrapper : FunctionWrapper<*>

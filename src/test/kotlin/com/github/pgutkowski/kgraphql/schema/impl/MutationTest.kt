@@ -13,7 +13,7 @@ class MutationTest : BaseSchemaTest() {
 
     @Test
     fun testSimpleMutation(){
-        val map = execute("mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age})}")
+        val map = execute("mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}){name, age}}")
         assertNoErrors(map)
         assertThat(extract<Map<String, Any>>(map, "data/createActor"), equalTo(mapOf("name" to testActor.name, "age" to testActor.age)))
     }
@@ -41,7 +41,7 @@ class MutationTest : BaseSchemaTest() {
     @Test
     fun testInvalidArgumentType(){
         val map = execute("mutation {createActor(name: \"${testActor.name}\", age: \"fwfwf\"){age}}")
-        assertError(map, "SyntaxException: argument 'fwfwf' is not value of type: kotlin.Int")
+        assertError(map, "SyntaxException: argument 'fwfwf' is not value of type Int")
     }
 
     @Test

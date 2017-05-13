@@ -5,7 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.treeToValue
 import kotlin.reflect.KClass
 
-class Variables(val objectMapper: ObjectMapper,val json: JsonNode?){
+class Variables(val json: JsonNode?){
+
+    companion object {
+        private val objectMapper = ObjectMapper()
+    }
+
+    constructor(json : String) : this(objectMapper.readTree(json))
+
+    constructor() : this(null)
 
     fun <T : Any>getVariable(kClass: KClass<T>, key : String) : T? {
         if(json != null){

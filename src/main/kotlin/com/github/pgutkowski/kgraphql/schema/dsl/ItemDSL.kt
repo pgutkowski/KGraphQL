@@ -1,7 +1,7 @@
 package com.github.pgutkowski.kgraphql.schema.dsl
 
-
-abstract class AbstractItemDSL {
+@SchemaBuilderMarker
+abstract class ItemDSL {
     var description : String? = null
 
     lateinit open var name : String

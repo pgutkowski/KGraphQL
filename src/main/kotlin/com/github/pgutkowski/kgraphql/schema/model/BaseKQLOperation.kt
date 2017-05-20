@@ -2,7 +2,6 @@ package com.github.pgutkowski.kgraphql.schema.model
 
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.impl.FunctionWrapper
-import kotlin.reflect.KFunction
 import kotlin.reflect.KType
 import kotlin.reflect.full.valueParameters
 

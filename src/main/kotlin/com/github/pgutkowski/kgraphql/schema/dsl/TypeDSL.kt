@@ -25,15 +25,15 @@ open class TypeDSL<T : Any>(private val supportedUnions: Collection<KQLType.Unio
     }
 
     fun <R, E> transformation(kProperty: KProperty1<T, R>, function: (R, E) -> R) {
-        transformationProperties.add(Transformation(kProperty, FunctionWrapper.on(function)))
+        transformationProperties.add(Transformation(kProperty, FunctionWrapper.on(function, true)))
     }
 
     fun <R, E, W> transformation(kProperty: KProperty1<T, R>, function: (R, E, W) -> R) {
-        transformationProperties.add(Transformation(kProperty, FunctionWrapper.on(function)))
+        transformationProperties.add(Transformation(kProperty, FunctionWrapper.on(function, true)))
     }
 
     fun <R, E, W, Q> transformation(kProperty: KProperty1<T, R>, function: (R, E, W, Q) -> R) {
-        transformationProperties.add(Transformation(kProperty, FunctionWrapper.on(function)))
+        transformationProperties.add(Transformation(kProperty, FunctionWrapper.on(function, true)))
     }
 
     fun <R> property(block : PropertyDSL<T, R>.() -> Unit){

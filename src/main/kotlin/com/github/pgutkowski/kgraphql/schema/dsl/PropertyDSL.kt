@@ -12,18 +12,18 @@ class PropertyDSL<T, R>(block : PropertyDSL<T, R>.() -> Unit) : ItemDSL() {
     internal lateinit var functionWrapper : FunctionWrapper<R>
 
     fun resolver(function: (T) -> R){
-        functionWrapper = FunctionWrapper.on(function)
+        functionWrapper = FunctionWrapper.on(function, true)
     }
 
     fun <E>resolver(function: (T, E) -> R){
-        functionWrapper = FunctionWrapper.on(function)
+        functionWrapper = FunctionWrapper.on(function, true)
     }
 
     fun <E, W>resolver(function: (T, E, W) -> R){
-        functionWrapper = FunctionWrapper.on(function)
+        functionWrapper = FunctionWrapper.on(function, true)
     }
 
     fun <E, W, Q>resolver(function: (T, E, W, Q) -> R){
-        functionWrapper = FunctionWrapper.on(function)
+        functionWrapper = FunctionWrapper.on(function, true)
     }
 }

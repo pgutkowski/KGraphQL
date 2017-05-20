@@ -2,6 +2,7 @@ package com.github.pgutkowski.kgraphql.schema.impl
 
 import com.github.pgutkowski.kgraphql.extract
 import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 
@@ -90,6 +91,12 @@ class QueryTest : BaseSchemaTest() {
     }
 
     @Test
+    fun testQueryWithIgnoredProperty(){
+        val map = execute("{scenario{author, content}}")
+        assertError(map, "SyntaxException: property author on Scenario does not exist")
+    }
+
+    @Test
     fun testInvalidQueryWithDuplicatedAliases(){
         val map = execute("{bestFilm: filmByRank(rank: 1){title}, bestFilm: filmByRank(rank: 2){title}}")
         assertError(map, "SyntaxException: Duplicated property name/alias: bestFilm")
@@ -111,5 +118,48 @@ class QueryTest : BaseSchemaTest() {
                 "name" to davidFincher.name,
                 "age" to davidFincher.age)
         ))
+    }
+
+    @Test
+    fun testExtensionProperty(){
+        val map = execute("{actors{name, age, isOld}}")
+        for(i in 0..4){
+            val isOld = extract<Boolean>(map, "data/actors[$i]/isOld")
+            val age = extract<Int>(map, "data/actors[$i]/age")
+            assertThat(isOld, equalTo(age > 500))
+        }
+    }
+
+    @Test
+    fun testExtensionPropertyWithArgument(){
+        val map = execute("{actors{name, picture(big: true)}}")
+        for(i in 0..4){
+            val name = extract<String>(map, "data/actors[$i]/name").replace(' ', '_')
+            assertThat(extract<String>(map, "data/actors[$i]/picture"), equalTo("http://picture.server/pic/$name?big=true"))
+        }
+    }
+
+    @Test
+    fun testExtensionPropertyWithOptionalArgument(){
+        val map = execute("{actors{name, picture}}")
+        for(i in 0..4){
+            val name = extract<String>(map, "data/actors[$i]/name").replace(' ', '_')
+            assertThat(extract<String>(map, "data/actors[$i]/picture"), equalTo("http://picture.server/pic/$name?big=false"))
+        }
+    }
+
+    @Test
+    fun testPropertyTransformation(){
+        val map = execute("{scenario{id, content(uppercase: false)}}")
+        assertThat(extract<String>(map, "data/scenario/content"), equalTo("Very long scenario"))
+
+        val map2 = execute("{scenario{id, content(uppercase: true)}}")
+        assertThat(extract<String>(map2, "data/scenario/content"), equalTo("VERY LONG SCENARIO"))
+    }
+
+    @Test
+    fun testInvalidPropertyArguments(){
+        val map = execute("{scenario{id(uppercase: true), content}}")
+        assertError(map, "ValidationException: Property id on type Scenario has no arguments, found: [uppercase]")
     }
 }

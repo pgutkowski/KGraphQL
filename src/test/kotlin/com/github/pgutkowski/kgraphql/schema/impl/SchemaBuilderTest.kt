@@ -4,12 +4,18 @@ import com.github.pgutkowski.kgraphql.Id
 import com.github.pgutkowski.kgraphql.Scenario
 import com.github.pgutkowski.kgraphql.defaultSchema
 import com.github.pgutkowski.kgraphql.schema.ScalarSupport
+import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import org.hamcrest.CoreMatchers
+import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 import java.util.*
+import kotlin.reflect.full.starProjectedType
 
-
+/**
+ * Tests for SchemaBuilder behaviour, not request execution
+ */
 class SchemaBuilderTest {
     @Test
     fun testDSLCreatedUUIDScalarSupport(){
@@ -41,11 +47,16 @@ class SchemaBuilderTest {
                 ignore(Scenario::author)
             }
         }
+
+        val scenarioType = testedSchema.structure.nodes[Scenario::class.starProjectedType]
+                ?: throw Exception("Scenario type should be present in schema")
+        assertThat(scenarioType.properties["author"], nullValue())
+        assertThat(scenarioType.properties["content"], notNullValue())
     }
 
     @Test
     fun testTransformation() {
-        val tested = defaultSchema {
+        val testedSchema = defaultSchema {
             query {
                 name = "scenario"
                 resolver { -> Scenario(Id("GKalus", 234234),"Gamil Kalus", "TOO LONG") }
@@ -57,11 +68,16 @@ class SchemaBuilderTest {
                 })
             }
         }
+        val scenarioType = testedSchema.structure.nodes[Scenario::class.starProjectedType]
+                ?: throw Exception("Scenario type should be present in schema")
+        assert(scenarioType.kqlType is KQLType.Object<*>)
+        val kqlType = scenarioType.kqlType as KQLType.Object<*>
+        assertThat(kqlType.transformations.getOrNull(0), notNullValue())
     }
 
     @Test
     fun testExtensionProperty(){
-        val tested = defaultSchema {
+        val testedSchema = defaultSchema {
 
             query {
                 name = "scenario"
@@ -76,8 +92,17 @@ class SchemaBuilderTest {
                 }
             }
         }
+
+        val scenarioType = testedSchema.structure.nodes[Scenario::class.starProjectedType]
+                ?: throw Exception("Scenario type should be present in schema")
+        assert(scenarioType.kqlType is KQLType.Object<*>)
+        val kqlType = scenarioType.kqlType as KQLType.Object<*>
+
+        assertThat(kqlType.extensionProperties.getOrNull(0), notNullValue())
+        assertThat(scenarioType.properties.keys, hasItem("pdf"))
     }
 
+    @Test
     fun testUnionType(){
         val tested = defaultSchema {
 

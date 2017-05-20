@@ -4,6 +4,7 @@ import com.github.pgutkowski.kgraphql.schema.Schema
 import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilder
 import com.github.pgutkowski.kgraphql.server.NettyServer
 import kotlin.reflect.KClass
+import kotlin.reflect.KParameter
 import kotlin.reflect.KType
 import kotlin.reflect.jvm.jvmErasure
 
@@ -17,7 +18,3 @@ class KGraphQL {
         fun setupServer(schema: Schema) = NettyServer.run(schema)
     }
 }
-
-fun <T : Any> KClass<T>.typeName() = this.simpleName!!
-
-fun KType.typeName() = this.jvmErasure.typeName()

@@ -82,13 +82,22 @@ class SchemaStructureBuilder(
 
     fun <T : Any>handleObjectType(kType: KType, kClass: KClass<T>) : SchemaNode.Type {
         val kqlObject = objects.find { it.kClass == kClass } ?: KQLType.Object(kType.typeName(), kClass)
-        val properties : Map<String, SchemaNode.Property>  = kClass.memberProperties
+
+        val kProperties : Map<String, SchemaNode.Property>  = kClass.memberProperties
                 .filterNot { kqlObject.isIgnored(it) }
-                .associate { it.name to handleKotlinProperty(it)}
-        return SchemaNode.Type(kqlObject, properties)
+                .associate { property -> property.name to handleKotlinProperty(property, kqlObject.transformations.find { it.kProperty == property })}
+
+        val extProperties = kqlObject.extensionProperties
+                .associate { property -> property.name to handleFunctionProperty(property) }
+
+        return SchemaNode.Type(kqlObject, kProperties + extProperties)
     }
 
-    fun <T> handleKotlinProperty(property: KProperty1<T, *>) : SchemaNode.Property {
-        return SchemaNode.Property(KQLProperty.Kotlin(property), handleReturnType(property.returnType))
+    private fun handleFunctionProperty(property: KQLProperty.Function<*>): SchemaNode.Property {
+        return SchemaNode.Property(property, handleReturnType(property.kFunction.returnType))
+    }
+
+    fun <T> handleKotlinProperty(property: KProperty1<T, *>, transformation: Transformation<out Any, out Any?>?) : SchemaNode.Property {
+        return SchemaNode.Property(KQLProperty.Kotlin(property), handleReturnType(property.returnType), transformation)
     }
 }

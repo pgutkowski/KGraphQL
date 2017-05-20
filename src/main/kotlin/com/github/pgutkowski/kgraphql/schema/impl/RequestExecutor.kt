@@ -3,19 +3,12 @@ package com.github.pgutkowski.kgraphql.schema.impl
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonGenerator
 import com.github.pgutkowski.kgraphql.ExecutionException
-import com.github.pgutkowski.kgraphql.SyntaxException
-import com.github.pgutkowski.kgraphql.request.Arguments
 import com.github.pgutkowski.kgraphql.request.Variables
 import com.github.pgutkowski.kgraphql.schema.ScalarSupport
-import com.github.pgutkowski.kgraphql.schema.model.KQLObject
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import java.io.StringWriter
-import kotlin.reflect.KParameter
 import kotlin.reflect.KProperty1
-import kotlin.reflect.full.createType
-import kotlin.reflect.full.starProjectedType
-import kotlin.reflect.jvm.jvmErasure
 
 
 @Suppress("UNCHECKED_CAST") // For valid structure there is no risk of ClassCastException
@@ -27,9 +20,9 @@ class RequestExecutor(val schema: DefaultSchema) {
 
     data class Context(val generator: JsonGenerator, val variables: Variables)
 
-    private val enumsByType = schema.enums.associate { it.kClass.createType() to it }
+    private val argumentsHandler = ArgumentsHandler(schema)
 
-    private val scalarsByType = schema.scalars.associate { it.kClass.createType() to it }
+    private val functionHandler = FunctionInvoker(argumentsHandler)
 
     fun execute(plan : ExecutionPlan, variables: Variables) : String {
 
@@ -53,7 +46,13 @@ class RequestExecutor(val schema: DefaultSchema) {
     }
 
     private fun <T>writeOperation(ctx: Context, node: ExecutionNode, operation: SchemaNode.Operation<T>){
-        val operationResult : T? = invokeFunWrapper(operation.kqlOperation, node.arguments ?: Arguments(), ctx.variables)
+        val operationResult : T? = functionHandler.invokeFunWrapper(
+                funName = operation.kqlOperation.name,
+                functionWrapper = operation.kqlOperation,
+                receiver = null,
+                args = node.arguments,
+                variables = ctx.variables
+        )
         ctx.generator.writeFieldName(node.aliasOrKey)
 
         writeValue(ctx, operationResult, node, operation.returnType)
@@ -117,75 +116,33 @@ class RequestExecutor(val schema: DefaultSchema) {
     }
 
     private fun <T> writeProperty(ctx: Context, parentValue: T, node: ExecutionNode, property: SchemaNode.Property) {
-        when(property.kqlProperty){
+        val kqlProperty = property.kqlProperty
+        when(kqlProperty){
             is KQLProperty.Kotlin<*,*> -> {
-                property.kqlProperty.kProperty as KProperty1<T, *>
-                val value = property.kqlProperty.kProperty.get(parentValue)
+                kqlProperty.kProperty as KProperty1<T, *>
+                val rawValue = kqlProperty.kProperty.get(parentValue)
+                val value : Any?
+                if(property.transformation != null){
+                    value = functionHandler.invokeFunWrapper(
+                            funName = kqlProperty.name,
+                            functionWrapper = property.transformation,
+                            receiver = rawValue,
+                            args = node.arguments,
+                            variables = ctx.variables
+                    )
+                } else {
+                    value = rawValue
+                }
                 ctx.generator.writeFieldName(node.aliasOrKey)
                 writeValue(ctx, value, node, property.returnType)
             }
-            is KQLProperty.Function<*> -> throw Exception()
+            is KQLProperty.Function<*> -> {
+                val args = argumentsHandler.transformArguments(kqlProperty, node.arguments, ctx.variables)
+                val result = kqlProperty.invoke(parentValue, *args.toTypedArray())
+                ctx.generator.writeFieldName(node.aliasOrKey)
+                writeValue(ctx, result, node, property.returnType)
+            }
             is KQLProperty.Union -> throw Exception()
         }
     }
-
-    fun <T>invokeFunWrapper(functionWrapper: FunctionWrapper<T>, args: Arguments, variables: Variables): T? {
-        if(functionWrapper.arity() != args.size){
-
-            functionWrapper as KQLObject
-
-            throw SyntaxException(
-                    "Mutation ${functionWrapper.name} does support arguments: ${functionWrapper.kFunction.parameters.map { it.name }}. found arguments: ${args.keys}"
-            )
-        }
-
-        val transformedArgs : MutableList<Any?> = mutableListOf()
-        functionWrapper.kFunction.parameters.forEach { parameter ->
-            val value = args[parameter.name!!]
-            if(value == null){
-                if(!parameter.isOptional){
-                    throw IllegalArgumentException("${functionWrapper.kFunction.name} argument ${parameter.name} is not optional, value cannot be null")
-                } else {
-                    transformedArgs.add(null)
-                }
-            } else if(value is String) {
-                val transformedValue: Any? = transformValue(parameter, value, variables)
-                transformedArgs.add(transformedValue)
-            } else {
-                throw SyntaxException("Non string arguments are not supported yet")
-            }
-
-        }
-
-        return functionWrapper.invoke(*transformedArgs.toTypedArray())
-    }
-
-    private fun transformValue(parameter: KParameter, value: String, variables: Variables): Any? {
-
-        if(value.startsWith("$")){
-            return variables.getVariable(parameter.type.jvmErasure, value.substring(1))
-        } else {
-            val literalValue = value.dropQuotes()
-            return when (parameter.type) {
-                String::class.starProjectedType -> literalValue
-                in enumsByType.keys -> enumsByType[parameter.type]?.values?.find { it.name == literalValue }
-                in scalarsByType.keys ->{
-                    transformScalar(scalarsByType[parameter.type]!!, literalValue)
-                }
-                else -> {
-                    throw UnsupportedOperationException("Not supported yet")
-                }
-            }
-        }
-    }
-
-    private fun <T : Any>transformScalar(support : KQLType.Scalar<T>, value : String): T {
-        try {
-            return support.scalarSupport.serialize(value)
-        } catch (e: Exception){
-            throw SyntaxException("argument '$value' is not value of type ${support.name}")
-        }
-    }
-
-    fun String.dropQuotes() : String = if(startsWith('\"') && endsWith('\"')) drop(1).dropLast(1) else this
 }

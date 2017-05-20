@@ -8,7 +8,7 @@ sealed class SchemaNode {
     open class Type(
             val kqlType: KQLType,
             val properties : Map<String, SchemaNode.Property>
-    ) : SchemaNode(), KQLType by kqlType
+    ) : SchemaNode()
 
     class ReturnType(
             val type: SchemaNode.Type,
@@ -21,13 +21,14 @@ sealed class SchemaNode {
 
     class Property(
             val kqlProperty: KQLProperty,
-            returnType : SchemaNode.ReturnType
-    ) : Branch(returnType), KQLProperty by kqlProperty
+            returnType : SchemaNode.ReturnType,
+            val transformation: Transformation<*,*>? = null
+    ) : Branch(returnType)
 
     abstract class Operation<T>(
             val kqlOperation: KQLOperation<T>,
             returnType: SchemaNode.ReturnType
-    ) : Branch(returnType), KQLOperation<T> by kqlOperation
+    ) : Branch(returnType)
 
     class Query<T>(
             val kqlQuery: KQLQuery<T>,

@@ -3,4 +3,3 @@
 - better error messages in responses
 - implement more of GraphQL specification
 - fragments - TBD when type system more advanced
-- union types - only queries or properties too?

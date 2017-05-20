@@ -40,7 +40,7 @@ private fun writeOperationsHTML(title: String, operations: Collection<SchemaNode
 }
 
 private fun DefaultSchema.writeTypeDescriptor(typeName : String) : String {
-    val typeByName = structure.nodes.values.find { it.name == typeName }
+    val typeByName = structure.nodes.values.find { it.kqlType.name == typeName }
     val kqlType = typeByName?.kqlType
     return when(kqlType){
         null -> throw IllegalArgumentException("Type $typeName does not exist")
@@ -129,7 +129,7 @@ private fun writeHTML(block : FlowContent.() -> Unit) : String {
 
 private fun FlowContent.property(property: SchemaNode.Property) : Unit {
     p {
-        + property.name
+        + property.kqlProperty.name
         if(property.kqlProperty is KQLProperty.Function<*>){
             arguments(property.kqlProperty.argumentsDescriptor)
         }
@@ -140,7 +140,7 @@ private fun FlowContent.property(property: SchemaNode.Property) : Unit {
 
 private fun FlowContent.operation(operation : SchemaNode.Operation<*>) : Unit {
     p {
-        + operation.name
+        + operation.kqlOperation.name
         arguments(operation.kqlOperation.argumentsDescriptor)
         + " : "
         returnType(operation.returnType)

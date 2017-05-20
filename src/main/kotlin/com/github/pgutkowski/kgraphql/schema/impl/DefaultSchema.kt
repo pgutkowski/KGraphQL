@@ -36,13 +36,6 @@ class DefaultSchema(
         }
     }
 
-    /**
-     * returns Scalar for passed instance, or null if not found
-     */
-    fun findScalarByInstance(any : Any) : KQLType.Scalar<*>? {
-        return scalars.find{it.kClass.isInstance(any)}
-    }
-
     fun resolveActionType(token: String): Request.Action {
         if (queries.any { it.name.equals(token, true) }) return Request.Action.QUERY
         if (mutations.any { it.name.equals(token, true) }) return Request.Action.MUTATION

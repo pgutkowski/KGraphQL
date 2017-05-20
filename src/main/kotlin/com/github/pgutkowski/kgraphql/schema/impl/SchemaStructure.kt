@@ -1,9 +1,12 @@
 package com.github.pgutkowski.kgraphql.schema.impl
 
 import com.github.pgutkowski.kgraphql.SyntaxException
+import com.github.pgutkowski.kgraphql.ValidationException
 import com.github.pgutkowski.kgraphql.graph.GraphNode
+import com.github.pgutkowski.kgraphql.request.Arguments
 import com.github.pgutkowski.kgraphql.request.Request
 import com.github.pgutkowski.kgraphql.schema.model.KQLMutation
+import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLQuery
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import kotlin.reflect.KType
@@ -74,8 +77,43 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
                 val property = operation.returnType.properties[childRequestNode.key]
                         ?: throw SyntaxException("property ${childRequestNode.key} on ${operation.returnType.kqlType.name} does not exist")
                 children.add(handleBranch(childRequestNode, property))
+
+                val kqlType = operation.returnType.kqlType
+                val kqlProperty = property.kqlProperty
+                validatePropertyArguments(kqlProperty, kqlType, childRequestNode, property.transformation)
             }
         }
         return children
+    }
+
+    /**
+     * needs to be simplified
+     */
+    private fun validatePropertyArguments(kqlProperty: KQLProperty, kqlType: KQLType, requestNode: GraphNode, transformation: Transformation<*, *>?) {
+
+        fun illegalArguments(): List<ValidationException> {
+            return listOf(ValidationException(
+                    "Property ${kqlProperty.name} on type ${kqlType.name} has no arguments, found: ${requestNode.arguments?.map { it.key }}")
+            )
+        }
+
+        val argumentValidationExceptions = when {
+            //extension property function
+            kqlProperty is KQLProperty.Function<*> -> {
+                kqlProperty.validateArguments(requestNode.arguments)
+            }
+            //property with transformation
+            kqlProperty is KQLProperty.Kotlin<*, *> && kqlType is KQLType.Object<*> -> {
+                transformation
+                        ?.validateArguments(requestNode.arguments)
+                        ?: if(requestNode.arguments == null) emptyList() else illegalArguments()
+            }
+            requestNode.arguments == null -> emptyList()
+            else -> illegalArguments()
+        }
+
+        if (argumentValidationExceptions.isNotEmpty()) {
+            throw ValidationException(argumentValidationExceptions.fold("", { sum, exc -> sum + "${exc.message}; " }))
+        }
     }
 }

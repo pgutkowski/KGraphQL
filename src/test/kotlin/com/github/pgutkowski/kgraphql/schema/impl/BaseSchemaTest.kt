@@ -28,9 +28,19 @@ abstract class BaseSchemaTest {
 
     val testedSchema = SchemaBuilder {
         query {
+            name = "number"
+            description = "returns little of big number"
+            resolver { big : Boolean -> if(big) 10000 else 0 }
+        }
+        query {
             name = "film"
             description = "mock film"
             resolver { -> prestige }
+        }
+        query {
+            name = "actors"
+            description = "all actors"
+            resolver { -> listOf(bradPitt, morganFreeman, kevinSpacey, tomHardy, christianBale) }
         }
         query {
             name = "filmByRank"
@@ -67,7 +77,7 @@ abstract class BaseSchemaTest {
         }
         query {
             name = "scenario"
-            resolver { -> Scenario(Id("GKalus", 234234), "Gamil Kalus", "TOO LONG") }
+            resolver { -> Scenario(Id("GKalus", 234234), "Gamil Kalus", "Very long scenario") }
         }
         supportedScalar<Id> {
             description = "unique, concise representation of film"
@@ -77,6 +87,26 @@ abstract class BaseSchemaTest {
         type<Person>{ description = "Common data for any person"}
         type<Scenario>{
             ignore(Scenario::author)
+            transformation(Scenario::content) { content : String, uppercase: Boolean? ->
+                if(uppercase == true) content.toUpperCase() else content
+            }
+        }
+        type<Actor>{
+            property<Boolean> {
+                name = "isOld"
+                resolver { actor -> actor.age > 500 }
+            }
+            property<String> {
+                name = "picture"
+                resolver { actor, big : Boolean? ->
+                    val actorName = actor.name.replace(' ', '_')
+                    if(big == true){
+                        "http://picture.server/pic/$actorName?big=true"
+                    } else {
+                        "http://picture.server/pic/$actorName?big=false"
+                    }
+                }
+            }
         }
     }.build() as DefaultSchema
 

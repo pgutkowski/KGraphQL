@@ -17,7 +17,7 @@ interface KQLProperty {
 
     class Union(
             name : String,
-            resolver : FunctionWrapper<Any>,
+            resolver : FunctionWrapper<Any?>,
             val union : KQLType.Union
-    ) : Function<Any>(name, resolver), KQLProperty
+    ) : Function<Any?>(name, resolver), KQLProperty
 }

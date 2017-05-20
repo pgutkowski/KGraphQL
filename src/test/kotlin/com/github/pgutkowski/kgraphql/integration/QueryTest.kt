@@ -1,4 +1,4 @@
-package com.github.pgutkowski.kgraphql.schema.impl
+package com.github.pgutkowski.kgraphql.integration
 
 import com.github.pgutkowski.kgraphql.extract
 import org.hamcrest.CoreMatchers.equalTo
@@ -161,5 +161,11 @@ class QueryTest : BaseSchemaTest() {
     fun testInvalidPropertyArguments(){
         val map = execute("{scenario{id(uppercase: true), content}}")
         assertError(map, "ValidationException: Property id on type Scenario has no arguments, found: [uppercase]")
+    }
+
+    @Test
+    fun testUnionProperties(){
+        val map = execute("{actors{name, favourites}}")
+        println(map)
     }
 }

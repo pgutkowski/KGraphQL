@@ -1,7 +1,8 @@
-package com.github.pgutkowski.kgraphql.schema.impl
+package com.github.pgutkowski.kgraphql.integration
 
 import com.github.pgutkowski.kgraphql.*
 import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilder
+import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.junit.Before
@@ -75,8 +76,7 @@ abstract class BaseSchemaTest {
                 actor
             }
         }
-        query {
-            name = "scenario"
+        query("scenario") {
             resolver { -> Scenario(Id("GKalus", 234234), "Gamil Kalus", "Very long scenario") }
         }
         supportedScalar<Id> {
@@ -91,6 +91,14 @@ abstract class BaseSchemaTest {
                 if(uppercase == true) content.toUpperCase() else content
             }
         }
+        unionType {
+            name = "Favourite"
+            type<Actor>()
+            type<String>()
+            type<Scenario>()
+            type<Director>()
+        }
+
         type<Actor>{
             property<Boolean> {
                 name = "isOld"
@@ -106,6 +114,16 @@ abstract class BaseSchemaTest {
                         "http://picture.server/pic/$actorName?big=false"
                     }
                 }
+            }
+            unionProperty {
+                name = "favourite"
+                returnType = "Favourite"
+                resolver { actor -> when(actor){
+                    bradPitt -> tomHardy
+                    tomHardy -> christopherNolan
+                    christianBale -> "nachos"
+                    else -> null
+                }}
             }
         }
     }.build() as DefaultSchema

@@ -20,6 +20,8 @@ open class TypeDSL<T : Any>(private val supportedUnions: Collection<KQLType.Unio
 
     internal val extensionProperties = mutableSetOf<KQLProperty.Function<*>>()
 
+    internal val unionProperties = mutableSetOf<KQLProperty.Union>()
+
     infix fun ignore(kProperty: KProperty1<T, *>){
         ignoredProperties.add(kProperty)
     }
@@ -41,10 +43,10 @@ open class TypeDSL<T : Any>(private val supportedUnions: Collection<KQLType.Unio
         extensionProperties.add(KQLProperty.Function(it.name, it.functionWrapper))
     }
 
-    fun unionProperty(block : UnionPropertyDSL.() -> Unit){
+    fun unionProperty(block : UnionPropertyDSL<T>.() -> Unit){
         val it = UnionPropertyDSL(block)
         val union = supportedUnions.find { it.name.equals(it.name, true) } ?: throw SchemaException("Union Type: ${it.name} does not exist")
-        extensionProperties.add(KQLProperty.Union(it.name, it.functionWrapper, union))
+        unionProperties.add(KQLProperty.Union(it.name, it.functionWrapper, union))
     }
 
     init {
@@ -57,6 +59,7 @@ open class TypeDSL<T : Any>(private val supportedUnions: Collection<KQLType.Unio
                 kClass,
                 ignoredProperties.toList(),
                 extensionProperties.toList(),
+                unionProperties.toList(),
                 transformationProperties.toList(),
                 description
         )

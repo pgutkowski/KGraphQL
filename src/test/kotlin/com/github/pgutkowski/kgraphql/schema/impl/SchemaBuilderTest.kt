@@ -5,6 +5,7 @@ import com.github.pgutkowski.kgraphql.Scenario
 import com.github.pgutkowski.kgraphql.defaultSchema
 import com.github.pgutkowski.kgraphql.schema.ScalarSupport
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
+import com.github.pgutkowski.kgraphql.server.asHTML
 import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert
@@ -127,5 +128,11 @@ class SchemaBuilderTest {
                 }
             }
         }
+
+        val scenarioType = tested.structure.nodes[Scenario::class.starProjectedType]
+                ?: throw Exception("Scenario type should be present in schema")
+        assert(scenarioType.kqlType is KQLType.Object<*>)
+        val unionProperty = scenarioType.unionProperties["pdf"] ?: throw Exception("Scenario should have union property 'pdf'")
+        assertThat(unionProperty, notNullValue())
     }
 }

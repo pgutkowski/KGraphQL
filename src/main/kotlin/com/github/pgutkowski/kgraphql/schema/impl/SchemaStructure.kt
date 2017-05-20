@@ -3,7 +3,6 @@ package com.github.pgutkowski.kgraphql.schema.impl
 import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.ValidationException
 import com.github.pgutkowski.kgraphql.graph.GraphNode
-import com.github.pgutkowski.kgraphql.request.Arguments
 import com.github.pgutkowski.kgraphql.request.Request
 import com.github.pgutkowski.kgraphql.schema.model.KQLMutation
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
@@ -74,13 +73,22 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
         if (requestNode.children != null) {
             val childrenRequestNodes = requestNode.children
             for (childRequestNode in childrenRequestNodes) {
-                val property = operation.returnType.properties[childRequestNode.key]
+                val property = operation.returnType.properties[childRequestNode.key] ?: operation.returnType.unionProperties[childRequestNode.key]
                         ?: throw SyntaxException("property ${childRequestNode.key} on ${operation.returnType.kqlType.name} does not exist")
-                children.add(handleBranch(childRequestNode, property))
 
-                val kqlType = operation.returnType.kqlType
-                val kqlProperty = property.kqlProperty
-                validatePropertyArguments(kqlProperty, kqlType, childRequestNode, property.transformation)
+                when(property){
+                    is SchemaNode.Property -> {
+                        children.add(handleBranch(childRequestNode, property))
+                        val kqlType = operation.returnType.kqlType
+                        val kqlProperty = property.kqlProperty
+                        validatePropertyArguments(kqlProperty, kqlType, childRequestNode, property.transformation)
+                    }
+                    is SchemaNode.UnionProperty -> {
+
+                    }
+                    else ->
+                }
+
             }
         }
         return children

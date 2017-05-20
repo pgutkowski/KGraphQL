@@ -7,7 +7,8 @@ sealed class SchemaNode {
 
     open class Type(
             val kqlType: KQLType,
-            val properties : Map<String, SchemaNode.Property>
+            val properties : Map<String, SchemaNode.Property> = emptyMap(),
+            val unionProperties: Map<String, SchemaNode.UnionProperty> = emptyMap()
     ) : SchemaNode()
 
     class ReturnType(
@@ -15,9 +16,14 @@ sealed class SchemaNode {
             val isCollection : Boolean = false,
             val isNullable: Boolean = false,
             val areEntriesNullable : Boolean = false
-    ) : Type(type.kqlType, type.properties)
+    ) : Type(type.kqlType, type.properties, type.unionProperties)
 
     abstract class Branch(val returnType: SchemaNode.ReturnType) : SchemaNode()
+
+    class UnionProperty(
+            val kqlProperty: KQLProperty.Union,
+            val returnTypes: Collection<SchemaNode.Type>
+    ) : SchemaNode()
 
     class Property(
             val kqlProperty: KQLProperty,

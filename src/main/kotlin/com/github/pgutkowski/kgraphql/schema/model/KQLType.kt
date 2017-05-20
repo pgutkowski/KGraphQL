@@ -22,11 +22,12 @@ interface KQLType {
             override val kClass: KClass<T>,
             val ignoredProperties : List<KProperty1<T, *>>,
             val extensionProperties : List<KQLProperty.Function<*>>,
+            val unionProperties : List<KQLProperty.Union>,
             val transformations : List<Transformation<T, *>>,
             description : String?
     ) : BaseKQLType(name, description), Kotlin<T> {
 
-        constructor(name : String, kClass: KClass<T>) : this(name, kClass, emptyList(), emptyList(), emptyList(), null)
+        constructor(name : String, kClass: KClass<T>) : this(name, kClass, emptyList(), emptyList(), emptyList(), emptyList(), null)
 
         fun isIgnored(property: KProperty1<*, *>): Boolean = ignoredProperties.any { it == property }
     }

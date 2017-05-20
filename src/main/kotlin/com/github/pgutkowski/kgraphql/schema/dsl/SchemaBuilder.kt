@@ -35,6 +35,12 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
 
     internal val unions = arrayListOf<KQLType.Union>()
 
+    fun query(name : String, init: QueryOrMutationDSL.() -> Unit){
+        val wrapperDSL = QueryOrMutationDSL(init)
+        wrapperDSL.name = name
+        queries.add(KQLQuery(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))
+    }
+
     fun query(init: QueryOrMutationDSL.() -> Unit){
         val wrapperDSL = QueryOrMutationDSL(init)
         queries.add(KQLQuery(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))

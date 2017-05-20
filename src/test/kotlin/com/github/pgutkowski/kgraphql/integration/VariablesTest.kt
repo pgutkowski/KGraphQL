@@ -1,4 +1,4 @@
-package com.github.pgutkowski.kgraphql.schema.impl
+package com.github.pgutkowski.kgraphql.integration
 
 import com.github.pgutkowski.kgraphql.extract
 import org.hamcrest.CoreMatchers

@@ -5,6 +5,7 @@ import com.github.pgutkowski.kgraphql.Id
 import com.github.pgutkowski.kgraphql.Scenario
 import com.github.pgutkowski.kgraphql.defaultSchema
 import com.github.pgutkowski.kgraphql.schema.ScalarSupport
+import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.*
@@ -139,5 +140,29 @@ class SchemaBuilderTest {
         assert(scenarioType.kqlType is KQLType.Object<*>)
         val unionProperty = scenarioType.unionProperties["pdf"] ?: throw Exception("Scenario should have union property 'pdf'")
         assertThat(unionProperty, notNullValue())
+    }
+
+    @Test
+    fun testCircularDependencyExtensionProperty(){
+        val tested = defaultSchema {
+            query {
+                name = "actor"
+                resolver { -> Actor("Little John", 44) }
+            }
+
+            type<Actor> {
+                property<Actor> {
+                    name = "linked"
+                    resolver { actor -> Actor("BIG John", 3234) }
+                }
+            }
+        }
+
+        val actorType = tested.structure.nodes[Actor::class.starProjectedType]
+                ?: throw Exception("Scenario type should be present in schema")
+        assert(actorType.kqlType is KQLType.Object<*>)
+        val property = actorType.properties["linked"] ?: throw Exception("Actor should have ext property 'linked'")
+        assertThat(property, notNullValue())
+        assertThat(property.returnType.kqlType.name, equalTo("Actor"))
     }
 }

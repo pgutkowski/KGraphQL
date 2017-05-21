@@ -7,7 +7,6 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.memberProperties
-import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.jvmErasure
 
 
@@ -20,7 +19,18 @@ class SchemaStructureBuilder(
         val unions: List<KQLType.Union>
 ) {
 
-    val typeCache = mutableMapOf<KType, SchemaNode.Type>()
+    /**
+     * MutableType allows to avoid circular reference issues when building schema.
+     * @see getType
+     * @see typeCache
+     */
+    private class MutableType(
+            val kqlObjectType: KQLType.Object<*>,
+            val mutableProperties: MutableMap<String, SchemaNode.Property> = mutableMapOf(),
+            val mutableUnionProperties: MutableMap<String, SchemaNode.UnionProperty> = mutableMapOf()
+    ) : SchemaNode.Type(kqlObjectType, mutableProperties, mutableUnionProperties)
+
+    private val typeCache = mutableMapOf<KType, MutableType>()
 
     fun build() : SchemaStructure {
         val queryNodes = mutableMapOf<String, SchemaNode.Query<*>>()
@@ -31,8 +41,6 @@ class SchemaStructureBuilder(
 
         mutations.map { SchemaNode.Mutation(it, handleOperation(it))}
                 .associateTo(mutationNodes) {it.kqlMutation.name to it}
-
-
 
         return SchemaStructure(queryNodes, mutationNodes, typeCache)
     }
@@ -69,24 +77,38 @@ class SchemaStructureBuilder(
 
     private fun getType(kClass: KClass<*>, kType: KType): SchemaNode.Type {
 
-        fun <T : Any>handleObjectType(kType: KType, kClass: KClass<T>) : SchemaNode.Type {
+        fun createMutableType(kType: KType): MutableType {
             val kqlObject = objects.find { it.kClass == kClass } ?: KQLType.Object(kType.typeName(), kClass)
-
-            val kProperties : Map<String, SchemaNode.Property>  = kClass.memberProperties
-                    .filterNot { kqlObject.isIgnored(it) }
-                    .associate { property -> property.name to handleKotlinProperty(property, kqlObject.transformations.find { it.kProperty == property })}
-
-            val extProperties = kqlObject.extensionProperties
-                    .associate { property -> property.name to handleFunctionProperty(property) }
-
-            val unionProperties = kqlObject.unionProperties
-                    .associate { property -> property.name to handleUnionProperty(property) }
-
-            return SchemaNode.Type(kqlObject, kProperties + extProperties, unionProperties)
+            val type = MutableType(kqlObject)
+            typeCache.put(kType, type)
+            return type
         }
 
-        val type = typeCache[kType] ?: handleScalarType(kClass) ?: handleEnumType(kClass) ?: handleObjectType(kType, kClass)
-        typeCache.getOrPut(kType, { type })
+        fun <T : Any>handleObjectType(type : MutableType, kClass: KClass<T>) : MutableType {
+            val kqlObject = type.kqlObjectType
+
+            kClass.memberProperties.filterNot { kqlObject.isIgnored(it) }
+                    .associateTo(type.mutableProperties) { property ->
+                        property.name to handleKotlinProperty (
+                                property, kqlObject.transformations.find { it.kProperty == property }
+                        )
+                    }
+
+            kqlObject.extensionProperties.associateTo(type.mutableProperties) { property ->
+                property.name to handleFunctionProperty(property)
+            }
+
+            kqlObject.unionProperties.associateTo(type.mutableUnionProperties) { property ->
+                property.name to handleUnionProperty(property)
+            }
+
+            return type
+        }
+
+        val type = typeCache[kType]
+                ?: handleScalarType(kClass)
+                ?: handleEnumType(kClass)
+                ?: handleObjectType(createMutableType(kType), kClass)
         return type
     }
 

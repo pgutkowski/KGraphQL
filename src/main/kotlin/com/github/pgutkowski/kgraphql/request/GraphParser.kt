@@ -17,8 +17,8 @@ class GraphParser {
         return buildGraph(graphTokens, fragments)
     }
 
-    private fun buildFragments(tokens : List<String>) : Map<String, Fragment> {
-        val fragments : MutableMap<String, Fragment> = mutableMapOf()
+    private fun buildFragments(tokens : List<String>) : Map<String, Fragment.External> {
+        val fragments : MutableMap<String, Fragment.External> = mutableMapOf()
         var index = 0
         var typeCondition : String? = null
         var key : String = ""
@@ -29,7 +29,7 @@ class GraphParser {
                 "fragment" -> {/* DO NOTHING*/}
                 "on" -> {
                     typeCondition = tokens[index + 1]
-                    index += 2
+                    index += 1
                 }
                 "{" -> {
                     val subTokens = objectSubTokens(tokens, index)
@@ -37,7 +37,7 @@ class GraphParser {
                     if(fragments.any { it.key == key }) throw SyntaxException("Duplicated fragments with name $key")
 
                     val fragmentKey = "...$key"
-                    fragments.put(fragmentKey, Fragment(fragmentKey, buildGraph(subTokens, fragments), typeCondition))
+                    fragments.put(fragmentKey, Fragment.External(fragmentKey, buildGraph(subTokens, fragments), typeCondition))
                     index += subTokens.size + 2
                     typeCondition = null
                     key = ""
@@ -50,7 +50,7 @@ class GraphParser {
         return fragments
     }
 
-    private fun buildGraph(tokens: List<String>, fragments: Map<String, Fragment>): Graph {
+    private fun buildGraph(tokens: List<String>, fragments: Map<String, Fragment.External>): Graph {
         val graph = GraphBuilder()
         var index = 0
         var nestedBrackets = 0

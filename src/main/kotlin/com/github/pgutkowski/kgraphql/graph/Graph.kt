@@ -77,10 +77,14 @@ fun argBranch(key: String, alias: String, args: Arguments, vararg nodes: GraphNo
     return GraphNode(key, alias, if (nodes.isNotEmpty()) Graph(*nodes) else null, args)
 }
 
-fun fragment(key: String, typeCondition: String, vararg nodes: GraphNode) : Fragment {
-    return Fragment(key, Graph(*nodes), typeCondition)
+fun extFragment(key: String, typeCondition: String, vararg nodes: GraphNode) : Fragment.External {
+    return Fragment.External(key, Graph(*nodes), typeCondition)
 }
 
-fun fragment(key: String, vararg nodes: GraphNode) : Fragment {
-    return Fragment(key, Graph(*nodes))
+fun extFragment(key: String, vararg nodes: GraphNode) : Fragment.External {
+    return Fragment.External(key, Graph(*nodes))
+}
+
+fun inlineFragment(typeCondition: String, vararg nodes: GraphNode) : Fragment.Inline {
+    return Fragment.Inline(Graph(*nodes), typeCondition)
 }

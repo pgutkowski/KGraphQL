@@ -3,7 +3,18 @@ package com.github.pgutkowski.kgraphql.graph
 /**
  * fragment key needs to start with "..."
  */
-class Fragment(key : String,
-               val fragmentGraph: Graph,
-               val typeCondition: String? = null
-) : GraphNode(key, null, fragmentGraph, null)
+interface Fragment {
+
+    val fragmentGraph: Graph
+
+    class External (
+            key : String,
+            override val fragmentGraph: Graph,
+            typeCondition: String? = null
+    ) : Fragment, GraphNode(key, null, fragmentGraph, null)
+
+    class Inline (
+            override val fragmentGraph: Graph,
+            typeCondition: String
+    ) : Fragment, GraphNode("on $typeCondition", null, fragmentGraph, null)
+}

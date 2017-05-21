@@ -1,7 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.impl
 
 import com.github.pgutkowski.kgraphql.schema.model.*
-import kotlin.reflect.KClass
 
 
 sealed class SchemaNode {

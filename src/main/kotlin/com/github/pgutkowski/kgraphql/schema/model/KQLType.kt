@@ -39,9 +39,10 @@ interface KQLType {
             description : String?
     ) : BaseKQLType(name, description), Kotlin<T>
 
+    //To avoid circular dependencies etc. union type members are resolved in runtime
     class Union (
             name : String,
-            val possibleTypes: List<Object<*>>,
+            val members: List<KClass<*>>,
             description : String?
     ) : BaseKQLType(name, description)
 

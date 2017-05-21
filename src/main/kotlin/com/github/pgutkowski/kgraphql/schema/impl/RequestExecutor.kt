@@ -20,7 +20,7 @@ class RequestExecutor(val schema: DefaultSchema) {
 
     data class Context(val generator: JsonGenerator, val variables: Variables)
 
-    private val argumentsHandler = ArgumentsHandler(schema)
+    private val argumentsHandler = ArgumentsHandler(schema.model)
 
     private val functionHandler = FunctionInvoker(argumentsHandler)
 

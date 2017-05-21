@@ -14,7 +14,7 @@ import kotlin.reflect.full.withNullability
 import kotlin.reflect.jvm.jvmErasure
 
 
-internal class ArgumentsHandler(val schema : DefaultSchema) {
+internal class ArgumentsHandler(val schema : SchemaModel) {
 
     private val enumsByType = schema.enums.associate { it.kClass.createType() to it }
 

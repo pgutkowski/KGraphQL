@@ -94,7 +94,6 @@ abstract class BaseSchemaTest {
         unionType {
             name = "Favourite"
             type<Actor>()
-            type<String>()
             type<Scenario>()
             type<Director>()
         }

@@ -1,11 +1,11 @@
 package com.github.pgutkowski.kgraphql.schema.impl
 
+import com.github.pgutkowski.kgraphql.Actor
 import com.github.pgutkowski.kgraphql.Id
 import com.github.pgutkowski.kgraphql.Scenario
 import com.github.pgutkowski.kgraphql.defaultSchema
 import com.github.pgutkowski.kgraphql.schema.ScalarSupport
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
-import com.github.pgutkowski.kgraphql.server.asHTML
 import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert
@@ -30,7 +30,7 @@ class SchemaBuilderTest {
             }
         }
 
-        val uuidScalar = testedSchema.scalars.find { it.name == "UUID" }!!.scalarSupport as ScalarSupport<UUID>
+        val uuidScalar = testedSchema.model.scalars.find { it.name == "UUID" }!!.scalarSupport as ScalarSupport<UUID>
         val testUuid = UUID.randomUUID()
         MatcherAssert.assertThat(uuidScalar.deserialize(testUuid), CoreMatchers.equalTo(testUuid.toString()))
         MatcherAssert.assertThat(uuidScalar.serialize(testUuid.toString()), CoreMatchers.equalTo(testUuid))
@@ -113,17 +113,22 @@ class SchemaBuilderTest {
             }
 
             unionType {
-                name = "Owner"
-                type<String>()
-                type<Int>()
+                name = "Linked"
+                type<Actor>()
+                type<Scenario>()
             }
 
             type<Scenario> {
                 unionProperty {
                     name = "pdf"
+                    returnType = "Linked"
                     description = "link to pdf representation of scenario"
                     resolver { scenario : Scenario ->
-                        if(scenario.author.startsWith("Gamil")) "http://scenarios/${scenario.id}" else 543
+                        if(scenario.author.startsWith("Gamil")){
+                            Scenario(Id("ADD", 22), "gambino", "nope")
+                        } else{
+                            Actor("Chance", 333)
+                        }
                     }
                 }
             }

@@ -9,15 +9,10 @@ import com.github.pgutkowski.kgraphql.schema.model.KQLQuery
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 
 class DefaultSchema(
-        val queries: List<KQLQuery<*>>,
-        val mutations: List<KQLMutation<*>>,
-        val objects: List<KQLType.Object<*>>,
-        val scalars: List<KQLType.Scalar<*>>,
-        val enums: List<KQLType.Enumeration<*>>,
-        val unions: List<KQLType.Union>
+        internal val model : SchemaModel
 ) : Schema {
 
-    val structure = SchemaStructure.of(this)
+    val structure = SchemaStructure.of(model)
 
     val requestExecutor = RequestExecutor(this)
 
@@ -37,8 +32,8 @@ class DefaultSchema(
     }
 
     fun resolveActionType(token: String): Request.Action {
-        if (queries.any { it.name.equals(token, true) }) return Request.Action.QUERY
-        if (mutations.any { it.name.equals(token, true) }) return Request.Action.MUTATION
+        if (model.queries.any { it.name.equals(token, true) }) return Request.Action.QUERY
+        if (model.mutations.any { it.name.equals(token, true) }) return Request.Action.MUTATION
         throw IllegalArgumentException("Cannot infer request type for name $token")
     }
 }

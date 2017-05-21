@@ -44,9 +44,10 @@ open class TypeDSL<T : Any>(private val supportedUnions: Collection<KQLType.Unio
     }
 
     fun unionProperty(block : UnionPropertyDSL<T>.() -> Unit){
-        val it = UnionPropertyDSL(block)
-        val union = supportedUnions.find { it.name.equals(it.name, true) } ?: throw SchemaException("Union Type: ${it.name} does not exist")
-        unionProperties.add(KQLProperty.Union(it.name, it.functionWrapper, union))
+        val unionProperty = UnionPropertyDSL(block)
+        val union = supportedUnions.find { unionProperty.returnType.equals(it.name, true) }
+                ?: throw SchemaException("Union Type: ${unionProperty.name} does not exist")
+        unionProperties.add(KQLProperty.Union(unionProperty.name, unionProperty.functionWrapper, union))
     }
 
     init {

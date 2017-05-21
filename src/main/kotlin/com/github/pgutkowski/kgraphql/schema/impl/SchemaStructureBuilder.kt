@@ -32,6 +32,8 @@ class SchemaStructureBuilder(
         mutations.map { SchemaNode.Mutation(it, handleOperation(it))}
                 .associateTo(mutationNodes) {it.kqlMutation.name to it}
 
+
+
         return SchemaStructure(queryNodes, mutationNodes, typeCache)
     }
 
@@ -107,7 +109,7 @@ class SchemaStructureBuilder(
     }
 
     private fun handleUnionProperty(property: KQLProperty.Union) : SchemaNode.UnionProperty {
-        return SchemaNode.UnionProperty(property, property.union.possibleTypes.map { getType(it.kClass, it.kClass.starProjectedType) })
+        return SchemaNode.UnionProperty(property)
     }
 
     private fun <T> handleKotlinProperty(property: KProperty1<T, *>, transformation: Transformation<out Any, out Any?>?) : SchemaNode.Property {

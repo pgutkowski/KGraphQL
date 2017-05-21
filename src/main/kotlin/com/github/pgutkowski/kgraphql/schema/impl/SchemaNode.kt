@@ -1,6 +1,7 @@
 package com.github.pgutkowski.kgraphql.schema.impl
 
 import com.github.pgutkowski.kgraphql.schema.model.*
+import kotlin.reflect.KClass
 
 
 sealed class SchemaNode {
@@ -18,23 +19,24 @@ sealed class SchemaNode {
             val areEntriesNullable : Boolean = false
     ) : Type(type.kqlType, type.properties, type.unionProperties)
 
-    abstract class Branch(val returnType: SchemaNode.ReturnType) : SchemaNode()
+    interface Branch
+
+    abstract class SingleBranch(val returnType: SchemaNode.ReturnType) : Branch, SchemaNode()
 
     class UnionProperty(
-            val kqlProperty: KQLProperty.Union,
-            val returnTypes: Collection<SchemaNode.Type>
-    ) : SchemaNode()
+            val kqlProperty: KQLProperty.Union
+    ) : Branch, SchemaNode()
 
     class Property(
             val kqlProperty: KQLProperty,
             returnType : SchemaNode.ReturnType,
             val transformation: Transformation<*,*>? = null
-    ) : Branch(returnType)
+    ) : SingleBranch(returnType)
 
     abstract class Operation<T>(
             val kqlOperation: KQLOperation<T>,
             returnType: SchemaNode.ReturnType
-    ) : Branch(returnType)
+    ) : SingleBranch(returnType)
 
     class Query<T>(
             val kqlQuery: KQLQuery<T>,

@@ -162,10 +162,4 @@ class QueryTest : BaseSchemaTest() {
         val map = execute("{scenario{id(uppercase: true), content}}")
         assertError(map, "ValidationException: Property id on type Scenario has no arguments, found: [uppercase]")
     }
-
-    @Test
-    fun testUnionProperties(){
-        val map = execute("{actors{name, favourites}}")
-        println(map)
-    }
 }

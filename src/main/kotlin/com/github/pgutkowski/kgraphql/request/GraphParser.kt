@@ -1,10 +1,10 @@
 package com.github.pgutkowski.kgraphql.request
 
 import com.github.pgutkowski.kgraphql.SyntaxException
+import com.github.pgutkowski.kgraphql.graph.Fragment
 import com.github.pgutkowski.kgraphql.graph.Graph
 import com.github.pgutkowski.kgraphql.graph.GraphBuilder
 import com.github.pgutkowski.kgraphql.graph.GraphNode
-import java.util.*
 
 
 class GraphParser {
@@ -12,10 +12,45 @@ class GraphParser {
     fun parse(input: String): Graph {
         validateInput(input)
         val tokens = tokenizeRequest(input)
-        return buildGraph(tokens.filter(String::isNotBlank))
+        val (fragmentTokens, graphTokens) = split(tokens.filter(String::isNotBlank))
+        val fragments = buildFragments(fragmentTokens)
+        return buildGraph(graphTokens, fragments)
     }
 
-    private fun buildGraph(tokens: List<String>): Graph {
+    private fun buildFragments(tokens : List<String>) : Map<String, Fragment> {
+        val fragments : MutableMap<String, Fragment> = mutableMapOf()
+        var index = 0
+        var typeCondition : String? = null
+        var key : String = ""
+
+        while (index < tokens.size) {
+            val token = tokens[index]
+            when(token) {
+                "fragment" -> {/* DO NOTHING*/}
+                "on" -> {
+                    typeCondition = tokens[index + 1]
+                    index += 2
+                }
+                "{" -> {
+                    val subTokens = objectSubTokens(tokens, index)
+                    if(key.isBlank()) throw SyntaxException("Invalid fragment without name")
+                    if(fragments.any { it.key == key }) throw SyntaxException("Duplicated fragments with name $key")
+
+                    val fragmentKey = "...$key"
+                    fragments.put(fragmentKey, Fragment(fragmentKey, buildGraph(subTokens, fragments), typeCondition))
+                    index += subTokens.size + 2
+                    typeCondition = null
+                    key = ""
+                }
+                else -> key = token
+            }
+            index ++
+        }
+
+        return fragments
+    }
+
+    private fun buildGraph(tokens: List<String>, fragments: Map<String, Fragment>): Graph {
         val graph = GraphBuilder()
         var index = 0
         var nestedBrackets = 0
@@ -51,7 +86,7 @@ class GraphParser {
                 when (tokens.getOrNull(index + 1)) {
                     "{" -> {
                         val subGraphTokens = objectSubTokens(tokens, index + 1)
-                        validateAndAdd(graph, GraphNode(key, alias, buildGraph(subGraphTokens)))
+                        validateAndAdd(graph, GraphNode(key, alias, buildGraph(subGraphTokens, fragments)))
                         index += subGraphTokens.size + 2 //subtokens do not contain '{' and '}'
                     }
                     "(" -> {
@@ -62,13 +97,18 @@ class GraphParser {
                         var subGraph: Graph? = null
                         if (tokens.getOrNull(index + 1) == "{") {
                             val subGraphTokens = objectSubTokens(tokens, index + 1)
-                            subGraph = buildGraph(subGraphTokens)
+                            subGraph = buildGraph(subGraphTokens, fragments)
                             index += subGraphTokens.size + 2 //subtokens do not contain '{' and '}'
                         }
                         validateAndAdd(graph, GraphNode(key, alias, subGraph, arguments))
                     }
                     else -> {
-                        validateAndAdd(graph, GraphNode(key, alias))
+                        if(key.startsWith("...")){
+                            val fragment = fragments[key] ?: throw SyntaxException("Fragment $key} does not exist")
+                            validateAndAdd(graph, fragment)
+                        } else {
+                            validateAndAdd(graph, GraphNode(key, alias))
+                        }
                     }
                 }
             }
@@ -109,10 +149,6 @@ class GraphParser {
             if (nestedLevel == 0) return tokens.subList(1, index)
         }
         throw SyntaxException("Couldn't find matching closing token")
-    }
-
-    private fun getIndexOfTokenInString(tokens: List<String>): Int {
-        return tokens.fold(0, { index, token -> index + token.length })
     }
 
     private fun validateAndAdd(graph: GraphBuilder, node: GraphNode) {

@@ -76,3 +76,11 @@ fun argBranch(key: String, args: Arguments, vararg nodes: GraphNode): GraphNode 
 fun argBranch(key: String, alias: String, args: Arguments, vararg nodes: GraphNode): GraphNode {
     return GraphNode(key, alias, if (nodes.isNotEmpty()) Graph(*nodes) else null, args)
 }
+
+fun fragment(key: String, typeCondition: String, vararg nodes: GraphNode) : Fragment {
+    return Fragment(key, Graph(*nodes), typeCondition)
+}
+
+fun fragment(key: String, vararg nodes: GraphNode) : Fragment {
+    return Fragment(key, Graph(*nodes))
+}

@@ -158,4 +158,18 @@ class GraphParserTest {
         )
         assertThat(map, equalTo(expected))
     }
+
+    @Test
+    fun testSimpleFragment(){
+        val map = graphParser.parse("{hero {id ...heroName}} fragment heroName {name {real asHero}}")
+        val expected = Graph (
+                branch("hero",
+                        leaf("id"),
+                        fragment( "...heroName",
+                                branch("name", *leafs("real", "asHero"))
+                        )
+                )
+        )
+        assertThat(map, equalTo(expected))
+    }
 }

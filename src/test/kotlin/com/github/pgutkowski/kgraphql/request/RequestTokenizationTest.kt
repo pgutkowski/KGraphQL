@@ -14,6 +14,13 @@ class RequestTokenizationTest {
         assertThat(tokens, equalTo(expected))
     }
 
+    fun testSplit(input : String, expectedFragments: List<String>, expectedGraph : List<String>) {
+        val tokens = tokenizeRequest(input)
+        val (fragments, graph) = split(tokens)
+        assertThat(fragments, equalTo(expectedFragments))
+        assertThat(graph, equalTo(expectedGraph))
+    }
+
     @Test
     fun tokenizeMutationWithArgs(){
         testTokenization(
@@ -41,4 +48,34 @@ class RequestTokenizationTest {
         )
     }
 
+    @Test
+    fun testSimpleSplit(){
+        testSplit(
+                input = "{hero {id ...heroName}} fragment heroName on Hero {name {real asHero}}",
+                expectedFragments = listOf("fragment", "heroName", "on", "Hero", "{", "name", "{", "real", "asHero", "}", "}"),
+                expectedGraph = listOf("{", "hero", "{", "id", "...heroName", "}", "}")
+        )
+    }
+
+    @Test
+    fun testSplitTwoFragments(){
+        testSplit(
+                input = "{hero {id ...heroName}} fragment heroName {name {real asHero}} fragment powers {name}",
+                expectedFragments = listOf("fragment", "heroName", "{", "name", "{", "real", "asHero", "}", "}",
+                        "fragment", "powers", "{", "name", "}"
+                ),
+                expectedGraph = listOf("{", "hero", "{", "id", "...heroName", "}", "}")
+        )
+    }
+
+    @Test
+    fun testSplitTwoSeparatedFragments(){
+        testSplit(
+                input = "fragment heroName {name {real asHero}} {hero {id ...heroName}} fragment powers {name}",
+                expectedFragments = listOf("fragment", "heroName", "{", "name", "{", "real", "asHero", "}", "}",
+                        "fragment", "powers", "{", "name", "}"
+                ),
+                expectedGraph = listOf("{", "hero", "{", "id", "...heroName", "}", "}")
+        )
+    }
 }

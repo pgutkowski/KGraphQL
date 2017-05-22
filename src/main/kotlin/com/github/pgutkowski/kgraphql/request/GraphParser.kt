@@ -104,8 +104,19 @@ class GraphParser {
                     }
                     else -> {
                         if(key.startsWith("...")){
-                            val fragment = fragments[key] ?: throw SyntaxException("Fragment $key} does not exist")
-                            validateAndAdd(graph, fragment)
+                            if(key == "..."){
+                                if(tokens.getOrNull(index + 1) != "on"){
+                                    throw SyntaxException("expected 'on #typeCondition {selection set}' after '...' in inline fragment")
+                                }
+
+                                val typeCondition = tokens[index + 2]
+                                val subGraphTokens = objectSubTokens(tokens, index + 3)
+                                validateAndAdd(graph, Fragment.Inline(buildGraph(subGraphTokens, fragments), typeCondition))
+                                index += (subGraphTokens.size + 4)
+                            } else {
+                                val fragment = fragments[key] ?: throw SyntaxException("Fragment $key} does not exist")
+                                validateAndAdd(graph, fragment)
+                            }
                         } else {
                             validateAndAdd(graph, GraphNode(key, alias))
                         }

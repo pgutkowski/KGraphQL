@@ -186,4 +186,38 @@ class GraphParserTest {
         )
         assertThat(map, equalTo(expected))
     }
+
+    @Test
+    fun testInlineFragment(){
+        val map = graphParser.parse("{hero {id ... on Hero {height, power}}}")
+        val expected = Graph (
+                branch("hero",
+                        leaf("id"),
+                        inlineFragment("Hero",
+                                leaf("height"),
+                                leaf("power")
+                        )
+                )
+        )
+        assertThat(map, equalTo(expected))
+    }
+
+    @Test
+    fun testTwoInlineFragments(){
+        val map = graphParser.parse("{hero {id ... on Hero {height, power}, ... on Villain {height, deeds}}}")
+        val expected = Graph (
+                branch("hero",
+                        leaf("id"),
+                        inlineFragment("Hero",
+                                leaf("height"),
+                                leaf("power")
+                        ),
+                        inlineFragment("Villain",
+                                leaf("height"),
+                                leaf("deeds")
+                        )
+                )
+        )
+        assertThat(map, equalTo(expected))
+    }
 }

@@ -120,8 +120,8 @@ abstract class BaseSchemaTest {
                 resolver { actor -> when(actor){
                     bradPitt -> tomHardy
                     tomHardy -> christopherNolan
-                    christianBale -> "nachos"
-                    else -> null
+                    morganFreeman -> Scenario(Id("234", 33), "Paulo Coelho", "DUMB")
+                    else -> christianBale
                 }}
             }
         }

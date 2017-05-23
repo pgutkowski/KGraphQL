@@ -1,7 +1,9 @@
 package com.github.pgutkowski.kgraphql.schema.impl
 
+import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.ValidationException
+import com.github.pgutkowski.kgraphql.graph.Fragment
 import com.github.pgutkowski.kgraphql.graph.GraphNode
 import com.github.pgutkowski.kgraphql.request.Request
 import com.github.pgutkowski.kgraphql.schema.SchemaException
@@ -51,51 +53,100 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
 
     private fun <T>handleOperation(requestNode: GraphNode, operation: SchemaNode.Operation<T>): ExecutionNode.Operation<T>{
         return ExecutionNode.Operation(
-                operation,
-                handleChildren(operation, requestNode),
-                requestNode.key,
-                requestNode.alias,
-                requestNode.arguments
+                operationNode = operation,
+                children = handleChildren(operation, requestNode),
+                key = requestNode.key,
+                alias = requestNode.alias,
+                arguments = requestNode.arguments
         )
     }
 
     private fun handleBranch(requestNode: GraphNode, operation: SchemaNode.SingleBranch): ExecutionNode {
         return ExecutionNode(
-                operation,
-                handleChildren(operation, requestNode),
-                requestNode.key,
-                requestNode.alias,
-                requestNode.arguments
+                schemaNode = operation,
+                children = handleChildren(operation, requestNode),
+                key = requestNode.key,
+                alias = requestNode.alias,
+                arguments = requestNode.arguments
         )
     }
 
-    private fun handleChildren(operation: SchemaNode.SingleBranch, requestNode: GraphNode): MutableList<ExecutionNode> {
+    private fun handleUnion(requestNode: GraphNode, property: SchemaNode.UnionProperty): ExecutionNode {
+        //validate that only typed fragments are present
+        val illegalChildren = requestNode.children?.filterNot {
+            it is Fragment.Inline || (it is Fragment.External && it.typeCondition != null)
+        }
+
+        if(illegalChildren?.any() ?: false){
+            throw SyntaxException(
+                    "Invalid selection set with properties: $illegalChildren " +
+                    "on union type property ${property.kqlProperty.name} : ${property.returnTypes.map { it.kqlType.name }}"
+            )
+        }
+
+        val unionMembersChildren = property.returnTypes.associate { returnType ->
+            val fragmentRequestNode = requestNode.children?.get("on ${returnType.kqlType.name}")
+                    ?: requestNode.children?.filterIsInstance<Fragment.External>()?.find {returnType.kqlType.name == it.typeCondition }
+                    ?: throw SyntaxException("Missing type argument for type ${returnType.kqlType.name}")
+
+            returnType to handleReturnType(returnType, fragmentRequestNode)
+        }
+        return ExecutionNode.Union (
+                property,
+                unionMembersChildren,
+                requestNode.key,
+                requestNode.alias
+        )
+    }
+
+    private fun handleChildren(operation: SchemaNode.SingleBranch, requestNode: GraphNode): List<ExecutionNode> {
+        return handleReturnType(operation.returnType, requestNode)
+    }
+
+    fun handleReturnType(returnType: SchemaNode.ReturnType, requestNode: GraphNode) : List<ExecutionNode>{
         val children = mutableListOf<ExecutionNode>()
         if (requestNode.children != null) {
             val childrenRequestNodes = requestNode.children
             for (childRequestNode in childrenRequestNodes) {
-                val property = operation.returnType.properties[childRequestNode.key]
-                val unionProperty = operation.returnType.unionProperties[childRequestNode.key]
-
-                when {
-                    property == null && unionProperty == null ->{
-                        throw SyntaxException("property ${childRequestNode.key} on ${operation.returnType.kqlType.name} does not exist")
-                    }
-                    property != null && unionProperty == null -> {
-                        children.add(handleBranch(childRequestNode, property))
-                        val kqlType = operation.returnType.kqlType
-                        val kqlProperty = property.kqlProperty
-                        validatePropertyArguments(kqlProperty, kqlType, childRequestNode, property.transformation)
-                    }
-                    property == null && unionProperty != null -> {
-
-                    }
-                    else -> throw SchemaException("Invalid schema structure - type contains doubling properties")
-                }
-
+                children.addAll(handleReturnTypeChildOrFragment(childRequestNode, returnType))
             }
         }
         return children
+    }
+
+    private fun handleReturnTypeChildOrFragment(childRequestNode: GraphNode, returnType: SchemaNode.ReturnType): List<ExecutionNode> {
+        val children = mutableListOf<ExecutionNode>()
+        if (childRequestNode.key.startsWith("...")) {
+            if (childRequestNode is Fragment.External) {
+                childRequestNode.fragmentGraph.mapTo(children) { handleReturnTypeChild(it, returnType) }
+            } else {
+                throw ExecutionException("Unexpected property starting with '...' ${childRequestNode.key}")
+            }
+        } else {
+            children.add(handleReturnTypeChild(childRequestNode, returnType))
+        }
+        return children
+    }
+
+    private fun handleReturnTypeChild(childRequestNode: GraphNode, returnType: SchemaNode.ReturnType): ExecutionNode {
+        val property = returnType.properties[childRequestNode.key]
+        val unionProperty = returnType.unionProperties[childRequestNode.key]
+
+        when {
+            property == null && unionProperty == null -> {
+                throw SyntaxException("property ${childRequestNode.key} on ${returnType.kqlType.name} does not exist")
+            }
+            property != null && unionProperty == null -> {
+                val kqlType = returnType.kqlType
+                val kqlProperty = property.kqlProperty
+                validatePropertyArguments(kqlProperty, kqlType, childRequestNode, property.transformation)
+                return handleBranch(childRequestNode, property)
+            }
+            property == null && unionProperty != null -> {
+                return handleUnion(childRequestNode, unionProperty)
+            }
+            else -> throw SchemaException("Invalid schema structure - type contains doubling properties")
+        }
     }
 
     /**

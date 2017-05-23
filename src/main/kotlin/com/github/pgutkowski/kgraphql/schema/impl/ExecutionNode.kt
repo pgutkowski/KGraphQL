@@ -20,4 +20,21 @@ open class ExecutionNode(
             alias: String? = null,
             arguments : Arguments? = null
     ) : ExecutionNode(operationNode, children, key, alias, arguments)
+
+    class Union (
+            val unionNode : SchemaNode.UnionProperty,
+            val memberChildren: Map<SchemaNode.ReturnType, Collection<ExecutionNode>>,
+            key: String,
+            alias: String? = null
+    ) : ExecutionNode(unionNode, emptyList(), key, alias) {
+        fun memberExecution(type: SchemaNode.ReturnType): ExecutionNode {
+            return ExecutionNode(
+                    schemaNode,
+                    memberChildren[type] ?: throw IllegalArgumentException("Union ${unionNode.kqlProperty.name} has no member ${type}"),
+                    key,
+                    alias,
+                    arguments
+            )
+        }
+    }
 }

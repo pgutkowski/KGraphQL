@@ -10,7 +10,7 @@ interface Fragment {
     class External (
             key : String,
             override val fragmentGraph: Graph,
-            typeCondition: String? = null
+            val typeCondition: String? = null
     ) : Fragment, GraphNode(key, null, fragmentGraph, null)
 
     class Inline (

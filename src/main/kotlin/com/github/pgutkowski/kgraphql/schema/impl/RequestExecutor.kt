@@ -5,10 +5,12 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.request.Variables
 import com.github.pgutkowski.kgraphql.schema.ScalarSupport
+import com.github.pgutkowski.kgraphql.schema.model.KQLOperation
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import java.io.StringWriter
 import kotlin.reflect.KProperty1
+import kotlin.reflect.full.isSuperclassOf
 
 
 @Suppress("UNCHECKED_CAST") // For valid structure there is no risk of ClassCastException
@@ -58,6 +60,27 @@ class RequestExecutor(val schema: DefaultSchema) {
         writeValue(ctx, operationResult, node, operation.returnType)
     }
 
+    private fun <T>writeUnionOperation(ctx: Context, parent: T, node: ExecutionNode.Union, unionProperty: SchemaNode.UnionProperty){
+        val operationResult : Any? = functionHandler.invokeFunWrapper(
+                funName = unionProperty.kqlProperty.name,
+                functionWrapper = unionProperty.kqlProperty,
+                receiver = parent,
+                args = node.arguments,
+                variables = ctx.variables
+        )
+
+        ctx.generator.writeFieldName(node.aliasOrKey)
+
+        val returnType = unionProperty.returnTypes.find {
+            (it.kqlType as KQLType.Object<*>).kClass.isInstance(operationResult)
+        } ?: throw ExecutionException(
+                "Unexpected type of union property value, expected one of : ${unionProperty.kqlProperty.union.members}." +
+                        " value was $operationResult"
+        )
+
+        writeValue(ctx, operationResult, node, returnType)
+    }
+
     private fun <T>writeValue(ctx: Context, value : T?, node: ExecutionNode, returnType: SchemaNode.ReturnType){
         when {
             value == null -> writeNullValue(ctx, node, returnType)
@@ -80,6 +103,9 @@ class RequestExecutor(val schema: DefaultSchema) {
             //big decimal etc?
 
             node.children.isNotEmpty() -> writeObject(ctx, value, node, returnType)
+            node is ExecutionNode.Union -> {
+                writeObject(ctx, value, node.memberExecution(returnType), returnType)
+            }
             else -> writeSimpleValue(ctx, returnType, value)
         }
     }
@@ -108,9 +134,15 @@ class RequestExecutor(val schema: DefaultSchema) {
     private fun <T> writeObject(ctx: Context, value : T, node: ExecutionNode, type: SchemaNode.Type){
         ctx.generator.writeStartObject()
         for(child in node.children){
-            val property = type.properties[child.key]
-                    ?: throw IllegalStateException("Execution unit ${child.key} is not contained by operation return type")
-            writeProperty(ctx, value, child, property)
+            if(child is ExecutionNode.Union){
+                val property = type.unionProperties[child.key]
+                        ?: throw IllegalStateException("Execution unit ${child.key} is not contained by operation return type")
+                writeUnionOperation(ctx, value, child, property)
+            } else {
+                val property = type.properties[child.key]
+                        ?: throw IllegalStateException("Execution unit ${child.key} is not contained by operation return type")
+                writeProperty(ctx, value, child, property)
+            }
         }
         ctx.generator.writeEndObject()
     }
@@ -142,7 +174,9 @@ class RequestExecutor(val schema: DefaultSchema) {
                 ctx.generator.writeFieldName(node.aliasOrKey)
                 writeValue(ctx, result, node, property.returnType)
             }
-            is KQLProperty.Union -> throw Exception()
+            else -> {
+                throw Exception("Unexpected kql property type: $kqlProperty, should be KQLProperty.Kotlin or KQLProperty.Function")
+            }
         }
     }
 }

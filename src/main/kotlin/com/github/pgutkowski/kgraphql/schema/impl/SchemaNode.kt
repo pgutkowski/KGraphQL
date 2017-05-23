@@ -22,8 +22,9 @@ sealed class SchemaNode {
 
     abstract class SingleBranch(val returnType: SchemaNode.ReturnType) : Branch, SchemaNode()
 
-    class UnionProperty(
-            val kqlProperty: KQLProperty.Union
+    class UnionProperty (
+            val kqlProperty: KQLProperty.Union,
+            val returnTypes: List<SchemaNode.ReturnType>
     ) : Branch, SchemaNode()
 
     class Property(

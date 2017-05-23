@@ -7,6 +7,7 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.jvmErasure
 
 
@@ -131,7 +132,7 @@ class SchemaStructureBuilder(
     }
 
     private fun handleUnionProperty(property: KQLProperty.Union) : SchemaNode.UnionProperty {
-        return SchemaNode.UnionProperty(property)
+        return SchemaNode.UnionProperty(property, property.union.members.map { handleReturnType(it.starProjectedType) })
     }
 
     private fun <T> handleKotlinProperty(property: KProperty1<T, *>, transformation: Transformation<out Any, out Any?>?) : SchemaNode.Property {

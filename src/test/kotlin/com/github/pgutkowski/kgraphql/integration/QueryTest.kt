@@ -162,4 +162,54 @@ class QueryTest : BaseSchemaTest() {
         val map = execute("{scenario{id(uppercase: true), content}}")
         assertError(map, "ValidationException: Property id on type Scenario has no arguments, found: [uppercase]")
     }
+
+    @Test
+    fun testUnionPropertyQuery(){
+        val map = execute("{actors{name, favourite{ ... on Actor {name}, ... on Director {name age}, ... on Scenario{content(uppercase: false)}}}}", null)
+        for(i in 0..4){
+            val name = extract<String>(map, "data/actors[$i]/name")
+            val favourite = extract<Map<String, String>>(map, "data/actors[$i]/favourite")
+            when(name){
+                "Brad Pitt" -> assertThat(favourite, equalTo(mapOf("name" to "Tom Hardy")))
+                "Tom Hardy" -> assertThat(favourite, equalTo(mapOf("age" to 43, "name" to "Christopher Nolan")))
+                "Morgan Freeman" -> assertThat(favourite, equalTo(mapOf("content" to "DUMB")))
+            }
+        }
+    }
+
+    @Test
+    fun testUnionPropertyQueryExternalFragment(){
+        val map = execute("{actors{name, favourite{ ...actor, ...director, ...scenario }}}" +
+                "fragment actor on Actor {name}" +
+                "fragment director on Director {name age}" +
+                "fragment scenario on Scenario{content(uppercase: false)} ", null)
+        for(i in 0..4){
+            val name = extract<String>(map, "data/actors[$i]/name")
+            val favourite = extract<Map<String, String>>(map, "data/actors[$i]/favourite")
+            when(name){
+                "Brad Pitt" -> assertThat(favourite, equalTo(mapOf("name" to "Tom Hardy")))
+                "Tom Hardy" -> assertThat(favourite, equalTo(mapOf("age" to 43, "name" to "Christopher Nolan")))
+                "Morgan Freeman" -> assertThat(favourite, equalTo(mapOf("content" to "DUMB")))
+            }
+        }
+    }
+
+    @Test
+    fun testUnionPropertyInvalidProperties(){
+        val map = execute("{actors{name, favourite{ name }}}", null)
+        assertError( map,
+                "SyntaxException",
+                "Invalid selection set with properties: [name] ",
+                "on union type property favourite : [Actor, Scenario, Director]"
+        )
+    }
+
+    @Test
+    fun testExternalFragment(){
+        val map = execute("{film{title, ...dir }} fragment dir {director{name, age}}")
+        assertNoErrors(map)
+        assertThat(extract<String>(map, "data/film/title"), equalTo(prestige.title))
+        assertThat(extract<String>(map, "data/film/director/name"), equalTo(prestige.director.name))
+        assertThat(extract<Int>(map, "data/film/director/age"), equalTo(prestige.director.age))
+    }
 }

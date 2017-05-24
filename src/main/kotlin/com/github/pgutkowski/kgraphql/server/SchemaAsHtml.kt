@@ -64,6 +64,10 @@ fun writeObjectTypeDescriptor(schemaNode: SchemaNode.Type, objectType: KQLType.O
         for ((_, property) in schemaNode.properties){
             property(property)
         }
+
+        for((_, unionProperty) in schemaNode.unionProperties){
+            unionProperty(unionProperty)
+        }
     }
 }
 
@@ -118,6 +122,9 @@ private fun writeHTML(block : FlowContent.() -> Unit) : String {
     return createHTML().html {
         head {
             title { +"GraphQL Docs" }
+            style {
+                + STYLESHEET
+            }
         }
         body {
             h4 { +"GraphQL Docs" }
@@ -138,6 +145,22 @@ private fun FlowContent.property(property: SchemaNode.Property) : Unit {
     }
 }
 
+private fun FlowContent.unionProperty(property: SchemaNode.UnionProperty) : Unit {
+    p {
+        + property.kqlProperty.name
+        if(property.kqlProperty is KQLProperty.Function<*>){
+            arguments(property.kqlProperty.argumentsDescriptor)
+        }
+        + " : "
+        property.returnTypes.forEachIndexed { index, returnType ->
+            if(index != 0 ){
+                + " | "
+            }
+            returnType(returnType)
+        }
+    }
+}
+
 private fun FlowContent.operation(operation : SchemaNode.Operation<*>) : Unit {
     p {
         + operation.kqlOperation.name
@@ -150,7 +173,7 @@ private fun FlowContent.operation(operation : SchemaNode.Operation<*>) : Unit {
 private fun FlowContent.returnType(type: SchemaNode.ReturnType) {
     val kqlType = type.kqlType
     when (kqlType) {
-        is KQLType.Kotlin<*> -> typeLink(kqlType.kClass.starProjectedType, type.isCollection)
+        is KQLType.Kotlin<*> -> typeLink(kqlType.kClass.starProjectedType, type.isCollection, type.isNullable)
         else -> throw UnsupportedOperationException("Type representation for $kqlType is not supported yet")
     }
 }
@@ -167,14 +190,11 @@ private fun FlowContent.arguments(args: Map<String, KType>?) : Unit {
     }
 }
 
-private fun FlowContent.typeLink(kType: KType, collection: Boolean = false) : Unit {
+private fun FlowContent.typeLink(kType: KType, collection: Boolean = false, nullable: Boolean = false) : Unit {
+    if(collection) +"["
     a("$K_GRAPH_QL_DOCS_PREFIX/type/${kType.typeName()}"){
-        if(collection) +"["
-        +kType.nullableTypeName()
-        if(collection) + "]"
+        +kType.typeName()
     }
-}
-
-private fun KType.nullableTypeName() : String {
-    return typeName() + if(isMarkedNullable) "" else "!"
+    if(!nullable) +"!"
+    if(collection) + "]"
 }

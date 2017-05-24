@@ -29,9 +29,7 @@ internal class ArgumentsHandler(val schema : SchemaModel) {
             args: Arguments?,
             variables: Variables
     ) : List<Any?>{
-        val parameters = functionWrapper.kFunction.parameters.let {
-            if(functionWrapper.hasReceiver) it.drop(1) else it
-        }
+        val parameters = functionWrapper.valueParameters()
 
         return parameters.map { parameter ->
             val value = args?.get(parameter.name)

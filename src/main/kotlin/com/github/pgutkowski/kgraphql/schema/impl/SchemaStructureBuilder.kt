@@ -23,7 +23,7 @@ class SchemaStructureBuilder(
     /**
      * MutableType allows to avoid circular reference issues when building schema.
      * @see getType
-     * @see typeCache
+     * @see mutableTypesCache
      */
     private class MutableType(
             val kqlObjectType: KQLType.Object<*>,
@@ -31,7 +31,9 @@ class SchemaStructureBuilder(
             val mutableUnionProperties: MutableMap<String, SchemaNode.UnionProperty> = mutableMapOf()
     ) : SchemaNode.Type(kqlObjectType, mutableProperties, mutableUnionProperties)
 
-    private val typeCache = mutableMapOf<KType, MutableType>()
+    private val mutableTypesCache = mutableMapOf<KType, MutableType>()
+
+    private val typesCache = mutableMapOf<KType, SchemaNode.Type>()
 
     fun build() : SchemaStructure {
         val queryNodes = mutableMapOf<String, SchemaNode.Query<*>>()
@@ -43,7 +45,7 @@ class SchemaStructureBuilder(
         mutations.map { SchemaNode.Mutation(it, handleOperation(it))}
                 .associateTo(mutationNodes) {it.kqlMutation.name to it}
 
-        return SchemaStructure(queryNodes, mutationNodes, typeCache)
+        return SchemaStructure(queryNodes, mutationNodes, mutableTypesCache.toMap() + typesCache.toMap())
     }
 
     private fun <R> handleOperation(operation : BaseKQLOperation<R>) : SchemaNode.ReturnType {
@@ -81,7 +83,7 @@ class SchemaStructureBuilder(
         fun createMutableType(kType: KType): MutableType {
             val kqlObject = objects.find { it.kClass == kClass } ?: KQLType.Object(kType.typeName(), kClass)
             val type = MutableType(kqlObject)
-            typeCache.put(kType, type)
+            mutableTypesCache.put(kType, type)
             return type
         }
 
@@ -106,21 +108,26 @@ class SchemaStructureBuilder(
             return type
         }
 
-        val type = typeCache[kType]
-                ?: handleScalarType(kClass)
-                ?: handleEnumType(kClass)
+        return mutableTypesCache[kType]
+                ?: handleScalarType(kType, kClass)
+                ?: handleEnumType(kType, kClass)
                 ?: handleObjectType(createMutableType(kType), kClass)
-        return type
     }
 
-    private fun <T : Any>handleScalarType(kClass: KClass<T>) : SchemaNode.Type? {
-        val kqlScalar = scalars.find { it.kClass == kClass }
-        return if(kqlScalar != null) SchemaNode.Type(kqlScalar) else null
+    private fun <T : Any>handleScalarType(kType: KType, kClass: KClass<T>) : SchemaNode.Type? {
+        return createSchemaNodeType(kType, scalars.find { it.kClass == kClass })
     }
 
-    private fun <T : Any>handleEnumType(kClass: KClass<T>) : SchemaNode.Type? {
-        val kqlEnum = enums.find { it.kClass == kClass }
-        return if(kqlEnum != null) SchemaNode.Type(kqlEnum) else null
+    private fun <T : Any>handleEnumType(kType: KType, kClass: KClass<T>) : SchemaNode.Type? {
+        return createSchemaNodeType(kType, enums.find { it.kClass == kClass })
+    }
+
+    private fun createSchemaNodeType(kType: KType, kqlType: KQLType?): SchemaNode.Type? {
+        return if (kqlType != null) {
+            val type = SchemaNode.Type(kqlType)
+            typesCache.put(kType, type)
+            type
+        } else null
     }
 
     private fun handleFunctionProperty(property: KQLProperty.Function<*>): SchemaNode.Property {

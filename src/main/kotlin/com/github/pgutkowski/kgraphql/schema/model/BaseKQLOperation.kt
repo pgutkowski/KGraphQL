@@ -2,6 +2,7 @@ package com.github.pgutkowski.kgraphql.schema.model
 
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.impl.FunctionWrapper
+import kotlin.reflect.KParameter
 import kotlin.reflect.KType
 import kotlin.reflect.full.valueParameters
 
@@ -14,11 +15,11 @@ abstract class BaseKQLOperation<T>(
 
     private fun createArgumentsDescriptor(): Map<String, KType> {
         val arguments : MutableMap<String, KType> = mutableMapOf()
-        operationWrapper.kFunction.valueParameters.forEach { parameter ->
+        valueParameters().associateTo(arguments) { parameter ->
             if(parameter.name == null){
                 throw SchemaException("Cannot handle nameless argument on function: ${operationWrapper.kFunction}")
             }
-            arguments[parameter.name!!] = parameter.type
+            parameter.name!! to parameter.type
         }
         return arguments
     }

@@ -99,9 +99,10 @@ abstract class BaseSchemaTest {
         }
 
         type<Actor>{
-            property<Boolean> {
+            description = "An actor is a person who portrays a character in a performance"
+            property<Boolean?> {
                 name = "isOld"
-                resolver { actor -> actor.age > 500 }
+                resolver { actor -> (actor.age > 500) as Boolean? }
             }
             property<String> {
                 name = "picture"

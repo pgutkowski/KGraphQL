@@ -6,6 +6,8 @@ import com.github.pgutkowski.kgraphql.ValidationException
 import com.github.pgutkowski.kgraphql.isNullable
 import com.github.pgutkowski.kgraphql.request.Arguments
 import kotlin.reflect.KFunction
+import kotlin.reflect.KParameter
+import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.reflect
 
 
@@ -55,6 +57,15 @@ interface FunctionWrapper <T>{
             }
         }
         return exceptions
+    }
+
+    /**
+     * returns list of function parameters without receiver
+     */
+    fun valueParameters(): List<KParameter> {
+        return kFunction.valueParameters.let {
+            if(hasReceiver) it.drop(1) else it
+        }
     }
 
     class ArityZero<T>(val implementation : ()-> T, override val hasReceiver: Boolean = false ) : FunctionWrapper<T>{

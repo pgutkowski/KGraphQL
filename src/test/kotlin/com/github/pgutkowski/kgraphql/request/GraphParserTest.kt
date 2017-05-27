@@ -11,7 +11,7 @@ class GraphParserTest {
     val graphParser = GraphParser()
 
     @Test
-    fun nestedQueryParsing() {
+    fun `nested query parsing`() {
         val map = graphParser.parse("{hero{name appearsIn}\nvillain{name deeds}}")
         val expected = Graph(
                 branch( "hero",
@@ -28,7 +28,7 @@ class GraphParserTest {
     }
 
     @Test
-    fun doubleNestedQueryParsing() {
+    fun `double nested query parsing`() {
         val map = graphParser.parse("{hero{name appearsIn{title, year}}\nvillain{name deeds}}")
 
         val expected = Graph(
@@ -49,7 +49,7 @@ class GraphParserTest {
     }
 
     @Test
-    fun tripleNestedQueryParsing() {
+    fun `triple nested query parsing`() {
         val map = graphParser.parse("{hero{name appearsIn{title{abbr full} year}}\nvillain{name deeds}}")
 
         val expected = Graph(
@@ -72,7 +72,7 @@ class GraphParserTest {
     }
 
     @Test
-    fun queryWithArguments() {
+    fun `query with arguments parsing`() {
         val map = graphParser.parse("{hero(name: \"Batman\"){ power }}")
 
         val expected = Graph(
@@ -86,7 +86,7 @@ class GraphParserTest {
     }
 
     @Test
-    fun queryWithAlias() {
+    fun `query with alias parsing`() {
         val map = graphParser.parse("{batman: hero(name: \"Batman\"){ power }}")
 
         val expected = Graph(
@@ -100,7 +100,7 @@ class GraphParserTest {
     }
 
     @Test
-    fun queryWithFieldAlias() {
+    fun `query with field alias parsing`() {
         val map = graphParser.parse("{batman: hero(name: \"Batman\"){ skills : powers }}")
 
         val expected = Graph(
@@ -114,7 +114,7 @@ class GraphParserTest {
     }
 
     @Test
-    fun mutationArgumentsParsing(){
+    fun `mutation with field alias parsing`(){
         val map = graphParser.parse("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\")}")
         val expected = Graph (
                 argLeaf("createHero", args("name" to "\"Batman\"", "appearsIn" to "\"The Dark Knight\""))
@@ -123,7 +123,7 @@ class GraphParserTest {
     }
 
     @Test
-    fun fieldArgumentsParsing(){
+    fun `field arguments parsing`(){
         val map = graphParser.parse("{hero{name height(unit: FOOT)}}")
         val expected = Graph(
                 branch("hero",
@@ -135,7 +135,7 @@ class GraphParserTest {
     }
 
     @Test
-    fun mutationFieldsParsing(){
+    fun `mutation selection set parsing`(){
         val map = graphParser.parse("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\"){id name timestamp}}")
         val expected = Graph (
                 argBranch("createHero",
@@ -147,7 +147,7 @@ class GraphParserTest {
     }
 
     @Test
-    fun mutationNestedFieldsParsing(){
+    fun `mutation nested selection set parsing`(){
         val map = graphParser.parse("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\"){id name {real asHero}}}")
         val expected = Graph (
                 argBranch("createHero",
@@ -160,7 +160,7 @@ class GraphParserTest {
     }
 
     @Test
-    fun testSimpleFragment(){
+    fun `fragment parsing`(){
         val map = graphParser.parse("{hero {id ...heroName}} fragment heroName {name {real asHero}}")
         val expected = Graph (
                 branch("hero",
@@ -174,7 +174,7 @@ class GraphParserTest {
     }
 
     @Test
-    fun testTypedFragment(){
+    fun `fragment with type condition parsing`(){
         val map = graphParser.parse("{hero {id ...heroName}} fragment heroName on Hero {name {real asHero}}")
         val expected = Graph (
                 branch("hero",
@@ -188,7 +188,7 @@ class GraphParserTest {
     }
 
     @Test
-    fun testInlineFragment(){
+    fun `inline fragment parsing`(){
         val map = graphParser.parse("{hero {id ... on Hero {height, power}}}")
         val expected = Graph (
                 branch("hero",
@@ -203,7 +203,7 @@ class GraphParserTest {
     }
 
     @Test
-    fun testTwoInlineFragments(){
+    fun `two inline fragments parsing`(){
         val map = graphParser.parse("{hero {id ... on Hero {height, power}, ... on Villain {height, deeds}}}")
         val expected = Graph (
                 branch("hero",

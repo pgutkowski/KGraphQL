@@ -8,8 +8,15 @@ class RequestParser(private val actionResolver: (String) -> Request.Action) {
     val graphParser: GraphParser = GraphParser()
 
     fun parse(request: String) : Request {
+        //validate characters
+        request.forEach { char ->
+            when(char) {
+                '\u0009', '\u000A', '\u000D', in '\u0020'..'\uFFFF' -> {}
+                else -> throw SyntaxException("Illegal character: ${String.format("\\u%04x", char.toInt())}")
+            }
+        }
         /**
-         * at first check if request is named and easily categorized as query or mutations
+         * check if request is named and easily categorized as query or mutations
          */
         val requestHeaderTokens = getRequestHeaderTokens(request)
         val name : String?

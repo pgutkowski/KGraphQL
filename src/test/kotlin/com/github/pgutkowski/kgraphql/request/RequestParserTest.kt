@@ -19,21 +19,21 @@ class RequestParserTest {
     })
 
     @Test
-    fun getRequestHeaderTokens(){
+    fun `extracting request token`(){
         assertThat(requestParser.getRequestHeaderTokens("{}"), hasSize(0))
         assertThat(requestParser.getRequestHeaderTokens("query {}"), hasSize(1))
         assertThat(requestParser.getRequestHeaderTokens("query CoolQuery {}"), hasSize(2))
     }
 
     @Test
-    fun dropRequestHeader(){
+    fun `dropping request header`(){
         assertThat(requestParser.dropRequestHeader("{}"), equalTo("{}"))
         assertThat(requestParser.dropRequestHeader("query {}"), equalTo("{}"))
         assertThat(requestParser.dropRequestHeader("query CoolQuery { literal name }"), equalTo("{ literal name }"))
     }
 
     @Test
-    fun testInferType(){
+    fun `inferring type`(){
         assertThat(requestParser.parse("query CoolQuery { literal name }").action, equalTo(Request.Action.QUERY))
         assertThat(requestParser.parse("{ literal name }").action, equalTo(Request.Action.QUERY))
 
@@ -42,7 +42,7 @@ class RequestParserTest {
     }
 
     @Test
-    fun testParsing(){
+    fun `request parsing`(){
         val result = requestParser.parse("query CoolQuery { literal name }")
         assertThat(result.action, equalTo(Request.Action.QUERY))
         assertThat(result.name, equalTo("CoolQuery"))

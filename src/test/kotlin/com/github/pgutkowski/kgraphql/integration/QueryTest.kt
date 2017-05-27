@@ -1,5 +1,7 @@
 package com.github.pgutkowski.kgraphql.integration
 
+import com.github.pgutkowski.kgraphql.assertError
+import com.github.pgutkowski.kgraphql.assertNoErrors
 import com.github.pgutkowski.kgraphql.extract
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
@@ -7,7 +9,7 @@ import org.junit.jupiter.api.Test
 
 class QueryTest : BaseSchemaTest() {
     @Test
-    fun `simple nested selection set query`(){
+    fun `query nested selection set`(){
         val map = execute("{film{title, director{name, age}}}")
         assertNoErrors(map)
         assertThat(extract<String>(map, "data/film/title"), equalTo(prestige.title))
@@ -16,7 +18,7 @@ class QueryTest : BaseSchemaTest() {
     }
 
     @Test
-    fun testCollections(){
+    fun `query collection field`(){
         val map = execute("{film{title, director{favActors{name, age}}}}")
         assertNoErrors(map)
         assertThat(extract<Map<String, String>>(map, "data/film/director/favActors[0]"), equalTo(mapOf(
@@ -26,62 +28,62 @@ class QueryTest : BaseSchemaTest() {
     }
 
     @Test
-    fun testScalar(){
+    fun `query scalar field`(){
         val map = execute("{film{id}}")
         assertNoErrors(map)
         assertThat(extract<String>(map, "data/film/id"), equalTo("${prestige.id.literal}:${prestige.id.numeric}"))
     }
 
     @Test
-    fun testCollectionEntriesProperties(){
+    fun `query with selection set on collection`(){
         val map = execute("{film{title, director{favActors{name}}}}")
         assertNoErrors(map)
         assertThat(extract<Map<String, String>>(map, "data/film/director/favActors[0]"), equalTo(mapOf("name" to prestige.director.favActors[0].name)))
     }
 
     @Test
-    fun testCollectionEntriesProperties2(){
+    fun `query with selection set on collection 2`(){
         val map = execute("{film{title, director{favActors{age}}}}")
         assertNoErrors(map)
         assertThat(extract<Map<String, Int>>(map, "data/film/director/favActors[0]"), equalTo(mapOf("age" to prestige.director.favActors[0].age)))
     }
 
     @Test
-    fun testInvalidPropertyName(){
+    fun `query with invalid field name`(){
         val map = execute("{film{title, director{name, [favActors]}}}")
         assertError(map, "property [favActors] on Director does not exist")
     }
 
     @Test
-    fun testQueryWithArgument(){
+    fun `query with argument`(){
         val map = execute("{filmByRank(rank: 1){title}}")
         assertNoErrors(map)
         assertThat(extract<String>(map, "data/filmByRank/title"), equalTo("Prestige"))
     }
 
     @Test
-    fun testQueryWithArgument2(){
+    fun `query with argument 2`(){
         val map = execute("{filmByRank(rank: 2){title}}")
         assertNoErrors(map)
         assertThat(extract<String>(map, "data/filmByRank/title"), equalTo("Se7en"))
     }
 
     @Test
-    fun testQueryWithAlias(){
+    fun `query with alias`(){
         val map = execute("{bestFilm: filmByRank(rank: 1){title}}")
         assertNoErrors(map)
         assertThat(extract<String>(map, "data/bestFilm/title"), equalTo("Prestige"))
     }
 
     @Test
-    fun testQueryWithFieldAlias(){
+    fun `query with field alias`(){
         val map =execute("{filmByRank(rank: 2){fullTitle: title}}")
         assertNoErrors(map)
         assertThat(extract<String>(map, "data/filmByRank/fullTitle"), equalTo("Se7en"))
     }
 
     @Test
-    fun testQueryWithAliases(){
+    fun `query with multiple aliases`(){
         val map = execute("{bestFilm: filmByRank(rank: 1){title}, secondBestFilm: filmByRank(rank: 2){title}}")
         assertNoErrors(map)
         assertThat(extract<String>(map, "data/bestFilm/title"), equalTo("Prestige"))
@@ -89,19 +91,19 @@ class QueryTest : BaseSchemaTest() {
     }
 
     @Test
-    fun testQueryWithIgnoredProperty(){
+    fun `query with ignored property`(){
         val map = execute("{scenario{author, content}}")
         assertError(map, "SyntaxException: property author on Scenario does not exist")
     }
 
     @Test
-    fun testInvalidQueryWithDuplicatedAliases(){
+    fun `invalid query wth duplicated aliases`(){
         val map = execute("{bestFilm: filmByRank(rank: 1){title}, bestFilm: filmByRank(rank: 2){title}}")
         assertError(map, "SyntaxException: Duplicated property name/alias: bestFilm")
     }
 
     @Test
-    fun testCastToSuperclass(){
+    fun `query with interface`(){
         val map = execute("{randomPerson{name \n age}}")
         assertThat(extract<Map<String, String>>(map, "data/randomPerson"), equalTo(mapOf(
                 "name" to davidFincher.name,
@@ -110,7 +112,7 @@ class QueryTest : BaseSchemaTest() {
     }
 
     @Test
-    fun testCastListElementsToSuperclass(){
+    fun `query with collection elements interface`(){
         val map = execute("{people{name, age}}")
         assertThat(extract<Map<String, String>>(map, "data/people[0]"), equalTo(mapOf(
                 "name" to davidFincher.name,
@@ -119,7 +121,7 @@ class QueryTest : BaseSchemaTest() {
     }
 
     @Test
-    fun testExtensionProperty(){
+    fun `query extension property`(){
         val map = execute("{actors{name, age, isOld}}")
         for(i in 0..4){
             val isOld = extract<Boolean>(map, "data/actors[$i]/isOld")
@@ -129,7 +131,7 @@ class QueryTest : BaseSchemaTest() {
     }
 
     @Test
-    fun testExtensionPropertyWithArgument(){
+    fun `query extension property with arguments`(){
         val map = execute("{actors{name, picture(big: true)}}")
         for(i in 0..4){
             val name = extract<String>(map, "data/actors[$i]/name").replace(' ', '_')
@@ -138,7 +140,7 @@ class QueryTest : BaseSchemaTest() {
     }
 
     @Test
-    fun testExtensionPropertyWithOptionalArgument(){
+    fun `query extension property with optional argument`(){
         val map = execute("{actors{name, picture}}")
         for(i in 0..4){
             val name = extract<String>(map, "data/actors[$i]/name").replace(' ', '_')
@@ -147,7 +149,7 @@ class QueryTest : BaseSchemaTest() {
     }
 
     @Test
-    fun testPropertyTransformation(){
+    fun `query with transformed property`(){
         val map = execute("{scenario{id, content(uppercase: false)}}")
         assertThat(extract<String>(map, "data/scenario/content"), equalTo("Very long scenario"))
 
@@ -156,13 +158,13 @@ class QueryTest : BaseSchemaTest() {
     }
 
     @Test
-    fun testInvalidPropertyArguments(){
+    fun `query with invalid field arguments`(){
         val map = execute("{scenario{id(uppercase: true), content}}")
         assertError(map, "ValidationException: Property id on type Scenario has no arguments, found: [uppercase]")
     }
 
     @Test
-    fun testUnionPropertyQuery(){
+    fun `query union property`(){
         val map = execute("{actors{name, favourite{ ... on Actor {name}, ... on Director {name age}, ... on Scenario{content(uppercase: false)}}}}", null)
         for(i in 0..4){
             val name = extract<String>(map, "data/actors[$i]/name")
@@ -176,7 +178,7 @@ class QueryTest : BaseSchemaTest() {
     }
 
     @Test
-    fun testUnionPropertyQueryExternalFragment(){
+    fun `query union property with external fragment`(){
         val map = execute("{actors{name, favourite{ ...actor, ...director, ...scenario }}}" +
                 "fragment actor on Actor {name}" +
                 "fragment director on Director {name age}" +
@@ -193,7 +195,7 @@ class QueryTest : BaseSchemaTest() {
     }
 
     @Test
-    fun testUnionPropertyInvalidProperties(){
+    fun `query union property with invalid selection set`(){
         val map = execute("{actors{name, favourite{ name }}}", null)
         assertError( map,
                 "SyntaxException",
@@ -203,7 +205,7 @@ class QueryTest : BaseSchemaTest() {
     }
 
     @Test
-    fun testExternalFragment(){
+    fun `query with external fragment`(){
         val map = execute("{film{title, ...dir }} fragment dir {director{name, age}}")
         assertNoErrors(map)
         assertThat(extract<String>(map, "data/film/title"), equalTo(prestige.title))

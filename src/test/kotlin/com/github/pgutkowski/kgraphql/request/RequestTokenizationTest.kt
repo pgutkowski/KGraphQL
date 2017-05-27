@@ -22,7 +22,7 @@ class RequestTokenizationTest {
     }
 
     @Test
-    fun tokenizeMutationWithArgs(){
+    fun `tokenize mutation with args`(){
         testTokenization(
                 input = "{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\")}",
                 expected = listOf("{", "createHero", "(", "name", ":", "\"Batman\"", "appearsIn", ":", "\"The Dark Knight\"", ")", "}")
@@ -30,7 +30,7 @@ class RequestTokenizationTest {
     }
 
     @Test
-    fun tokenizeSimpleQuery(){
+    fun `tokenize simple query`(){
         testTokenization(
                 input = "{batman: hero(name: \"Batman\"){ skills : powers }}",
                 expected = listOf("{", "batman", ":", "hero", "(", "name", ":", "\"Batman\"", ")", "{", "skills", ":", "powers", "}", "}")
@@ -38,7 +38,7 @@ class RequestTokenizationTest {
     }
 
     @Test
-    fun tokenizeNestedQuery(){
+    fun `tokenize query with nested selection set`(){
         testTokenization(
                 input = "{hero{name appearsIn{title{abbr full} year}}\nvillain{name deeds}}",
                 expected = listOf(
@@ -49,7 +49,7 @@ class RequestTokenizationTest {
     }
 
     @Test
-    fun testSimpleSplit(){
+    fun `split query and fragment`(){
         testSplit(
                 input = "{hero {id ...heroName}} fragment heroName on Hero {name {real asHero}}",
                 expectedFragments = listOf("fragment", "heroName", "on", "Hero", "{", "name", "{", "real", "asHero", "}", "}"),
@@ -58,7 +58,7 @@ class RequestTokenizationTest {
     }
 
     @Test
-    fun testSplitTwoFragments(){
+    fun `split query and two fragments`(){
         testSplit(
                 input = "{hero {id ...heroName}} fragment heroName {name {real asHero}} fragment powers {name}",
                 expectedFragments = listOf("fragment", "heroName", "{", "name", "{", "real", "asHero", "}", "}",
@@ -69,7 +69,7 @@ class RequestTokenizationTest {
     }
 
     @Test
-    fun testSplitTwoSeparatedFragments(){
+    fun `split two separated fragments`(){
         testSplit(
                 input = "fragment heroName {name {real asHero}} {hero {id ...heroName}} fragment powers {name}",
                 expectedFragments = listOf("fragment", "heroName", "{", "name", "{", "real", "asHero", "}", "}",

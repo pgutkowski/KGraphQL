@@ -1,10 +1,9 @@
-package com.github.pgutkowski.kgraphql.schema.impl
+package com.github.pgutkowski.kgraphql.schema
 
 import com.github.pgutkowski.kgraphql.Actor
 import com.github.pgutkowski.kgraphql.Id
 import com.github.pgutkowski.kgraphql.Scenario
 import com.github.pgutkowski.kgraphql.defaultSchema
-import com.github.pgutkowski.kgraphql.schema.ScalarSupport
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.*
@@ -19,7 +18,7 @@ import kotlin.reflect.full.starProjectedType
  */
 class SchemaBuilderTest {
     @Test
-    fun testDSLCreatedUUIDScalarSupport(){
+    fun `DSL created UUID scalar support`(){
 
         val testedSchema = defaultSchema {
             scalar<UUID> {
@@ -38,7 +37,7 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun testIgnoredProperty() {
+    fun `ignored property DSL`() {
         val testedSchema = defaultSchema {
             query {
                 name = "scenario"
@@ -56,7 +55,7 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun testTransformation() {
+    fun `transformation DSL`() {
         val testedSchema = defaultSchema {
             query {
                 name = "scenario"
@@ -77,7 +76,7 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun testExtensionProperty(){
+    fun `extension property DSL`(){
         val testedSchema = defaultSchema {
 
             query {
@@ -104,7 +103,7 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun testUnionType(){
+    fun `union type DSL`(){
         val tested = defaultSchema {
 
             query {
@@ -142,7 +141,7 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun testCircularDependencyExtensionProperty(){
+    fun `circular dependency extension property`(){
         val tested = defaultSchema {
             query {
                 name = "actor"

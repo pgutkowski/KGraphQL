@@ -173,7 +173,7 @@ class GraphParser {
     private fun validateInput(string: String) {
         val trimmedString = string.trim()
         if (!trimmedString.startsWith("{") || !trimmedString.endsWith("}")) {
-            throw SyntaxException("passed string $string does not represent valid MultiMap")
+            throw SyntaxException("passed string $string does not represent valid query document")
         }
     }
 }

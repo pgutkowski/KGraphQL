@@ -130,19 +130,5 @@ abstract class BaseSchemaTest {
     @AfterEach
     fun cleanup() = createdActors.clear()
 
-    fun assertNoErrors(map : Map<*,*>) {
-        if(map["errors"] != null) throw AssertionError("Errors encountered: ${map["errors"]}")
-        if(map["data"] == null) throw AssertionError("Data is null")
-    }
-
-    fun assertError(map : Map<*,*>, vararg messageElements : String) {
-        val errorMessage = extract<String>(map, "errors/message")
-        MatcherAssert.assertThat(errorMessage, CoreMatchers.notNullValue())
-
-        messageElements
-                .filterNot { errorMessage.contains(it) }
-                .forEach { throw AssertionError("Expected error message to contain $it, but was: $errorMessage") }
-    }
-
     fun execute(query: String, variables : String? = null) = deserialize(testedSchema.handleRequest(query, variables))
 }

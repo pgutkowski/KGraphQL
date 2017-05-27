@@ -1,6 +1,5 @@
-package com.github.pgutkowski.kgraphql.server
+package com.github.pgutkowski.kgraphql
 
-import com.github.pgutkowski.kgraphql.KGraphQL
 import com.github.pgutkowski.kgraphql.integration.QueryTest
 
 

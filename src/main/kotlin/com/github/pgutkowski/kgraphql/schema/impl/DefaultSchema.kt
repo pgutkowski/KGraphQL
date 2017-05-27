@@ -21,7 +21,7 @@ class DefaultSchema(
      */
     private val requestParser = RequestParser { resolveActionType(it) }
 
-    override fun handleRequest(request: String, variables: String?): String {
+    override fun execute(request: String, variables: String?): String {
         try {
             val parsedVariables = variables?.let { Variables(variables) } ?: Variables()
             val executionPlan = structure.createExecutionPlan(requestParser.parse(request))

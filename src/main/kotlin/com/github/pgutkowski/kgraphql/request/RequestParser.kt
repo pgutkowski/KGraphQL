@@ -7,14 +7,8 @@ class RequestParser(private val actionResolver: (String) -> Request.Action) {
 
     val graphParser: GraphParser = GraphParser()
 
-    fun parse(request: String) : Request {
-        //validate characters
-        request.forEach { char ->
-            when(char) {
-                '\u0009', '\u000A', '\u000D', in '\u0020'..'\uFFFF' -> {}
-                else -> throw SyntaxException("Illegal character: ${String.format("\\u%04x", char.toInt())}")
-            }
-        }
+    fun parse(rawRequest: String) : Request {
+        val request = validateAndFilterRequest(rawRequest)
         /**
          * check if request is named and easily categorized as query or mutations
          */
@@ -69,5 +63,22 @@ class RequestParser(private val actionResolver: (String) -> Request.Action) {
         } else{
             return header.split(" ")
         }
+    }
+
+    fun validateAndFilterRequest(request : String) : String{
+        //validate characters
+        request.forEach { char ->
+            when(char) {
+                '\u0009', '\u000A', '\u000D', in '\u0020'..'\uFFFF' -> {}
+                else -> throw SyntaxException("Illegal character: ${String.format("\\u%04x", char.toInt())}")
+            }
+        }
+
+        var result = request.replace(Regex("#.*\n"), "")
+        //ignore Unicode BOM if present
+        if(request.startsWith('\uFEFF')){
+            result = result.drop(1)
+        }
+        return result
     }
 }

@@ -3,8 +3,6 @@ package com.github.pgutkowski.kgraphql.integration
 import com.github.pgutkowski.kgraphql.*
 import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilder
 import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
-import org.hamcrest.CoreMatchers
-import org.hamcrest.MatcherAssert
 import org.junit.jupiter.api.AfterEach
 
 
@@ -130,5 +128,5 @@ abstract class BaseSchemaTest {
     @AfterEach
     fun cleanup() = createdActors.clear()
 
-    fun execute(query: String, variables : String? = null) = deserialize(testedSchema.handleRequest(query, variables))
+    fun execute(query: String, variables : String? = null) = deserialize(testedSchema.execute(query, variables))
 }

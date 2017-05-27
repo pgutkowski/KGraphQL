@@ -1,7 +1,6 @@
 package com.github.pgutkowski.kgraphql.server
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.github.pgutkowski.kgraphql.schema.Schema
 import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelFutureListener
@@ -39,7 +38,7 @@ class HttpRequestHandler(val schema : DefaultSchema) : SimpleChannelInboundHandl
     private fun handleQuery(ctx: ChannelHandlerContext, msg: FullHttpRequest) {
         val queryParameters = QueryStringDecoder(msg.uri()).parameters()["query"] ?: throw IllegalArgumentException("Please specify query")
         val query = if (queryParameters.size == 1) queryParameters.first() else throw IllegalArgumentException("Please specify only one query")
-        writeResponse(ctx, schema.handleRequest(query, null))
+        writeResponse(ctx, schema.execute(query, null))
     }
 
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {

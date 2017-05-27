@@ -3,7 +3,7 @@ package com.github.pgutkowski.kgraphql.integration
 import com.github.pgutkowski.kgraphql.extract
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 
 class EnumTest : BaseSchemaTest() {

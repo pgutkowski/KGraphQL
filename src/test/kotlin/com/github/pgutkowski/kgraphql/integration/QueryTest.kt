@@ -2,14 +2,12 @@ package com.github.pgutkowski.kgraphql.integration
 
 import com.github.pgutkowski.kgraphql.extract
 import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.Test
-
+import org.junit.jupiter.api.Test
 
 class QueryTest : BaseSchemaTest() {
     @Test
-    fun testBasicJsonQuery(){
+    fun `simple nested selection set query`(){
         val map = execute("{film{title, director{name, age}}}")
         assertNoErrors(map)
         assertThat(extract<String>(map, "data/film/title"), equalTo(prestige.title))

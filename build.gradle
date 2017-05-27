@@ -9,10 +9,12 @@ buildscript {
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'org.junit.platform:junit-platform-gradle-plugin:1.0.0-M4'
     }
 }
 
 apply plugin: 'kotlin'
+apply plugin: 'org.junit.platform.gradle.plugin'
 
 repositories {
     mavenCentral()
@@ -32,6 +34,7 @@ dependencies {
 
     compile "io.netty:netty-all:4.1.9.Final"
 
-    testCompile "junit:junit:4.12"
+    testRuntime "org.junit.jupiter:junit-jupiter-engine:5.0.0-M4"
+    testCompile "org.junit.jupiter:junit-jupiter-api:5.0.0-M4"
     testCompile "org.hamcrest:hamcrest-all:1.3"
 }

@@ -5,7 +5,7 @@ import com.github.pgutkowski.kgraphql.graph.leaf
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.hasSize
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 
 class RequestParserTest {

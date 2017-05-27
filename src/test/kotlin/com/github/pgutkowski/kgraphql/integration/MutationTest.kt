@@ -4,7 +4,7 @@ import com.github.pgutkowski.kgraphql.Actor
 import com.github.pgutkowski.kgraphql.extract
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 
 class MutationTest : BaseSchemaTest() {

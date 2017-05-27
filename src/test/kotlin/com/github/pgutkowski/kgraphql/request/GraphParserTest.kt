@@ -3,7 +3,7 @@ package com.github.pgutkowski.kgraphql.request
 import com.github.pgutkowski.kgraphql.graph.*
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 
 class GraphParserTest {

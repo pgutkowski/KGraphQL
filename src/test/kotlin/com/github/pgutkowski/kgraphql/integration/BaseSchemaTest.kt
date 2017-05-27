@@ -5,8 +5,7 @@ import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilder
 import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
-import org.junit.Before
-import java.util.*
+import org.junit.jupiter.api.AfterEach
 
 
 abstract class BaseSchemaTest {
@@ -128,7 +127,7 @@ abstract class BaseSchemaTest {
         }
     }.build() as DefaultSchema
 
-    @Before
+    @AfterEach
     fun cleanup() = createdActors.clear()
 
     fun assertNoErrors(map : Map<*,*>) {

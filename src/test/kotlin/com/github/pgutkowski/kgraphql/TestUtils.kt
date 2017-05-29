@@ -4,10 +4,13 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.pgutkowski.kgraphql.request.Arguments
 import com.github.pgutkowski.kgraphql.graph.Graph
 import com.github.pgutkowski.kgraphql.graph.GraphNode
+import com.github.pgutkowski.kgraphql.schema.Schema
 import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilder
 import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.Test
 
 val objectMapper = jacksonObjectMapper()
@@ -54,6 +57,23 @@ fun assertError(map : Map<*,*>, vararg messageElements : String) {
     messageElements
             .filterNot { errorMessage.contains(it) }
             .forEach { throw AssertionError("Expected error message to contain $it, but was: $errorMessage") }
+}
+
+inline fun <reified T: Exception> expect(message: String, block: () -> Unit){
+    try {
+        block()
+    } catch (e : Exception){
+        assertThat(e, instanceOf(T::class.java))
+        assertThat(e.message, containsString(message))
+    }
+}
+
+fun executeEqualQueries(schema: Schema, expected: Map<*,*>, vararg queries : String){
+    queries.map { request ->
+        deserialize(schema.execute(request))
+    }.forEach { map ->
+        MatcherAssert.assertThat(map, CoreMatchers.equalTo(expected))
+    }
 }
 
 

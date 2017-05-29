@@ -5,7 +5,7 @@ import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.ValidationException
 import com.github.pgutkowski.kgraphql.graph.Fragment
 import com.github.pgutkowski.kgraphql.graph.GraphNode
-import com.github.pgutkowski.kgraphql.request.Request
+import com.github.pgutkowski.kgraphql.request.Operation
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.model.KQLMutation
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
@@ -38,9 +38,27 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
         }
     }
 
-    fun createExecutionPlan(request: Request) : ExecutionPlan {
+    fun createExecutionPlan(request: Operation) : ExecutionPlan {
         val children = mutableListOf<ExecutionNode.Operation<*>>()
-        val root = if(request.action == Request.Action.QUERY) queries else mutations
+        val root = when(request.action){
+            Operation.Action.QUERY -> queries
+            Operation.Action.MUTATION -> mutations
+            else -> {
+                val keys = request.graph.nodes.map { it.key }
+                if(keys.all { queries.containsKey(it) }) {
+                    queries
+                } else if(keys.all { mutations.containsKey(it) }){
+                    mutations
+                } else {
+                    keys.forEach { key ->
+                        if(queries.none { it.key == key } && mutations.none{ it.key == key }){
+                            throw SyntaxException("$key is not supported by this schema")
+                        }
+                    }
+                    throw SyntaxException("Cannot infer operation from fields")
+                }
+            }
+        }
 
         for(requestNode in request.graph){
             val operation = root[requestNode.key]

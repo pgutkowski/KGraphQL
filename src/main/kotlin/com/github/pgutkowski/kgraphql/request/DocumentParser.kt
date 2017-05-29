@@ -7,50 +7,23 @@ import com.github.pgutkowski.kgraphql.graph.GraphBuilder
 import com.github.pgutkowski.kgraphql.graph.GraphNode
 
 
-class GraphParser {
+class DocumentParser {
 
-    fun parse(input: String): Graph {
-        validateInput(input)
-        val tokens = tokenizeRequest(input)
-        val (fragmentTokens, graphTokens) = split(tokens.filter(String::isNotBlank))
-        val fragments = buildFragments(fragmentTokens)
-        return buildGraph(graphTokens, fragments)
-    }
+    fun parseDocument(input: String) : List<Operation> {
+        val request = validateAndFilterRequest(input)
+        val documentTokens = createDocumentTokens(tokenizeRequest(request))
+        val fragments = mutableMapOf<String, Fragment.External>()
 
-    private fun buildFragments(tokens : List<String>) : Map<String, Fragment.External> {
-        val fragments : MutableMap<String, Fragment.External> = mutableMapOf()
-        var index = 0
-        var typeCondition : String? = null
-        var key : String = ""
-
-        while (index < tokens.size) {
-            val token = tokens[index]
-            when(token) {
-                "fragment" -> {/* DO NOTHING*/}
-                "on" -> {
-                    typeCondition = tokens[index + 1]
-                    index += 1
-                }
-                "{" -> {
-                    val subTokens = objectSubTokens(tokens, index)
-                    if(key.isBlank()) throw SyntaxException("Invalid fragment without name")
-                    if(fragments.any { it.key == key }) throw SyntaxException("Duplicated fragments with name $key")
-
-                    val fragmentKey = "...$key"
-                    fragments.put(fragmentKey, Fragment.External(fragmentKey, buildGraph(subTokens, fragments), typeCondition))
-                    index += subTokens.size + 2
-                    typeCondition = null
-                    key = ""
-                }
-                else -> key = token
-            }
-            index ++
+        documentTokens.fragmentsTokens.forEach { (name, typeCondition, graphTokens) ->
+            fragments.put("...$name", Fragment.External("...$name", parseGraph(graphTokens, fragments), typeCondition))
         }
 
-        return fragments
+        return documentTokens.operationTokens.map { (name, type, graphTokens) ->
+            Operation(parseGraph(graphTokens, fragments), name, Operation.Action.parse(type))
+        }
     }
 
-    private fun buildGraph(tokens: List<String>, fragments: Map<String, Fragment.External>): Graph {
+    fun parseGraph(tokens: List<String>, fragments: Map<String, Fragment.External> = emptyMap()): Graph {
         val graph = GraphBuilder()
         var index = 0
         var nestedBrackets = 0
@@ -86,18 +59,18 @@ class GraphParser {
                 when (tokens.getOrNull(index + 1)) {
                     "{" -> {
                         val subGraphTokens = objectSubTokens(tokens, index + 1)
-                        validateAndAdd(graph, GraphNode(key, alias, buildGraph(subGraphTokens, fragments)))
+                        validateAndAdd(graph, GraphNode(key, alias, parseGraph(subGraphTokens, fragments)))
                         index += subGraphTokens.size + 2 //subtokens do not contain '{' and '}'
                     }
                     "(" -> {
                         val argTokens = argsSubTokens(tokens, index + 1)
-                        val arguments = buildArguments(argTokens)
+                        val arguments = parseArguments(argTokens)
                         index += argTokens.size + 2 //subtokens do not contain '(' and ')'
 
                         var subGraph: Graph? = null
                         if (tokens.getOrNull(index + 1) == "{") {
                             val subGraphTokens = objectSubTokens(tokens, index + 1)
-                            subGraph = buildGraph(subGraphTokens, fragments)
+                            subGraph = parseGraph(subGraphTokens, fragments)
                             index += subGraphTokens.size + 2 //subtokens do not contain '{' and '}'
                         }
                         validateAndAdd(graph, GraphNode(key, alias, subGraph, arguments))
@@ -111,7 +84,7 @@ class GraphParser {
 
                                 val typeCondition = tokens[index + 2]
                                 val subGraphTokens = objectSubTokens(tokens, index + 3)
-                                validateAndAdd(graph, Fragment.Inline(buildGraph(subGraphTokens, fragments), typeCondition))
+                                validateAndAdd(graph, Fragment.Inline(parseGraph(subGraphTokens, fragments), typeCondition))
                                 index += (subGraphTokens.size + 4)
                             } else {
                                 val fragment = fragments[key] ?: throw SyntaxException("Fragment $key} does not exist")
@@ -134,7 +107,7 @@ class GraphParser {
         return graph.build()
     }
 
-    fun buildArguments(tokens: List<String>): Arguments {
+    fun parseArguments(tokens: List<String>): Arguments {
         val arguments = Arguments()
         var i = 0
         while (i + 2 < tokens.size) {
@@ -145,11 +118,11 @@ class GraphParser {
         return arguments
     }
 
-    fun objectSubTokens(allTokens: List<String>, startIndex: Int) = subTokens(allTokens, startIndex, "{", "}")
+    private fun objectSubTokens(allTokens: List<String>, startIndex: Int) = subTokens(allTokens, startIndex, "{", "}")
 
-    fun argsSubTokens(allTokens: List<String>, startIndex: Int) = subTokens(allTokens, startIndex, "(", ")")
+    private fun argsSubTokens(allTokens: List<String>, startIndex: Int) = subTokens(allTokens, startIndex, "(", ")")
 
-    fun subTokens(allTokens: List<String>, startIndex: Int, openingToken: String, closingToken: String): List<String> {
+    private fun subTokens(allTokens: List<String>, startIndex: Int, openingToken: String, closingToken: String): List<String> {
         val tokens = allTokens.subList(startIndex, allTokens.size)
         var nestedLevel = 0
         tokens.forEachIndexed { index, token ->
@@ -167,13 +140,6 @@ class GraphParser {
             node.key.isBlank() -> throw SyntaxException("cannot handle blank property in object : $graph")
             graph.any { it.aliasOrKey == node.aliasOrKey } -> throw SyntaxException("Duplicated property name/alias: ${node.aliasOrKey}")
             else -> graph.add(node)
-        }
-    }
-
-    private fun validateInput(string: String) {
-        val trimmedString = string.trim()
-        if (!trimmedString.startsWith("{") || !trimmedString.endsWith("}")) {
-            throw SyntaxException("passed string $string does not represent valid query document")
         }
     }
 }

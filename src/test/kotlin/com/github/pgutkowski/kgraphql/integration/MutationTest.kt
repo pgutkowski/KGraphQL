@@ -1,9 +1,6 @@
 package com.github.pgutkowski.kgraphql.integration
 
-import com.github.pgutkowski.kgraphql.Actor
-import com.github.pgutkowski.kgraphql.assertError
-import com.github.pgutkowski.kgraphql.assertNoErrors
-import com.github.pgutkowski.kgraphql.extract
+import com.github.pgutkowski.kgraphql.*
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Test
@@ -36,20 +33,23 @@ class MutationTest : BaseSchemaTest() {
 
     @Test
     fun `invalid mutation name`(){
-        val map = execute("mutation {createBanana(name: \"${testActor.name}\", age: ${testActor.age}){age}}")
-        assertError(map, "SyntaxException: createBanana is not supported by this schema")
+        expect<SyntaxException>("createBanana is not supported by this schema"){
+            execute("mutation {createBanana(name: \"${testActor.name}\", age: ${testActor.age}){age}}")
+        }
     }
 
     @Test
     fun `invalid argument type`(){
-        val map = execute("mutation {createActor(name: \"${testActor.name}\", age: \"fwfwf\"){age}}")
-        assertError(map, "SyntaxException: argument 'fwfwf' is not value of type Int")
+        expect<SyntaxException>("argument 'fwfwf' is not value of type Int"){
+            execute("mutation {createActor(name: \"${testActor.name}\", age: \"fwfwf\"){age}}")
+        }
     }
 
     @Test
     fun `invalid arguments number`(){
-        val map = execute("mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}, bananan: \"fwfwf\"){age}}")
-        assertError(map, "createActor does support arguments: [name, age]. found arguments: [name, bananan, age]")
+        expect<SyntaxException>("createActor does support arguments: [name, age]. found arguments: [name, bananan, age]"){
+            execute("mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}, bananan: \"fwfwf\"){age}}")
+        }
     }
 
     @Test

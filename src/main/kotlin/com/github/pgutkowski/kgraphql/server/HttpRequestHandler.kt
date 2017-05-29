@@ -13,7 +13,7 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 /**
- * TODO: refactor and split to two handlers : for queries and for API docs
+ * TODO: refactor and splitOperationsAndFragments to two handlers : for queries and for API docs
  */
 @ChannelHandler.Sharable
 class HttpRequestHandler(val schema : DefaultSchema) : SimpleChannelInboundHandler<FullHttpRequest>() {
@@ -38,7 +38,11 @@ class HttpRequestHandler(val schema : DefaultSchema) : SimpleChannelInboundHandl
     private fun handleQuery(ctx: ChannelHandlerContext, msg: FullHttpRequest) {
         val queryParameters = QueryStringDecoder(msg.uri()).parameters()["query"] ?: throw IllegalArgumentException("Please specify query")
         val query = if (queryParameters.size == 1) queryParameters.first() else throw IllegalArgumentException("Please specify only one query")
-        writeResponse(ctx, schema.execute(query, null))
+        try {
+            writeResponse(ctx, schema.execute(query, null))
+        } catch(e: Exception) {
+            writeResponse(ctx, "{\"errors\" : { \"message\": \"Caught ${e.javaClass.canonicalName}: ${e.message?.replace("\"", "\\\"")}\"}}")
+        }
     }
 
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {

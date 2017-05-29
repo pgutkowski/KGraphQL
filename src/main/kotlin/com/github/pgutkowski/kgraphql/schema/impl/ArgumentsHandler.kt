@@ -48,7 +48,7 @@ internal class ArgumentsHandler(val schema : SchemaModel) {
     private fun transformValue(parameter: KParameter, value: String, variables: Variables): Any? {
 
         if(value.startsWith("$")){
-            return variables.getVariable(parameter.type.jvmErasure, value.substring(1))
+            return variables.get(parameter.type.jvmErasure, value.substring(1))
         } else {
             val literalValue = value.dropQuotes()
             //drop nullability on lookup type

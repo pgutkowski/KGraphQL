@@ -22,14 +22,15 @@ class SourceTextSpecificationTest {
 
     @Test
     fun `invalid unicode character`() {
-        val map = deserialize(schema.execute("\u0003", null))
-        assertError(map, "Illegal character", "SyntaxException", "\u0003")
+        expect<SyntaxException>("Illegal character: \\u0003"){
+            deserialize(schema.execute("\u0003"))
+        }
     }
 
     @Test
     @Specification("2.1.1 Unicode")
     fun `ignore unicode BOM character`() {
-        val map = deserialize(schema.execute("\uFEFF{fizz}", null))
+        val map = deserialize(schema.execute("\uFEFF{fizz}"))
         assertNoErrors(map)
         assertThat(extract<String>(map, "data/fizz"), equalTo("buzz"))
     }
@@ -42,12 +43,9 @@ class SourceTextSpecificationTest {
             "2.1.7 Ignored Tokens"
     )
     fun `ignore whitespace, line terminator, comma characters`(){
-        val expected : Map<*,*> = mapOf("data" to mapOf(
-                "fizz" to "buzz",
-                "actor" to mapOf("name" to "Bogusław Linda")
-        ))
+        executeEqualQueries( schema,
+                mapOf("data" to mapOf("fizz" to "buzz", "actor" to mapOf("name" to "Bogusław Linda"))),
 
-        listOf(
                 "{fizz \nactor,{,\nname}}\n",
                 "{fizz \tactor,  \n,\n{name}}",
                 "{fizz\n actor\n{name,\n\n\n}}",
@@ -57,22 +55,15 @@ class SourceTextSpecificationTest {
                 "{\nfizz ,actor\n{\nname,\t}}",
                 "{\nfizz, actor\n{\nname\t}}",
                 "{\tfizz actor\n{name}}"
-        ).map { request ->
-            deserialize(schema.execute(request, null))
-        }.forEach { map ->
-            assertThat(map, equalTo(expected))
-        }
+        )
     }
 
     @Test
     @Specification("2.1.4 Comments")
     fun `support comments`(){
-        val expected : Map<*,*> = mapOf("data" to mapOf(
-                "fizz" to "buzz",
-                "actor" to mapOf("name" to "Bogusław Linda")
-        ))
+        executeEqualQueries( schema,
+                mapOf("data" to mapOf("fizz" to "buzz", "actor" to mapOf("name" to "Bogusław Linda"))),
 
-        listOf(
                 "{fizz #FIZZ COMMENTS\nactor,{,\nname}}\n",
                 "#FIZZ COMMENTS\n{fizz \tactor#FIZZ COMMENTS\n,  #FIZZ COMMENTS\n\n#FIZZ COMMENTS\n,\n{name}}",
                 "{fizz\n actor\n{name,\n\n\n}}",
@@ -82,23 +73,21 @@ class SourceTextSpecificationTest {
                 "#FIZZ COMMENTS\n{\nfizz ,actor#FIZZ COMMENTS\n\n{\nname,\t}}",
                 "{\nfizz,#FIZZ COMMENTS\n#FIZZ COMMENTS\n actor\n{\nname\t}}",
                 "{\tfizz #FIZZ COMMENTS\nactor\n{name}#FIZZ COMMENTS\n}"
-        ).map { request ->
-            deserialize(schema.execute(request, null))
-        }.forEach { map ->
-            assertThat(map, equalTo(expected))
-        }
+        )
     }
 
     @Test
     @Specification("2.1.9 Names")
     fun `names are case sensitive`(){
-        val mapUpperCase = deserialize(schema.execute("{FIZZ}", null))
-        assertError(mapUpperCase, "FIZZ is not supported by this schema")
+        expect<SyntaxException>("FIZZ is not supported by this schema"){
+            deserialize(schema.execute("{FIZZ}"))
+        }
 
-        val mapCapitalized = deserialize(schema.execute("{Fizz}", null))
-        assertError(mapCapitalized, "Fizz is not supported by this schema")
+        expect<SyntaxException>("Fizz is not supported by this schema"){
+            deserialize(schema.execute("{Fizz}"))
+        }
 
-        val mapLowerCase = deserialize(schema.execute("{fizz}", null))
+        val mapLowerCase = deserialize(schema.execute("{fizz}"))
         assertNoErrors(mapLowerCase)
         assertThat(extract<String>(mapLowerCase, "data/fizz"), equalTo("buzz"))
     }

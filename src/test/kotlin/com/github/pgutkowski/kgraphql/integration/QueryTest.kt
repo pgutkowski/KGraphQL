@@ -1,8 +1,6 @@
 package com.github.pgutkowski.kgraphql.integration
 
-import com.github.pgutkowski.kgraphql.assertError
-import com.github.pgutkowski.kgraphql.assertNoErrors
-import com.github.pgutkowski.kgraphql.extract
+import com.github.pgutkowski.kgraphql.*
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Test
@@ -50,8 +48,9 @@ class QueryTest : BaseSchemaTest() {
 
     @Test
     fun `query with invalid field name`(){
-        val map = execute("{film{title, director{name, [favActors]}}}")
-        assertError(map, "property [favActors] on Director does not exist")
+        expect<SyntaxException>("property [favActors] on Director does not exist"){
+            execute("{film{title, director{name, [favActors]}}}")
+        }
     }
 
     @Test
@@ -92,14 +91,16 @@ class QueryTest : BaseSchemaTest() {
 
     @Test
     fun `query with ignored property`(){
-        val map = execute("{scenario{author, content}}")
-        assertError(map, "SyntaxException: property author on Scenario does not exist")
+        expect<SyntaxException>("property author on Scenario does not exist"){
+            execute("{scenario{author, content}}")
+        }
     }
 
     @Test
     fun `invalid query wth duplicated aliases`(){
-        val map = execute("{bestFilm: filmByRank(rank: 1){title}, bestFilm: filmByRank(rank: 2){title}}")
-        assertError(map, "SyntaxException: Duplicated property name/alias: bestFilm")
+        expect<SyntaxException>("Duplicated property name/alias: bestFilm"){
+            execute("{bestFilm: filmByRank(rank: 1){title}, bestFilm: filmByRank(rank: 2){title}}")
+        }
     }
 
     @Test
@@ -159,8 +160,9 @@ class QueryTest : BaseSchemaTest() {
 
     @Test
     fun `query with invalid field arguments`(){
-        val map = execute("{scenario{id(uppercase: true), content}}")
-        assertError(map, "ValidationException: Property id on type Scenario has no arguments, found: [uppercase]")
+        expect<ValidationException>("Property id on type Scenario has no arguments, found: [uppercase]"){
+            execute("{scenario{id(uppercase: true), content}}")
+        }
     }
 
     @Test
@@ -196,12 +198,9 @@ class QueryTest : BaseSchemaTest() {
 
     @Test
     fun `query union property with invalid selection set`(){
-        val map = execute("{actors{name, favourite{ name }}}", null)
-        assertError( map,
-                "SyntaxException",
-                "Invalid selection set with properties: [name] ",
-                "on union type property favourite : [Actor, Scenario, Director]"
-        )
+        expect<SyntaxException>("Invalid selection set with properties: [name] on union type property favourite : [Actor, Scenario, Director]"){
+            execute("{actors{name, favourite{ name }}}")
+        }
     }
 
     @Test

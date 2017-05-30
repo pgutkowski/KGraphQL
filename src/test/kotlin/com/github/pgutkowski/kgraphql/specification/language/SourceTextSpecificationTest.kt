@@ -44,7 +44,10 @@ class SourceTextSpecificationTest {
     )
     fun `ignore whitespace, line terminator, comma characters`(){
         executeEqualQueries( schema,
-                mapOf("data" to mapOf("fizz" to "buzz", "actor" to mapOf("name" to "Bogusław Linda"))),
+                mapOf("data" to mapOf(
+                        "fizz" to "buzz",
+                        "actor" to mapOf("name" to "Bogusław Linda")
+                )),
 
                 "{fizz \nactor,{,\nname}}\n",
                 "{fizz \tactor,  \n,\n{name}}",
@@ -62,7 +65,10 @@ class SourceTextSpecificationTest {
     @Specification("2.1.4 Comments")
     fun `support comments`(){
         executeEqualQueries( schema,
-                mapOf("data" to mapOf("fizz" to "buzz", "actor" to mapOf("name" to "Bogusław Linda"))),
+                mapOf("data" to mapOf (
+                        "fizz" to "buzz",
+                        "actor" to mapOf("name" to "Bogusław Linda")
+                )),
 
                 "{fizz #FIZZ COMMENTS\nactor,{,\nname}}\n",
                 "#FIZZ COMMENTS\n{fizz \tactor#FIZZ COMMENTS\n,  #FIZZ COMMENTS\n\n#FIZZ COMMENTS\n,\n{name}}",

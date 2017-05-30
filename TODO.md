@@ -1,5 +1,4 @@
 - parallel query/mutation execution
 - Create some basic benchmarks
 - better error messages in responses
-- implement more of GraphQL specification
 - support full unicode in string literals and comments

@@ -1,16 +1,16 @@
-package com.github.pgutkowski.kgraphql.schema.impl
+package com.github.pgutkowski.kgraphql.schema.execution
 
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonGenerator
 import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.request.Variables
 import com.github.pgutkowski.kgraphql.schema.ScalarSupport
-import com.github.pgutkowski.kgraphql.schema.model.KQLOperation
+import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
+import com.github.pgutkowski.kgraphql.schema.structure.SchemaNode
 import java.io.StringWriter
 import kotlin.reflect.KProperty1
-import kotlin.reflect.full.isSuperclassOf
 
 
 @Suppress("UNCHECKED_CAST") // For valid structure there is no risk of ClassCastException

@@ -1,4 +1,4 @@
-package com.github.pgutkowski.kgraphql.schema.impl
+package com.github.pgutkowski.kgraphql.schema.execution
 
 import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.dropQuotes
@@ -6,6 +6,8 @@ import com.github.pgutkowski.kgraphql.isNotNullable
 import com.github.pgutkowski.kgraphql.isNullable
 import com.github.pgutkowski.kgraphql.request.Arguments
 import com.github.pgutkowski.kgraphql.request.Variables
+import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
+import com.github.pgutkowski.kgraphql.schema.model.SchemaModel
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.createType
@@ -20,10 +22,6 @@ internal class ArgumentsHandler(val schema : SchemaModel) {
 
     private val scalarsByType = schema.scalars.associate { it.kClass.createType() to it }
 
-    /**
-     * transform arguments accepts custom handler for case when invoker wants to add special argument handling logic
-     * see
-     */
     fun <T>transformArguments (
             functionWrapper: FunctionWrapper<T>,
             args: Arguments?,

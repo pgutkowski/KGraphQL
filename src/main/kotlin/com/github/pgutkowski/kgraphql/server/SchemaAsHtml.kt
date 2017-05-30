@@ -1,7 +1,7 @@
 package com.github.pgutkowski.kgraphql.server
 
-import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
-import com.github.pgutkowski.kgraphql.schema.impl.SchemaNode
+import com.github.pgutkowski.kgraphql.schema.DefaultSchema
+import com.github.pgutkowski.kgraphql.schema.structure.SchemaNode
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import com.github.pgutkowski.kgraphql.typeName
@@ -13,21 +13,26 @@ import kotlin.reflect.full.starProjectedType
 
 private val K_GRAPH_QL_DOCS_PREFIX = "/graphql/docs"
 
-fun DefaultSchema.asHTML(path : List<String>) : String {
-
-    if (path.isEmpty()) {
-        return homeHTML()
-    }
-
-    return when (path[0]) {
-        "query" -> writeOperationsHTML("Queries", structure.queries.values)
-        "mutation" -> writeOperationsHTML("Mutations", structure.mutations.values)
-        "type" -> when (path[1].toLowerCase()) {
-            else -> writeTypeDescriptor(path[1])
+fun DefaultSchema.writeHomeHtml() : String {
+    return writeHTML {
+        p {
+            a("$K_GRAPH_QL_DOCS_PREFIX/query") {
+                +"Queries"
+            }
         }
-        else -> throw IllegalArgumentException("Illegal request")
+        p {
+            a("$K_GRAPH_QL_DOCS_PREFIX/mutation") {
+                +"Mutations"
+            }
+        }
     }
 }
+
+fun DefaultSchema.writeQueriesHtml() : String = writeOperationsHTML("Queries", structure.queries.values)
+
+fun DefaultSchema.writeMutationsHtml() : String = writeOperationsHTML("Mutations", structure.mutations.values)
+
+fun DefaultSchema.writeTypeHtml(typeName: String) : String = writeTypeDescriptor(typeName)
 
 private fun writeOperationsHTML(title: String, operations: Collection<SchemaNode.Operation<*>>): String {
     return writeHTML {
@@ -51,7 +56,7 @@ private fun DefaultSchema.writeTypeDescriptor(typeName : String) : String {
     }
 }
 
-fun writeObjectTypeDescriptor(schemaNode: SchemaNode.Type, objectType: KQLType.Object<*>): String {
+private fun writeObjectTypeDescriptor(schemaNode: SchemaNode.Type, objectType: KQLType.Object<*>): String {
     return writeHTML {
         h1 { +objectType.name }
         hr {}
@@ -71,7 +76,7 @@ fun writeObjectTypeDescriptor(schemaNode: SchemaNode.Type, objectType: KQLType.O
     }
 }
 
-fun writeScalarTypeDescriptor(scalar: KQLType.Scalar<*>): String {
+private fun writeScalarTypeDescriptor(scalar: KQLType.Scalar<*>): String {
     return writeHTML {
         h1 { +scalar.name }
         hr {}
@@ -98,21 +103,6 @@ private fun writeEnumTypeDescriptor(enum: KQLType.Enumeration<*>): String {
         for (value in enum.values) {
             p {
                 +value.name
-            }
-        }
-    }
-}
-
-private fun homeHTML(): String {
-    return writeHTML {
-        p {
-            a("$K_GRAPH_QL_DOCS_PREFIX/query") {
-                +"Queries"
-            }
-        }
-        p {
-            a("$K_GRAPH_QL_DOCS_PREFIX/mutation") {
-                +"Mutations"
             }
         }
     }

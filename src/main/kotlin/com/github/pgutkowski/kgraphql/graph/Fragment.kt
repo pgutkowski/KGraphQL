@@ -11,7 +11,13 @@ interface Fragment {
             key : String,
             override val fragmentGraph: Graph,
             val typeCondition: String? = null
-    ) : Fragment, GraphNode(key, null, fragmentGraph, null)
+    ) : Fragment, GraphNode(key, null, fragmentGraph, null){
+        init {
+            if(!key.startsWith("...")){
+                throw IllegalArgumentException("External fragment key has to start with '...'")
+            }
+        }
+    }
 
     class Inline (
             override val fragmentGraph: Graph,

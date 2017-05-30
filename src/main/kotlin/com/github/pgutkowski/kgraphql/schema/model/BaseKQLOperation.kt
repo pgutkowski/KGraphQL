@@ -1,10 +1,7 @@
 package com.github.pgutkowski.kgraphql.schema.model
 
 import com.github.pgutkowski.kgraphql.schema.SchemaException
-import com.github.pgutkowski.kgraphql.schema.impl.FunctionWrapper
-import kotlin.reflect.KParameter
 import kotlin.reflect.KType
-import kotlin.reflect.full.valueParameters
 
 abstract class BaseKQLOperation<T>(
         name : String,

@@ -3,8 +3,8 @@ package com.github.pgutkowski.kgraphql.schema.dsl
 import com.github.pgutkowski.kgraphql.schema.ScalarSupport
 import com.github.pgutkowski.kgraphql.schema.Schema
 import com.github.pgutkowski.kgraphql.schema.SchemaException
-import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
-import com.github.pgutkowski.kgraphql.schema.impl.MutableSchemaModel
+import com.github.pgutkowski.kgraphql.schema.DefaultSchema
+import com.github.pgutkowski.kgraphql.schema.model.MutableSchemaModel
 import com.github.pgutkowski.kgraphql.schema.model.KQLMutation
 import com.github.pgutkowski.kgraphql.schema.model.KQLQuery
 import com.github.pgutkowski.kgraphql.schema.model.KQLType

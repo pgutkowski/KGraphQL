@@ -1,17 +1,13 @@
 package com.github.pgutkowski.kgraphql
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.github.pgutkowski.kgraphql.request.Arguments
-import com.github.pgutkowski.kgraphql.graph.Graph
-import com.github.pgutkowski.kgraphql.graph.GraphNode
 import com.github.pgutkowski.kgraphql.schema.Schema
 import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilder
-import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
+import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.*
-import org.junit.jupiter.api.Test
 
 val objectMapper = jacksonObjectMapper()
 

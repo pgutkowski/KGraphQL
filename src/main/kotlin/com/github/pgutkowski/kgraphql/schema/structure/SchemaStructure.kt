@@ -1,4 +1,4 @@
-package com.github.pgutkowski.kgraphql.schema.impl
+package com.github.pgutkowski.kgraphql.schema.structure
 
 import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.SyntaxException
@@ -7,10 +7,10 @@ import com.github.pgutkowski.kgraphql.graph.Fragment
 import com.github.pgutkowski.kgraphql.graph.GraphNode
 import com.github.pgutkowski.kgraphql.request.Operation
 import com.github.pgutkowski.kgraphql.schema.SchemaException
-import com.github.pgutkowski.kgraphql.schema.model.KQLMutation
-import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
-import com.github.pgutkowski.kgraphql.schema.model.KQLQuery
-import com.github.pgutkowski.kgraphql.schema.model.KQLType
+import com.github.pgutkowski.kgraphql.schema.execution.ExecutionNode
+import com.github.pgutkowski.kgraphql.schema.execution.ExecutionPlan
+import com.github.pgutkowski.kgraphql.schema.model.SchemaModel
+import com.github.pgutkowski.kgraphql.schema.model.*
 import kotlin.reflect.KType
 
 

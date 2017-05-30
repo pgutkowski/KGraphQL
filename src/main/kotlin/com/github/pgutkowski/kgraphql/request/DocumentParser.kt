@@ -6,9 +6,15 @@ import com.github.pgutkowski.kgraphql.graph.Graph
 import com.github.pgutkowski.kgraphql.graph.GraphBuilder
 import com.github.pgutkowski.kgraphql.graph.GraphNode
 
-
+/**
+ * Utility for parsing query document and its structures.
+ */
 class DocumentParser {
 
+    /**
+     * Performs validation and parsing of query document, returning all declared operations.
+     * Fragments declared in document are parsed as well, but only used to create operations and not persisted.
+     */
     fun parseDocument(input: String) : List<Operation> {
         val request = validateAndFilterRequest(input)
         val documentTokens = createDocumentTokens(tokenizeRequest(request))
@@ -23,6 +29,9 @@ class DocumentParser {
         }
     }
 
+    /**
+     * @param tokens - should be list of valid GraphQL tokens
+     */
     fun parseGraph(tokens: List<String>, fragments: Map<String, Fragment.External> = emptyMap()): Graph {
         val graph = GraphBuilder()
         var index = 0

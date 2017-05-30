@@ -1,6 +1,7 @@
-package com.github.pgutkowski.kgraphql.schema.impl
+package com.github.pgutkowski.kgraphql.schema.execution
 
 import com.github.pgutkowski.kgraphql.request.Arguments
+import com.github.pgutkowski.kgraphql.schema.structure.SchemaNode
 
 
 open class ExecutionNode(
@@ -30,7 +31,7 @@ open class ExecutionNode(
         fun memberExecution(type: SchemaNode.ReturnType): ExecutionNode {
             return ExecutionNode(
                     schemaNode,
-                    memberChildren[type] ?: throw IllegalArgumentException("Union ${unionNode.kqlProperty.name} has no member ${type}"),
+                    memberChildren[type] ?: throw IllegalArgumentException("Union ${unionNode.kqlProperty.name} has no member $type"),
                     key,
                     alias,
                     arguments

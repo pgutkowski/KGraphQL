@@ -40,9 +40,9 @@ fun tokenizeRequest(input : String) : List<String> {
     return tokens
 }
 
-fun createDocumentTokens(tokens : List<String>) : DocumentTokens {
-    val operations : MutableList<DocumentTokens.OperationTokens> = mutableListOf()
-    val fragments : MutableList<DocumentTokens.FragmentTokens> = mutableListOf()
+fun createDocumentTokens(tokens : List<String>) : Document {
+    val operations : MutableList<Document.OperationTokens> = mutableListOf()
+    val fragments : MutableList<Document.FragmentTokens> = mutableListOf()
 
     var index = 0
     while(index < tokens.size){
@@ -59,10 +59,10 @@ fun createDocumentTokens(tokens : List<String>) : DocumentTokens {
         }
     }
 
-    return DocumentTokens(fragments, operations)
+    return Document(fragments, operations)
 }
 
-fun createFragmentTokens(tokens : List<String>, startIndex: Int) : Pair<Int, DocumentTokens.FragmentTokens>{
+fun createFragmentTokens(tokens : List<String>, startIndex: Int) : Pair<Int, Document.FragmentTokens>{
     var index = startIndex
     var name : String? = null
     var typeCondition : String? = null
@@ -80,7 +80,7 @@ fun createFragmentTokens(tokens : List<String>, startIndex: Int) : Pair<Int, Doc
             "{" -> {
                 val indexOfClosingBracket = indexOfClosingBracket(tokens, index)
                 if(name == null) throw SyntaxException("Invalid anonymous external fragment")
-                return indexOfClosingBracket to DocumentTokens.FragmentTokens(name, typeCondition, tokens.subList(index, indexOfClosingBracket))
+                return indexOfClosingBracket to Document.FragmentTokens(name, typeCondition, tokens.subList(index, indexOfClosingBracket))
             }
             else -> throw SyntaxException("Unexpected token: $token")
         }
@@ -89,7 +89,7 @@ fun createFragmentTokens(tokens : List<String>, startIndex: Int) : Pair<Int, Doc
     throw SyntaxException("Invalid fragment $name declaration without selection set")
 }
 
-fun createOperationTokens(tokens : List<String>, startIndex: Int) : Pair<Int, DocumentTokens.OperationTokens>{
+fun createOperationTokens(tokens : List<String>, startIndex: Int) : Pair<Int, Document.OperationTokens>{
     var index = startIndex
     var name : String? = null
     var type : String? = null
@@ -98,7 +98,7 @@ fun createOperationTokens(tokens : List<String>, startIndex: Int) : Pair<Int, Do
         when {
             token == "{" -> {
                 val indexOfClosingBracket = indexOfClosingBracket(tokens, index)
-                return indexOfClosingBracket to DocumentTokens.OperationTokens(name, type, tokens.subList(index, indexOfClosingBracket))
+                return indexOfClosingBracket to Document.OperationTokens(name, type, tokens.subList(index, indexOfClosingBracket))
             }
             type == null -> {
                 if(token.equals("query", true) || token.equals("mutation", true)){

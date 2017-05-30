@@ -1,7 +1,7 @@
 package com.github.pgutkowski.kgraphql.server
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
+import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
@@ -32,7 +32,18 @@ class HttpRequestHandler(val schema : DefaultSchema) : SimpleChannelInboundHandl
 
     fun handleDocQuery(ctx: ChannelHandlerContext, msg: FullHttpRequest){
         val path = msg.uri().substring("/graphql/docs".length).split('/').filter(String::isNotBlank)
-        writeResponse(ctx, schema.asHTML(path), AsciiString("text/html"))
+
+        val response = when {
+            path.isEmpty() -> schema.writeHomeHtml()
+            path[0] == "query" -> schema.writeQueriesHtml()
+            path[0] == "mutation" -> schema.writeMutationsHtml()
+            path[0] == "type" -> {
+                schema.writeTypeHtml(path.getOrElse(1, {throw IllegalArgumentException("Missing type name")}))
+            }
+            else -> throw IllegalArgumentException("Illegal request")
+        }
+
+        writeResponse(ctx, response, AsciiString("text/html"))
     }
 
     private fun handleQuery(ctx: ChannelHandlerContext, msg: FullHttpRequest) {

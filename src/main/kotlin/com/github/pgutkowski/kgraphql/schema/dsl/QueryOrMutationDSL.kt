@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.dsl
 
-import com.github.pgutkowski.kgraphql.schema.impl.FunctionWrapper
+import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
 
 
 class QueryOrMutationDSL(block : QueryOrMutationDSL.() -> Unit) : ItemDSL() {

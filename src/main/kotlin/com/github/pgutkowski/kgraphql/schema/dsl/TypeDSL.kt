@@ -1,8 +1,8 @@
 package com.github.pgutkowski.kgraphql.schema.dsl
 
 import com.github.pgutkowski.kgraphql.schema.SchemaException
-import com.github.pgutkowski.kgraphql.schema.impl.FunctionWrapper
-import com.github.pgutkowski.kgraphql.schema.impl.Transformation
+import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
+import com.github.pgutkowski.kgraphql.schema.model.Transformation
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import com.github.pgutkowski.kgraphql.typeName

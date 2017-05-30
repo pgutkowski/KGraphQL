@@ -2,7 +2,7 @@ package com.github.pgutkowski.kgraphql.integration
 
 import com.github.pgutkowski.kgraphql.*
 import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilder
-import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
+import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import org.junit.jupiter.api.AfterEach
 
 

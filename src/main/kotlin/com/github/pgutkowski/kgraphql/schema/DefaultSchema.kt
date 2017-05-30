@@ -1,9 +1,11 @@
-package com.github.pgutkowski.kgraphql.schema.impl
+package com.github.pgutkowski.kgraphql.schema
 
 import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.request.DocumentParser
 import com.github.pgutkowski.kgraphql.request.Variables
-import com.github.pgutkowski.kgraphql.schema.Schema
+import com.github.pgutkowski.kgraphql.schema.execution.RequestExecutor
+import com.github.pgutkowski.kgraphql.schema.model.SchemaModel
+import com.github.pgutkowski.kgraphql.schema.structure.SchemaStructure
 
 class DefaultSchema(internal val model : SchemaModel) : Schema {
 

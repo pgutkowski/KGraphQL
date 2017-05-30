@@ -1,7 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.model
 
 import com.github.pgutkowski.kgraphql.schema.ScalarSupport
-import com.github.pgutkowski.kgraphql.schema.impl.Transformation
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 

@@ -1,4 +1,4 @@
-package com.github.pgutkowski.kgraphql.schema.impl
+package com.github.pgutkowski.kgraphql.schema.model
 
 import kotlin.reflect.KProperty1
 

@@ -1,26 +1,21 @@
 package com.github.pgutkowski.kgraphql.server
 
 import com.github.pgutkowski.kgraphql.schema.Schema
-import com.github.pgutkowski.kgraphql.schema.impl.DefaultSchema
+import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.logging.LoggingHandler
-import java.util.logging.Logger
 
 class NettyServer {
 
     companion object {
 
-        private val logger : Logger = Logger.getLogger( NettyServer::class.qualifiedName )
-
-        fun run(schema : Schema) {
+        fun run(schema : Schema, port : Int) {
 
             val workerGroup = NioEventLoopGroup()
-            val port = 8080
-
             try {
                 val channel = ServerBootstrap()
                         .channel(NioServerSocketChannel::class.java)

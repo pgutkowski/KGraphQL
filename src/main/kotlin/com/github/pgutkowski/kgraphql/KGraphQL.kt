@@ -15,6 +15,6 @@ class KGraphQL {
             return SchemaBuilder(init).build()
         }
 
-        fun setupServer(schema: Schema) = NettyServer.run(schema)
+        fun setupServer(schema: Schema, port: Int = 8080) = NettyServer.run(schema, port)
     }
 }

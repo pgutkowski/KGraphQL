@@ -1,12 +1,8 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package com.github.pgutkowski.kgraphql.schema.impl
+package com.github.pgutkowski.kgraphql.schema.model
 
-import com.github.pgutkowski.kgraphql.ValidationException
 import com.github.pgutkowski.kgraphql.isNullable
-import com.github.pgutkowski.kgraphql.request.Arguments
-import kotlin.reflect.KFunction
-import kotlin.reflect.KParameter
 import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.reflect
 
@@ -19,33 +15,39 @@ import kotlin.reflect.jvm.reflect
 interface FunctionWrapper <T>{
     //lots of boilerplate here, because kotlin-reflect doesn't support invoking lambdas, local and anonymous functions yet
     companion object {
-        fun <T> on (function : () -> T) : FunctionWrapper<T> = ArityZero(function)
+        fun <T> on (function : () -> T) : FunctionWrapper<T> = FunctionWrapper.ArityZero(function)
 
-        fun <T, R> on (function : (R) -> T, hasReceiver: Boolean = false) = ArityOne(function, hasReceiver)
+        fun <T, R> on (function : (R) -> T, hasReceiver: Boolean = false) = FunctionWrapper.ArityOne(function, hasReceiver)
 
-        fun <T, R, E> on (function : (R, E) -> T, hasReceiver: Boolean = false) = ArityTwo(function, hasReceiver)
+        fun <T, R, E> on (function : (R, E) -> T, hasReceiver: Boolean = false) = FunctionWrapper.ArityTwo(function, hasReceiver)
 
-        fun <T, R, E, W> on (function : (R, E, W) -> T, hasReceiver: Boolean = false) = ArityThree(function, hasReceiver)
+        fun <T, R, E, W> on (function : (R, E, W) -> T, hasReceiver: Boolean = false) = FunctionWrapper.ArityThree(function, hasReceiver)
 
-        fun <T, R, E, W, Q> on (function : (R, E, W, Q) -> T, hasReceiver: Boolean = false) = ArityFour(function, hasReceiver)
+        fun <T, R, E, W, Q> on (function : (R, E, W, Q) -> T, hasReceiver: Boolean = false) = FunctionWrapper.ArityFour(function, hasReceiver)
     }
 
-    val kFunction: KFunction<T>
+    val kFunction: kotlin.reflect.KFunction<T>
 
     fun invoke(vararg args: Any?) : T?
 
     fun arity() : Int
 
+    /**
+     * denotes whether function is called with receiver argument.
+     * Receiver argument in GraphQL is somewhat similar to kotlin receivers:
+     * its value is passed by framework, usually it is parent of function property with [FunctionWrapper]
+     * Receiver argument is omitted in schema, and cannot be stated in query document.
+     */
     val hasReceiver : Boolean
 
-    fun validateArguments(args: Arguments?) : List<ValidationException> {
-        val exceptions = mutableListOf<ValidationException>()
+    fun validateArguments(args: com.github.pgutkowski.kgraphql.request.Arguments?) : List<com.github.pgutkowski.kgraphql.ValidationException> {
+        val exceptions = mutableListOf<com.github.pgutkowski.kgraphql.ValidationException>()
 
         val parameterNames = kFunction.parameters.map { it.name }
         val invalidArguments = args?.filterKeys { it !in parameterNames }
 
         if(invalidArguments != null && invalidArguments.isNotEmpty()){
-            invalidArguments.forEach { name, _ -> exceptions.add(ValidationException("Invalid argument $name")) }
+            invalidArguments.forEach { name, _ -> exceptions.add(com.github.pgutkowski.kgraphql.ValidationException("Invalid argument $name")) }
         }
 
         kFunction.parameters.forEachIndexed { index, kParameter ->
@@ -53,7 +55,7 @@ interface FunctionWrapper <T>{
             if(value != null || (kParameter.isNullable() || (hasReceiver && index == 0))){
                 //is valid
             } else {
-                exceptions.add(ValidationException("Missing value for non-nullable argument ${kParameter.name}"))
+                exceptions.add(com.github.pgutkowski.kgraphql.ValidationException("Missing value for non-nullable argument ${kParameter.name}"))
             }
         }
         return exceptions
@@ -62,14 +64,14 @@ interface FunctionWrapper <T>{
     /**
      * returns list of function parameters without receiver
      */
-    fun valueParameters(): List<KParameter> {
+    fun valueParameters(): List<kotlin.reflect.KParameter> {
         return kFunction.valueParameters.let {
             if(hasReceiver) it.drop(1) else it
         }
     }
 
-    class ArityZero<T>(val implementation : ()-> T, override val hasReceiver: Boolean = false ) : FunctionWrapper<T>{
-        override val kFunction: KFunction<T>
+    class ArityZero<T>(val implementation : ()-> T, override val hasReceiver: Boolean = false ) : FunctionWrapper<T> {
+        override val kFunction: kotlin.reflect.KFunction<T>
             get() = implementation.reflect()!!
 
         override fun arity(): Int = 0
@@ -83,8 +85,8 @@ interface FunctionWrapper <T>{
         }
     }
 
-    class ArityOne<T, R>(val implementation : (R)-> T, override val hasReceiver: Boolean) : FunctionWrapper<T>{
-        override val kFunction: KFunction<T>
+    class ArityOne<T, R>(val implementation : (R)-> T, override val hasReceiver: Boolean) : FunctionWrapper<T> {
+        override val kFunction: kotlin.reflect.KFunction<T>
             get() = implementation.reflect()!!
 
         override fun arity(): Int = 1
@@ -98,8 +100,8 @@ interface FunctionWrapper <T>{
         }
     }
 
-    class ArityTwo<T, R, E>(val implementation : (R, E)-> T, override val hasReceiver: Boolean ) : FunctionWrapper<T>{
-        override val kFunction: KFunction<T>
+    class ArityTwo<T, R, E>(val implementation : (R, E)-> T, override val hasReceiver: Boolean ) : FunctionWrapper<T> {
+        override val kFunction: kotlin.reflect.KFunction<T>
             get() = implementation.reflect()!!
 
         override fun arity(): Int = 2
@@ -113,8 +115,8 @@ interface FunctionWrapper <T>{
         }
     }
 
-    class ArityThree<T, R, E, W>(val implementation : (R, E, W)-> T, override val hasReceiver: Boolean ) : FunctionWrapper<T>{
-        override val kFunction: KFunction<T>
+    class ArityThree<T, R, E, W>(val implementation : (R, E, W)-> T, override val hasReceiver: Boolean ) : FunctionWrapper<T> {
+        override val kFunction: kotlin.reflect.KFunction<T>
             get() = implementation.reflect()!!
 
         override fun arity(): Int = 3
@@ -128,8 +130,8 @@ interface FunctionWrapper <T>{
         }
     }
 
-    class ArityFour<T, R, E, W, Q>(val implementation : (R, E, W, Q)-> T, override val hasReceiver: Boolean ) : FunctionWrapper<T>{
-        override val kFunction: KFunction<T>
+    class ArityFour<T, R, E, W, Q>(val implementation : (R, E, W, Q)-> T, override val hasReceiver: Boolean ) : FunctionWrapper<T> {
+        override val kFunction: kotlin.reflect.KFunction<T>
             get() = implementation.reflect()!!
 
         override fun arity(): Int = 4

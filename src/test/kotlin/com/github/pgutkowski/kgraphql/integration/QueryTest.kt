@@ -211,4 +211,11 @@ class QueryTest : BaseSchemaTest() {
         assertThat(extract<String>(map, "data/film/director/name"), equalTo(prestige.director.name))
         assertThat(extract<Int>(map, "data/film/director/age"), equalTo(prestige.director.age))
     }
+
+    @Test
+    fun `query with missing selection set`(){
+        expect<SyntaxException>("Missing selection set on property film of type Film"){
+            execute("{film}")
+        }
+    }
 }

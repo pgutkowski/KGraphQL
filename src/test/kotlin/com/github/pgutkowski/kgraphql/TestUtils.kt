@@ -5,8 +5,10 @@ import com.github.pgutkowski.kgraphql.schema.Schema
 import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilder
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import org.hamcrest.CoreMatchers
+import org.hamcrest.FeatureMatcher
 import org.hamcrest.MatcherAssert
 import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers
 import org.hamcrest.Matchers.*
 
 val objectMapper = jacksonObjectMapper()
@@ -60,7 +62,8 @@ inline fun <reified T: Exception> expect(message: String, block: () -> Unit){
         block()
     } catch (e : Exception){
         assertThat(e, instanceOf(T::class.java))
-        assertThat(e.message, containsString(message))
+        assertThat(e, ExceptionMessageMatcher(message))
+//        assertThat(e.message, containsString(message))
     }
 }
 
@@ -70,6 +73,12 @@ fun executeEqualQueries(schema: Schema, expected: Map<*,*>, vararg queries : Str
     }.forEach { map ->
         MatcherAssert.assertThat(map, CoreMatchers.equalTo(expected))
     }
+}
+
+class ExceptionMessageMatcher(message: String)
+    : FeatureMatcher<Exception, String>(Matchers.containsString(message), "exception message is", "exception message"){
+
+    override fun featureValueOf(actual: Exception?): String? = actual?.message
 }
 
 

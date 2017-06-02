@@ -128,20 +128,26 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
             for (childRequestNode in childrenRequestNodes) {
                 children.addAll(handleReturnTypeChildOrFragment(childRequestNode, returnType))
             }
+        } else if(returnType.properties.isNotEmpty()){
+            throw SyntaxException("Missing selection set on property ${requestNode.aliasOrKey} of type ${returnType.kqlType.name}")
         }
         return children
     }
 
     private fun handleReturnTypeChildOrFragment(childRequestNode: GraphNode, returnType: SchemaNode.ReturnType): List<ExecutionNode> {
         val children = mutableListOf<ExecutionNode>()
-        if (childRequestNode.key.startsWith("...")) {
-            if (childRequestNode is Fragment.External) {
+        when(childRequestNode){
+            is Fragment.External -> {
                 childRequestNode.fragmentGraph.mapTo(children) { handleReturnTypeChild(it, returnType) }
-            } else {
-                throw ExecutionException("Unexpected property starting with '...' ${childRequestNode.key}")
             }
-        } else {
-            children.add(handleReturnTypeChild(childRequestNode, returnType))
+            is Fragment.Inline -> {
+                if(childRequestNode.typeCondition == returnType.kqlType.name){
+                    childRequestNode.fragmentGraph.mapTo(children) { handleReturnTypeChild(it, returnType) }
+                }
+            }
+            else -> {
+                children.add(handleReturnTypeChild(childRequestNode, returnType))
+            }
         }
         return children
     }

@@ -21,6 +21,6 @@ interface Fragment {
 
     class Inline (
             override val fragmentGraph: Graph,
-            typeCondition: String
+            val typeCondition: String
     ) : Fragment, GraphNode("on $typeCondition", null, fragmentGraph, null)
 }

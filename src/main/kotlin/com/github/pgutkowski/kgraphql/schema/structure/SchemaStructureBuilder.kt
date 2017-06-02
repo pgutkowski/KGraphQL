@@ -1,5 +1,7 @@
 package com.github.pgutkowski.kgraphql.schema.structure
 
+import com.github.pgutkowski.kgraphql.schema.SchemaException
+import com.github.pgutkowski.kgraphql.schema.dsl.EnumDSL
 import com.github.pgutkowski.kgraphql.schema.model.*
 import com.github.pgutkowski.kgraphql.typeName
 import kotlin.reflect.KClass
@@ -88,9 +90,14 @@ class SchemaStructureBuilder(
         }
 
         fun <T : Any>handleObjectType(type : MutableType, kClass: KClass<T>) : MutableType {
+            if(kClass.isSubclassOf(Enum::class)){
+                throw SchemaException("Cannot handle enum class $kClass as Object type")
+            }
+
             val kqlObject = type.kqlObjectType
 
-            kClass.memberProperties.filterNot { kqlObject.isIgnored(it) }
+            kClass.memberProperties
+                    .filterNot { kqlObject.isIgnored(it) }
                     .associateTo(type.mutableProperties) { property ->
                         property.name to handleKotlinProperty (
                                 property, kqlObject.transformations.find { it.kProperty == property }
@@ -119,7 +126,11 @@ class SchemaStructureBuilder(
     }
 
     private fun <T : Any>handleEnumType(kType: KType, kClass: KClass<T>) : SchemaNode.Type? {
-        return createSchemaNodeType(kType, enums.find { it.kClass == kClass })
+        if(kClass.isSubclassOf(Enum::class)){
+            val kqlType = enums.find { it.kClass == kClass }
+                    ?: throw SchemaException("Please explicitly declare enum in schema")
+            return createSchemaNodeType(kType, kqlType)
+        } else return null
     }
 
     private fun createSchemaNodeType(kType: KType, kqlType: KQLType?): SchemaNode.Type? {

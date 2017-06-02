@@ -78,12 +78,12 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
         type(T::class, block)
     }
 
-    fun <T : Enum<T>>enum(kClass: KClass<T>, enumValues : Array<T>, block: EnumDSL<T>.() -> Unit){
+    fun <T : Enum<T>>enum(kClass: KClass<T>, enumValues : Array<T>, block: (EnumDSL<T>.() -> Unit)? = null){
         val type = EnumDSL(kClass, block)
         model.addEnum(KQLType.Enumeration(type.name, kClass, enumValues, type.description))
     }
 
-    inline fun <reified T : Enum<T>> enum(noinline block: EnumDSL<T>.() -> Unit) {
+    inline fun <reified T : Enum<T>> enum(noinline block: (EnumDSL<T>.() -> Unit)? = null) {
         val enumValues = enumValues<T>()
         if(enumValues.isEmpty()){
             throw SchemaException("Enum of type ${T::class} must have at least one value")

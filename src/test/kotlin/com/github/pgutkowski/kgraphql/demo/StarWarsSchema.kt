@@ -43,8 +43,16 @@ fun main(args: Array<String>) {
             }}
         }
 
+        query("heroes") {
+            resolver{ -> listOf(luke, r2d2)}
+        }
+
+        type<Droid>()
+        type<Human>()
+
         enum<Episode>()
     }
 
-    println(schema.execute("{hero(episode: \"EMPIRE\"){id, name}}"))
+    println(schema.execute("{hero(episode: JEDI){id, name, ... on Droid{primaryFunction} ... on Human{height}}}"))
+    println(schema.execute("{heroes {id, name, ... on Droid{primaryFunction} ... on Human{height}}}"))
 }

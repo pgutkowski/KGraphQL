@@ -1,7 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.structure
 
 import com.github.pgutkowski.kgraphql.schema.SchemaException
-import com.github.pgutkowski.kgraphql.schema.dsl.EnumDSL
 import com.github.pgutkowski.kgraphql.schema.model.*
 import com.github.pgutkowski.kgraphql.typeName
 import kotlin.reflect.KClass
@@ -46,6 +45,10 @@ class SchemaStructureBuilder(
 
         mutations.map { SchemaNode.Mutation(it, handleOperation(it))}
                 .associateTo(mutationNodes) {it.kqlMutation.name to it}
+
+        objects.map { it.kClass.starProjectedType }
+                .filter {  typesCache[it] ?: mutableTypesCache[it] == null }
+                .associateTo(typesCache) { it to handleReturnType(it) }
 
         return SchemaStructure(queryNodes, mutationNodes, mutableTypesCache.toMap() + typesCache.toMap())
     }

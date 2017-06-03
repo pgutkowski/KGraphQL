@@ -39,6 +39,14 @@ fun <T>extract(map: Map<*,*>, path : String) : T {
     }
 }
 
+fun <T>extractOrNull(map: Map<*,*>, path : String) : T? {
+    try {
+        return extract(map, path)
+    } catch (e: IllegalArgumentException){
+        return null
+    }
+}
+
 fun defaultSchema(block: SchemaBuilder.() -> Unit): DefaultSchema {
     return SchemaBuilder(block).build() as DefaultSchema
 }

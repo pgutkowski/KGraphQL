@@ -78,6 +78,10 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
         type(T::class, block)
     }
 
+    inline fun <reified T : Any> type() {
+        type(T::class, {})
+    }
+
     fun <T : Enum<T>>enum(kClass: KClass<T>, enumValues : Array<T>, block: (EnumDSL<T>.() -> Unit)? = null){
         val type = EnumDSL(kClass, block)
         model.addEnum(KQLType.Enumeration(type.name, kClass, enumValues, type.description))

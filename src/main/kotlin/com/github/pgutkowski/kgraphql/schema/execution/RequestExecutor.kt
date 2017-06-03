@@ -48,7 +48,7 @@ class RequestExecutor(val schema: DefaultSchema) {
         }
     }
 
-    private fun <T>writeOperation(ctx: Context, node: ExecutionNode, operation: SchemaNode.Operation<T>){
+    private fun <T>writeOperation(ctx: Context, node: Execution.Node, operation: SchemaNode.Operation<T>){
         val operationResult : T? = functionHandler.invokeFunWrapper(
                 funName = operation.kqlOperation.name,
                 functionWrapper = operation.kqlOperation,
@@ -61,7 +61,7 @@ class RequestExecutor(val schema: DefaultSchema) {
         writeValue(ctx, operationResult, node, operation.returnType)
     }
 
-    private fun <T>writeUnionOperation(ctx: Context, parent: T, node: ExecutionNode.Union, unionProperty: SchemaNode.UnionProperty){
+    private fun <T>writeUnionOperation(ctx: Context, parent: T, node: Execution.Union, unionProperty: SchemaNode.UnionProperty){
         val operationResult : Any? = functionHandler.invokeFunWrapper(
                 funName = unionProperty.kqlProperty.name,
                 functionWrapper = unionProperty.kqlProperty,
@@ -82,7 +82,7 @@ class RequestExecutor(val schema: DefaultSchema) {
         writeValue(ctx, operationResult, node, returnType)
     }
 
-    private fun <T>writeValue(ctx: Context, value : T?, node: ExecutionNode, returnType: SchemaNode.ReturnType){
+    private fun <T>writeValue(ctx: Context, value : T?, node: Execution.Node, returnType: SchemaNode.ReturnType){
         when {
             value == null -> writeNullValue(ctx, node, returnType)
 
@@ -104,7 +104,7 @@ class RequestExecutor(val schema: DefaultSchema) {
             //big decimal etc?
 
             node.children.isNotEmpty() -> writeObject(ctx, value, node, returnType)
-            node is ExecutionNode.Union -> {
+            node is Execution.Union -> {
                 writeObject(ctx, value, node.memberExecution(returnType), returnType)
             }
             else -> writeSimpleValue(ctx, returnType, value)
@@ -124,7 +124,7 @@ class RequestExecutor(val schema: DefaultSchema) {
         }
     }
 
-    private fun writeNullValue(ctx: Context, node: ExecutionNode, returnType: SchemaNode.ReturnType) {
+    private fun writeNullValue(ctx: Context, node: Execution.Node, returnType: SchemaNode.ReturnType) {
         if (returnType.isNullable) {
             ctx.generator.writeNull()
         } else {
@@ -132,23 +132,53 @@ class RequestExecutor(val schema: DefaultSchema) {
         }
     }
 
-    private fun <T> writeObject(ctx: Context, value : T, node: ExecutionNode, type: SchemaNode.Type){
+    private fun <T> writeObject(ctx: Context, value : T, node: Execution.Node, type: SchemaNode.Type){
         ctx.generator.writeStartObject()
         for(child in node.children){
-            if(child is ExecutionNode.Union){
-                val property = type.unionProperties[child.key]
-                        ?: throw IllegalStateException("Execution unit ${child.key} is not contained by operation return type")
-                writeUnionOperation(ctx, value, child, property)
-            } else {
-                val property = type.properties[child.key]
-                        ?: throw IllegalStateException("Execution unit ${child.key} is not contained by operation return type")
-                writeProperty(ctx, value, child, property)
-            }
+            handleProperty(ctx, value, child, type)
         }
         ctx.generator.writeEndObject()
     }
 
-    private fun <T> writeProperty(ctx: Context, parentValue: T, node: ExecutionNode, property: SchemaNode.Property) {
+    private fun <T> handleProperty(ctx: Context, value: T, child: Execution, type: SchemaNode.Type) {
+        when (child) {
+        //Union is subclass of Node so check it first
+            is Execution.Union -> {
+                val property = type.unionProperties[child.key]
+                        ?: throw IllegalStateException("Execution unit ${child.key} is not contained by operation return type")
+                writeUnionOperation(ctx, value, child, property)
+            }
+            is Execution.Node -> {
+                val property = type.properties[child.key]
+                        ?: throw IllegalStateException("Execution unit ${child.key} is not contained by operation return type")
+                writeProperty(ctx, value, child, property)
+            }
+            is Execution.Container -> {
+                handleContainer(ctx, value, child)
+            }
+            else -> {
+                throw UnsupportedOperationException("Handling containers is not implemented yet")
+            }
+        }
+    }
+
+    private fun <T> handleContainer(ctx: Context, value: T, container: Execution.Container) {
+        when(container.condition) {
+            is Condition.Type -> {
+                val schemaNode = container.condition.schemaNode
+                if(schemaNode.kqlType is KQLType.Object<*>){
+                    if(schemaNode.kqlType.kClass.isInstance(value)){
+                        container.elements.forEach{ handleProperty(ctx, value, it, schemaNode)}
+                    }
+                } else {
+                    throw IllegalStateException("")
+                }
+            }
+            is Condition.Directive -> { throw UnsupportedOperationException("Directives are not supported yet") }
+        }
+    }
+
+    private fun <T> writeProperty(ctx: Context, parentValue: T, node: Execution.Node, property: SchemaNode.Property) {
         val kqlProperty = property.kqlProperty
         when(kqlProperty){
             is KQLProperty.Kotlin<*,*> -> {

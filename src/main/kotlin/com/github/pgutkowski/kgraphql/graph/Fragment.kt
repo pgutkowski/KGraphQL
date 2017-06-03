@@ -7,10 +7,12 @@ interface Fragment {
 
     val fragmentGraph: Graph
 
+    val typeCondition: String?
+
     class External (
             key : String,
             override val fragmentGraph: Graph,
-            val typeCondition: String? = null
+            override val typeCondition: String? = null
     ) : Fragment, GraphNode(key, null, fragmentGraph, null){
         init {
             if(!key.startsWith("...")){
@@ -21,6 +23,6 @@ interface Fragment {
 
     class Inline (
             override val fragmentGraph: Graph,
-            val typeCondition: String
+            override val typeCondition: String
     ) : Fragment, GraphNode("on $typeCondition", null, fragmentGraph, null)
 }

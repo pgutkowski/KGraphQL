@@ -1,3 +1,3 @@
 package com.github.pgutkowski.kgraphql.schema.execution
 
-class ExecutionPlan(val c: List<ExecutionNode.Operation<*>>) : List<ExecutionNode.Operation<*>> by c
+class ExecutionPlan(val c: List<Execution.Operation<*>>) : List<Execution.Operation<*>> by c

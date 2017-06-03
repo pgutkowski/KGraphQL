@@ -3,9 +3,11 @@ package com.github.pgutkowski.kgraphql.specification.language
 import com.github.pgutkowski.kgraphql.*
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-@Specification("2.2 Query Document")
+@Specification("2.2 Query Document/2.3 Operations")
 class QueryDocumentSpecificationTest {
 
     val schema = defaultSchema {
@@ -62,5 +64,11 @@ class QueryDocumentSpecificationTest {
         ))
         assertNoErrors(map)
         assertThat(extract<String>(map, "data/fizz"), equalTo("buzz"))
+    }
+
+    @Test
+    @Disabled("Feature not supported yet")
+    fun `handle subscription`(){
+        Assertions.fail("Feature not supported yet")
     }
 }

@@ -1,13 +1,13 @@
 package com.github.pgutkowski.kgraphql.schema.structure
 
-import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.ValidationException
 import com.github.pgutkowski.kgraphql.graph.Fragment
 import com.github.pgutkowski.kgraphql.graph.GraphNode
 import com.github.pgutkowski.kgraphql.request.Operation
 import com.github.pgutkowski.kgraphql.schema.SchemaException
-import com.github.pgutkowski.kgraphql.schema.execution.ExecutionNode
+import com.github.pgutkowski.kgraphql.schema.execution.Condition
+import com.github.pgutkowski.kgraphql.schema.execution.Execution
 import com.github.pgutkowski.kgraphql.schema.execution.ExecutionPlan
 import com.github.pgutkowski.kgraphql.schema.model.SchemaModel
 import com.github.pgutkowski.kgraphql.schema.model.*
@@ -39,7 +39,7 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
     }
 
     fun createExecutionPlan(request: Operation) : ExecutionPlan {
-        val children = mutableListOf<ExecutionNode.Operation<*>>()
+        val children = mutableListOf<Execution.Operation<*>>()
         val root = when(request.action){
             Operation.Action.QUERY -> queries
             Operation.Action.MUTATION -> mutations
@@ -69,8 +69,8 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
         return ExecutionPlan(children)
     }
 
-    private fun <T>handleOperation(requestNode: GraphNode, operation: SchemaNode.Operation<T>): ExecutionNode.Operation<T>{
-        return ExecutionNode.Operation(
+    private fun <T>handleOperation(requestNode: GraphNode, operation: SchemaNode.Operation<T>): Execution.Operation<T>{
+        return Execution.Operation(
                 operationNode = operation,
                 children = handleChildren(operation, requestNode),
                 key = requestNode.key,
@@ -79,8 +79,8 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
         )
     }
 
-    private fun handleBranch(requestNode: GraphNode, operation: SchemaNode.SingleBranch): ExecutionNode {
-        return ExecutionNode(
+    private fun handleBranch(requestNode: GraphNode, operation: SchemaNode.SingleBranch): Execution.Node {
+        return Execution.Node(
                 schemaNode = operation,
                 children = handleChildren(operation, requestNode),
                 key = requestNode.key,
@@ -89,7 +89,7 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
         )
     }
 
-    private fun handleUnion(requestNode: GraphNode, property: SchemaNode.UnionProperty): ExecutionNode {
+    private fun handleUnion(requestNode: GraphNode, property: SchemaNode.UnionProperty): Execution.Union {
         //validate that only typed fragments are present
         val illegalChildren = requestNode.children?.filterNot {
             it is Fragment.Inline || (it is Fragment.External && it.typeCondition != null)
@@ -109,7 +109,7 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
 
             returnType to handleReturnType(returnType, fragmentRequestNode)
         }
-        return ExecutionNode.Union (
+        return Execution.Union (
                 property,
                 unionMembersChildren,
                 requestNode.key,
@@ -117,12 +117,12 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
         )
     }
 
-    private fun handleChildren(operation: SchemaNode.SingleBranch, requestNode: GraphNode): List<ExecutionNode> {
+    private fun handleChildren(operation: SchemaNode.SingleBranch, requestNode: GraphNode): List<Execution> {
         return handleReturnType(operation.returnType, requestNode)
     }
 
-    fun handleReturnType(returnType: SchemaNode.ReturnType, requestNode: GraphNode) : List<ExecutionNode>{
-        val children = mutableListOf<ExecutionNode>()
+    fun handleReturnType(returnType: SchemaNode.ReturnType, requestNode: GraphNode) : List<Execution>{
+        val children = mutableListOf<Execution>()
         if (requestNode.children != null) {
             val childrenRequestNodes = requestNode.children
             for (childRequestNode in childrenRequestNodes) {
@@ -134,25 +134,28 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
         return children
     }
 
-    private fun handleReturnTypeChildOrFragment(childRequestNode: GraphNode, returnType: SchemaNode.ReturnType): List<ExecutionNode> {
-        val children = mutableListOf<ExecutionNode>()
-        when(childRequestNode){
-            is Fragment.External -> {
-                childRequestNode.fragmentGraph.mapTo(children) { handleReturnTypeChild(it, returnType) }
-            }
-            is Fragment.Inline -> {
-                if(childRequestNode.typeCondition == returnType.kqlType.name){
-                    childRequestNode.fragmentGraph.mapTo(children) { handleReturnTypeChild(it, returnType) }
+    private fun handleReturnTypeChildOrFragment(node: GraphNode, returnType: SchemaNode.ReturnType): List<Execution> {
+        val children = mutableListOf<Execution>()
+        when(node){
+            is Fragment -> {
+                if(node.typeCondition == null){
+                    node.fragmentGraph.mapTo(children) { handleTypeChild(it, returnType) }
+                } else {
+                    val type = nodes.values.find { it.kqlType.name == node.typeCondition }
+                            ?: throw SyntaxException("Unknown type ${node.typeCondition} in type condition on fragment ${node.aliasOrKey}")
+                    val condition = Condition.Type(type)
+                    val elements = node.fragmentGraph.map { handleTypeChild(it, type) }
+                    children.add(Execution.Container(condition, elements))
                 }
             }
             else -> {
-                children.add(handleReturnTypeChild(childRequestNode, returnType))
+                children.add(handleTypeChild(node, returnType))
             }
         }
         return children
     }
 
-    private fun handleReturnTypeChild(childRequestNode: GraphNode, returnType: SchemaNode.ReturnType): ExecutionNode {
+    private fun handleTypeChild(childRequestNode: GraphNode, returnType: SchemaNode.Type): Execution.Node {
         val property = returnType.properties[childRequestNode.key]
         val unionProperty = returnType.unionProperties[childRequestNode.key]
 

@@ -15,12 +15,6 @@ internal class FunctionInvoker(private val argumentsHandler: ArgumentsHandler) {
                             receiver: Any?,
                             args: Arguments?,
                             variables: Variables): T? {
-        if(functionWrapper.arity() != (args?.size ?: 0) + (if(receiver!= null) 1 else 0) ){
-
-            throw com.github.pgutkowski.kgraphql.SyntaxException(
-                    "$funName does support arguments: ${functionWrapper.kFunction.parameters.map { it.name }}. found arguments: ${args?.keys}"
-            )
-        }
 
         val transformedArgs = argumentsHandler.transformArguments(functionWrapper, args, variables)
 

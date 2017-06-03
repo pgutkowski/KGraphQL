@@ -161,13 +161,11 @@ class DocumentParserTest {
 
     @Test
     fun `fragment parsing`(){
-        val map = graphParser.parseDocument("{hero {id ...heroName}} fragment heroName {name {real asHero}}")
+        val map = graphParser.parseDocument("{hero {id ...heroName}} fragment heroName on Hero {name {real asHero}}")
         val expected = Graph (
                 branch("hero",
                         leaf("id"),
-                        extFragment( "...heroName",
-                                branch("name", *leafs("real", "asHero"))
-                        )
+                        extFragment( "...heroName", "Hero", branch("name", *leafs("real", "asHero")))
                 )
         )
         assertThat(map.first().graph, equalTo(expected))

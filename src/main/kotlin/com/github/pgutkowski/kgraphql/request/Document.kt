@@ -9,7 +9,7 @@ data class Document(val fragmentsTokens: List<FragmentTokens>, val operationToke
     /**
      * Represents half-structured data of fragment declaration in query document.
      */
-    data class FragmentTokens(val name : String, val typeCondition: String?, val graphTokens : List<String>)
+    data class FragmentTokens(val name : String, val typeCondition: String, val graphTokens : List<String>)
 
     /**
      * Represents half-structured data of operation declaration in query document

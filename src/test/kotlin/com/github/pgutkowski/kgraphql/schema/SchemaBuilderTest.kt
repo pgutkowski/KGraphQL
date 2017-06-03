@@ -1,9 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema
 
-import com.github.pgutkowski.kgraphql.Actor
-import com.github.pgutkowski.kgraphql.Id
-import com.github.pgutkowski.kgraphql.Scenario
-import com.github.pgutkowski.kgraphql.defaultSchema
+import com.github.pgutkowski.kgraphql.*
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.*
@@ -162,5 +159,27 @@ class SchemaBuilderTest {
         val property = actorType.properties["linked"] ?: throw Exception("Actor should have ext property 'linked'")
         assertThat(property, notNullValue())
         assertThat(property.returnType.kqlType.name, equalTo("Actor"))
+    }
+
+    @Test
+    fun ` _ is allowed as receiver argument name`(){
+        val schema = defaultSchema {
+            query {
+                name = "actor"
+                resolver { -> Actor("Boguś Linda", 4343) }
+            }
+
+            type<Actor>{
+                property<List<String>> {
+                    name = "favDishes"
+                    resolver { _: Actor, size: Int->
+                        listOf("steak", "burger", "soup", "salad", "bread", "bird").take(size)
+                    }
+                }
+            }
+        }
+
+        //just see if it works
+        val result = deserialize(schema.execute("{actor{favDishes(size: 2)}}"))
     }
 }

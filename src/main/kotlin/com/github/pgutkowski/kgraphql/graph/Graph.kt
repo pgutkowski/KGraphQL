@@ -81,10 +81,6 @@ fun extFragment(key: String, typeCondition: String, vararg nodes: GraphNode) : F
     return Fragment.External(key, Graph(*nodes), typeCondition)
 }
 
-fun extFragment(key: String, vararg nodes: GraphNode) : Fragment.External {
-    return Fragment.External(key, Graph(*nodes))
-}
-
 fun inlineFragment(typeCondition: String, vararg nodes: GraphNode) : Fragment.Inline {
     return Fragment.Inline(Graph(*nodes), typeCondition)
 }

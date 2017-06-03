@@ -212,7 +212,7 @@ class QueryTest : BaseSchemaTest() {
 
     @Test
     fun `query with external fragment`(){
-        val map = execute("{film{title, ...dir }} fragment dir {director{name, age}}")
+        val map = execute("{film{title, ...dir }} fragment dir on Film {director{name, age}}")
         assertNoErrors(map)
         assertThat(extract<String>(map, "data/film/title"), equalTo(prestige.title))
         assertThat(extract<String>(map, "data/film/director/name"), equalTo(prestige.director.name))
@@ -223,44 +223,6 @@ class QueryTest : BaseSchemaTest() {
     fun `query with missing selection set`(){
         expect<SyntaxException>("Missing selection set on property film of type Film"){
             execute("{film}")
-        }
-    }
-
-    @Test
-    fun `query with inline fragment with type condition`(){
-        val map = execute("{people{name, age, ... on Actor {isOld} ... on Director {favActors{name}}}}")
-        assertNoErrors(map)
-        for(i in extract<List<*>>(map, "data/people").indices){
-            val name = extract<String>(map, "data/people[$i]/name")
-            when(name){
-                "David Fincher" /* director */  ->{
-                    assertThat(extract<List<*>>(map, "data/people[$i]/favActors"), notNullValue())
-                    assertThat(extractOrNull<Boolean>(map, "data/people[$i]/isOld"), nullValue())
-                }
-                "Brad Pitt" /* actor */ -> {
-                    assertThat(extract<Boolean>(map, "data/people[$i]/isOld"), notNullValue())
-                    assertThat(extractOrNull<List<*>>(map, "data/people[$i]/favActors"), nullValue())
-                }
-            }
-        }
-    }
-
-    @Test
-    fun `query with external fragment with type condition`(){
-        val map = execute("{people{name, age ...act ...dir}} fragment act on Actor {isOld} fragment dir on Director {favActors{name}}")
-        assertNoErrors(map)
-        for(i in extract<List<*>>(map, "data/people").indices){
-            val name = extract<String>(map, "data/people[$i]/name")
-            when(name){
-                "David Fincher" /* director */  ->{
-                    assertThat(extract<List<*>>(map, "data/people[$i]/favActors"), notNullValue())
-                    assertThat(extractOrNull<Boolean>(map, "data/people[$i]/isOld"), nullValue())
-                }
-                "Brad Pitt" /* actor */ -> {
-                    assertThat(extract<Boolean>(map, "data/people[$i]/isOld"), notNullValue())
-                    assertThat(extractOrNull<List<*>>(map, "data/people[$i]/favActors"), nullValue())
-                }
-            }
         }
     }
 }

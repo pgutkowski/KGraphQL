@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-@Specification("2.2 Query Document/2.3 Operations")
+@Specification("2.2 Query Document")
 class QueryDocumentSpecificationTest {
 
     val schema = defaultSchema {
@@ -20,26 +20,6 @@ class QueryDocumentSpecificationTest {
             name = "createActor"
             resolver { name : String -> Actor(name, 11) }
         }
-    }
-
-    @Test
-    fun `unnamed and named queries are equivalent`(){
-        executeEqualQueries( schema,
-                mapOf("data" to mapOf("fizz" to "buzz")),
-                "{fizz}",
-                "query {fizz}",
-                "query BUZZ {fizz}"
-        )
-    }
-
-    @Test
-    fun `unnamed and named mutations are equivalent`(){
-        executeEqualQueries( schema,
-                mapOf("data" to mapOf("createActor" to mapOf("name" to "Kurt Russel"))),
-                "{createActor(name : \"Kurt Russel\"){name}}",
-                "mutation {createActor(name : \"Kurt Russel\"){name}}",
-                "mutation KURT {createActor(name : \"Kurt Russel\"){name}}"
-        )
     }
 
     @Test
@@ -64,11 +44,5 @@ class QueryDocumentSpecificationTest {
         ))
         assertNoErrors(map)
         assertThat(extract<String>(map, "data/fizz"), equalTo("buzz"))
-    }
-
-    @Test
-    @Disabled("Feature not supported yet")
-    fun `handle subscription`(){
-        Assertions.fail("Feature not supported yet")
     }
 }

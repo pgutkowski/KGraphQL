@@ -80,6 +80,7 @@ fun createFragmentTokens(tokens : List<String>, startIndex: Int) : Pair<Int, Doc
             "{" -> {
                 val indexOfClosingBracket = indexOfClosingBracket(tokens, index)
                 if(name == null) throw SyntaxException("Invalid anonymous external fragment")
+                if(typeCondition == null) throw SyntaxException("Invalid external fragment without type condition")
                 return indexOfClosingBracket to Document.FragmentTokens(name, typeCondition, tokens.subList(index, indexOfClosingBracket))
             }
             else -> throw SyntaxException("Unexpected token: $token")

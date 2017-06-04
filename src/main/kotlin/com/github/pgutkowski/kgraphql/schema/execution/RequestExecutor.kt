@@ -153,8 +153,8 @@ class RequestExecutor(val schema: DefaultSchema) {
                         ?: throw IllegalStateException("Execution unit ${child.key} is not contained by operation return type")
                 writeProperty(ctx, value, child, property)
             }
-            is Execution.Container -> {
-                handleContainer(ctx, value, child)
+            is Execution.Fragment -> {
+                handleFragment(ctx, value, child)
             }
             else -> {
                 throw UnsupportedOperationException("Handling containers is not implemented yet")
@@ -162,51 +162,58 @@ class RequestExecutor(val schema: DefaultSchema) {
         }
     }
 
-    private fun <T> handleContainer(ctx: Context, value: T, container: Execution.Container) {
-        when(container.condition) {
-            is Condition.Type -> {
-                val schemaNode = container.condition.schemaNode
-                if(schemaNode.kqlType is KQLType.Object<*>){
-                    if(schemaNode.kqlType.kClass.isInstance(value)){
-                        container.elements.forEach{ handleProperty(ctx, value, it, schemaNode)}
-                    }
-                } else {
-                    throw IllegalStateException("")
-                }
+    private fun <T> handleFragment(ctx: Context, value: T, container: Execution.Fragment) {
+        val schemaNode = container.condition.schemaNode
+        if(schemaNode.kqlType is KQLType.Object<*>){
+            if(schemaNode.kqlType.kClass.isInstance(value)){
+                container.elements.forEach{ handleProperty(ctx, value, it, schemaNode)}
             }
-            is Condition.Directive -> { throw UnsupportedOperationException("Directives are not supported yet") }
+        } else {
+            throw IllegalStateException("fragments can be specified on object types, interfaces, and unions")
         }
     }
 
     private fun <T> writeProperty(ctx: Context, parentValue: T, node: Execution.Node, property: SchemaNode.Property) {
-        val kqlProperty = property.kqlProperty
-        when(kqlProperty){
-            is KQLProperty.Kotlin<*,*> -> {
-                kqlProperty.kProperty as KProperty1<T, *>
-                val rawValue = kqlProperty.kProperty.get(parentValue)
-                val value : Any?
-                if(property.transformation != null){
-                    value = functionHandler.invokeFunWrapper(
-                            funName = kqlProperty.name,
-                            functionWrapper = property.transformation,
-                            receiver = rawValue,
-                            args = node.arguments,
-                            variables = ctx.variables
-                    )
-                } else {
-                    value = rawValue
+        val include = node.directives?.map { (directive, arguments) ->
+            functionHandler.invokeFunWrapper(
+                    funName = directive.name,
+                    functionWrapper = directive.execution,
+                    receiver = null,
+                    args = arguments,
+                    variables = ctx.variables
+            )?.include ?: throw ExecutionException("Illegal directive implementation returning null result")
+        }?.reduce { acc, b -> acc && b } ?: true
+
+        if(include){
+            val kqlProperty = property.kqlProperty
+            when(kqlProperty){
+                is KQLProperty.Kotlin<*,*> -> {
+                    kqlProperty.kProperty as KProperty1<T, *>
+                    val rawValue = kqlProperty.kProperty.get(parentValue)
+                    val value : Any?
+                    if(property.transformation != null){
+                        value = functionHandler.invokeFunWrapper(
+                                funName = kqlProperty.name,
+                                functionWrapper = property.transformation,
+                                receiver = rawValue,
+                                args = node.arguments,
+                                variables = ctx.variables
+                        )
+                    } else {
+                        value = rawValue
+                    }
+                    ctx.generator.writeFieldName(node.aliasOrKey)
+                    writeValue(ctx, value, node, property.returnType)
                 }
-                ctx.generator.writeFieldName(node.aliasOrKey)
-                writeValue(ctx, value, node, property.returnType)
-            }
-            is KQLProperty.Function<*> -> {
-                val args = argumentsHandler.transformArguments(kqlProperty, node.arguments, ctx.variables)
-                val result = kqlProperty.invoke(parentValue, *args.toTypedArray())
-                ctx.generator.writeFieldName(node.aliasOrKey)
-                writeValue(ctx, result, node, property.returnType)
-            }
-            else -> {
-                throw Exception("Unexpected kql property type: $kqlProperty, should be KQLProperty.Kotlin or KQLProperty.Function")
+                is KQLProperty.Function<*> -> {
+                    val args = argumentsHandler.transformArguments(kqlProperty, node.arguments, ctx.variables)
+                    val result = kqlProperty.invoke(parentValue, *args.toTypedArray())
+                    ctx.generator.writeFieldName(node.aliasOrKey)
+                    writeValue(ctx, result, node, property.returnType)
+                }
+                else -> {
+                    throw Exception("Unexpected kql property type: $kqlProperty, should be KQLProperty.Kotlin or KQLProperty.Function")
+                }
             }
         }
     }

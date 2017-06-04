@@ -1,13 +1,21 @@
 package com.github.pgutkowski.kgraphql.graph
 
+import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.request.Arguments
 import java.util.*
 
 
 class GraphBuilder : ArrayList<GraphNode>(){
-
     fun build() : Graph {
         return Graph(*this.toTypedArray())
+    }
+
+    override fun add(element: GraphNode): Boolean {
+        when {
+            element.key.isBlank() -> throw SyntaxException("cannot handle blank property in object : $this")
+            any { it.aliasOrKey == element.aliasOrKey } -> throw SyntaxException("Duplicated property name/alias: ${element.aliasOrKey}")
+            else -> return super.add(element)
+        }
     }
 }
 
@@ -82,5 +90,5 @@ fun extFragment(key: String, typeCondition: String, vararg nodes: GraphNode) : F
 }
 
 fun inlineFragment(typeCondition: String, vararg nodes: GraphNode) : Fragment.Inline {
-    return Fragment.Inline(Graph(*nodes), typeCondition)
+    return Fragment.Inline(Graph(*nodes), typeCondition, null)
 }

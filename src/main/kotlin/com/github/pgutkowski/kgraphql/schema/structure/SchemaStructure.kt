@@ -2,11 +2,13 @@ package com.github.pgutkowski.kgraphql.schema.structure
 
 import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.ValidationException
+import com.github.pgutkowski.kgraphql.graph.DirectiveInvocation
 import com.github.pgutkowski.kgraphql.graph.Fragment
 import com.github.pgutkowski.kgraphql.graph.GraphNode
 import com.github.pgutkowski.kgraphql.request.Operation
 import com.github.pgutkowski.kgraphql.schema.SchemaException
-import com.github.pgutkowski.kgraphql.schema.execution.Condition
+import com.github.pgutkowski.kgraphql.schema.directive.Directive
+import com.github.pgutkowski.kgraphql.schema.execution.TypeCondition
 import com.github.pgutkowski.kgraphql.schema.execution.Execution
 import com.github.pgutkowski.kgraphql.schema.execution.ExecutionPlan
 import com.github.pgutkowski.kgraphql.schema.model.SchemaModel
@@ -16,7 +18,8 @@ import kotlin.reflect.KType
 
 class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
                       val mutations : Map<String, SchemaNode.Mutation<*>>,
-                      val nodes : Map<KType, SchemaNode.Type>) {
+                      val nodes : Map<KType, SchemaNode.Type>,
+                      val directives: Map<String, Directive>) {
 
     companion object {
         fun of(
@@ -25,16 +28,24 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
                 objects: List<KQLType.Object<*>>,
                 scalars: List<KQLType.Scalar<*>>,
                 enums: List<KQLType.Enumeration<*>>,
-                unions: List<KQLType.Union>
+                unions: List<KQLType.Union>,
+                directives: List<Directive>
         ): SchemaStructure {
-            return SchemaStructureBuilder(queries, mutations, objects, scalars, enums, unions).build()
+            return SchemaStructureBuilder(queries, mutations, objects, scalars, enums, unions, directives).build()
         }
 
         fun of(schema: SchemaModel) : SchemaStructure {
-            return SchemaStructureBuilder(
-                    schema.queries, schema.mutations, schema.objects,
-                    schema.scalars, schema.enums, schema.unions
-            ).build()
+            with(schema) {
+                return SchemaStructureBuilder(
+                        queries,
+                        mutations,
+                        objects,
+                        scalars,
+                        enums,
+                        unions,
+                        directives
+                ).build()
+            }
         }
     }
 
@@ -75,7 +86,8 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
                 children = handleChildren(operation, requestNode),
                 key = requestNode.key,
                 alias = requestNode.alias,
-                arguments = requestNode.arguments
+                arguments = requestNode.arguments,
+                directives = requestNode.directives?.lookup()
         )
     }
 
@@ -85,14 +97,17 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
                 children = handleChildren(operation, requestNode),
                 key = requestNode.key,
                 alias = requestNode.alias,
-                arguments = requestNode.arguments
+                arguments = requestNode.arguments,
+                directives = requestNode.directives?.lookup()
         )
     }
+
+    fun List<DirectiveInvocation>.lookup() = associate { findDirective(it) to it.arguments }
 
     private fun handleUnion(requestNode: GraphNode, property: SchemaNode.UnionProperty): Execution.Union {
         //validate that only typed fragments are present
         val illegalChildren = requestNode.children?.filterNot {
-            it is Fragment.Inline || (it is Fragment.External && it.typeCondition != null)
+            it is Fragment.Inline || it is Fragment.External
         }
 
         if(illegalChildren?.any() ?: false){
@@ -113,7 +128,9 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
                 property,
                 unionMembersChildren,
                 requestNode.key,
-                requestNode.alias
+                requestNode.alias,
+                null,
+                requestNode.directives?.lookup()
         )
     }
 
@@ -143,9 +160,9 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
                 } else {
                     val type = nodes.values.find { it.kqlType.name == node.typeCondition }
                             ?: throw SyntaxException("Unknown type ${node.typeCondition} in type condition on fragment ${node.aliasOrKey}")
-                    val condition = Condition.Type(type)
+                    val condition = TypeCondition(type)
                     val elements = node.fragmentGraph.map { handleTypeChild(it, type) }
-                    children.add(Execution.Container(condition, elements))
+                    children.add(Execution.Fragment(condition, elements, node.directives?.lookup()))
                 }
             }
             else -> {
@@ -205,5 +222,9 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
         if (argumentValidationExceptions.isNotEmpty()) {
             throw ValidationException(argumentValidationExceptions.fold("", { sum, exc -> sum + "${exc.message}; " }))
         }
+    }
+
+    fun findDirective(invocation : DirectiveInvocation) : Directive {
+        return directives[invocation.key.removePrefix("@")] ?: throw SyntaxException("Directive ${invocation.key} does not exist")
     }
 }

@@ -1,12 +1,12 @@
 package com.github.pgutkowski.kgraphql.schema.model
 
 import com.github.pgutkowski.kgraphql.schema.builtin.BuiltInType
+import com.github.pgutkowski.kgraphql.schema.directive.Directive
 import com.github.pgutkowski.kgraphql.typeName
 
 /**
  * Intermediate, mutable data structure used to prepare [SchemaModel]
- * Performs basic validation (names duplication etc.) when methods for
- * adding schema components are invoked
+ * Performs basic validation (names duplication etc.) when methods for adding schema components are invoked
  */
 data class MutableSchemaModel (
         private val objects: ArrayList<KQLType.Object<*>> = arrayListOf<KQLType.Object<*>>(),
@@ -20,7 +20,11 @@ data class MutableSchemaModel (
         ),
         private val mutations: ArrayList<KQLMutation<*>> = arrayListOf<KQLMutation<*>>(),
         private val enums: ArrayList<KQLType.Enumeration<*>> = arrayListOf<KQLType.Enumeration<*>>(),
-        private val unions: ArrayList<KQLType.Union> = arrayListOf<KQLType.Union>()
+        private val unions: ArrayList<KQLType.Union> = arrayListOf<KQLType.Union>(),
+        private val directives: ArrayList<Directive> = arrayListOf(
+                Directive.SKIP,
+                Directive.INCLUDE
+        )
 ) {
 
         val unionsMonitor : List<KQLType.Union>
@@ -43,7 +47,7 @@ data class MutableSchemaModel (
                         }
                 }
 
-                return SchemaModel(compiledObjects, queries, scalars, mutations, enums, unions)
+                return SchemaModel(compiledObjects, queries, scalars, mutations, enums, unions, directives)
         }
 
         fun addQuery(query : KQLQuery<*>){

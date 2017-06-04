@@ -1,6 +1,7 @@
 package com.github.pgutkowski.kgraphql.schema.structure
 
 import com.github.pgutkowski.kgraphql.schema.SchemaException
+import com.github.pgutkowski.kgraphql.schema.directive.Directive
 import com.github.pgutkowski.kgraphql.schema.model.*
 import com.github.pgutkowski.kgraphql.typeName
 import kotlin.reflect.KClass
@@ -18,7 +19,8 @@ class SchemaStructureBuilder(
         val objects: List<KQLType.Object<*>>,
         val scalars: List<KQLType.Scalar<*>>,
         val enums: List<KQLType.Enumeration<*>>,
-        val unions: List<KQLType.Union>
+        val unions: List<KQLType.Union>,
+        val directives: List<Directive>
 ) {
 
     /**
@@ -50,7 +52,12 @@ class SchemaStructureBuilder(
                 .filter {  typesCache[it] ?: mutableTypesCache[it] == null }
                 .associateTo(typesCache) { it to handleReturnType(it) }
 
-        return SchemaStructure(queryNodes, mutationNodes, mutableTypesCache.toMap() + typesCache.toMap())
+        return SchemaStructure (
+                queryNodes,
+                mutationNodes,
+                mutableTypesCache.toMap() + typesCache.toMap(),
+                directives.associate { it.name to it }
+        )
     }
 
     private fun <R> handleOperation(operation : BaseKQLOperation<R>) : SchemaNode.ReturnType {

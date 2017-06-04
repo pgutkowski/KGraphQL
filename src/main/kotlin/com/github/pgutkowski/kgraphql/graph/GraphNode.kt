@@ -2,11 +2,12 @@ package com.github.pgutkowski.kgraphql.graph
 
 import com.github.pgutkowski.kgraphql.request.Arguments
 
-open class GraphNode(
+open class GraphNode (
         val key : String,
         val alias: String? = null,
         val children: Graph? = null,
-        val arguments : Arguments? = null
+        val arguments : Arguments? = null,
+        val directives: List<DirectiveInvocation>? = null
 ) : Comparable<GraphNode> {
 
     override fun compareTo(other: GraphNode): Int {
@@ -28,6 +29,7 @@ open class GraphNode(
         val builder = StringBuilder(aliasOrKey)
         if(children != null) builder.append(" {").append(children).append("} ")
         if(arguments != null) builder.append(" args: ").append("{").append(arguments).append("}")
+        if(directives != null) builder.append(" directives: ").append("{").append(arguments).append("}")
         return builder.toString()
     }
 
@@ -41,6 +43,7 @@ open class GraphNode(
         if (alias != other.alias) return false
         if (children != other.children) return false
         if (arguments != other.arguments) return false
+        if (directives != other.directives) return false
 
         return true
     }
@@ -50,6 +53,7 @@ open class GraphNode(
         result = 31 * result + (alias?.hashCode() ?: 0)
         result = 31 * result + (children?.hashCode() ?: 0)
         result = 31 * result + (arguments?.hashCode() ?: 0)
+        result = 31 * result + (directives?.hashCode() ?: 0)
         return result
     }
 }

@@ -1,15 +1,29 @@
 package com.github.pgutkowski.kgraphql.request
 
 import com.github.pgutkowski.kgraphql.SyntaxException
-import com.github.pgutkowski.kgraphql.graph.Fragment
-import com.github.pgutkowski.kgraphql.graph.Graph
-import com.github.pgutkowski.kgraphql.graph.GraphBuilder
-import com.github.pgutkowski.kgraphql.graph.GraphNode
+import com.github.pgutkowski.kgraphql.graph.*
 
 /**
  * Utility for parsing query document and its structures.
+ * TODO: too complex, has to refactor this
  */
 class DocumentParser {
+
+    private data class ParsingContext(
+            val tokens: List<String>,
+            val fragments: Map<String, Fragment.External>,
+            var index : Int = 0,
+            var nestedBrackets: Int = 0,
+            var nestedParenthesis: Int = 0
+    ) {
+        operator fun get(index: Int): String = tokens[index]
+
+        fun currentToken() = tokens[index]
+
+        fun currentTokenOrNull() = tokens.getOrNull(index)
+
+        fun followingTokenOrNull() = tokens.getOrNull(index + 1)
+    }
 
     /**
      * Performs validation and parsing of query document, returning all declared operations.
@@ -33,98 +47,143 @@ class DocumentParser {
      * @param tokens - should be list of valid GraphQL tokens
      */
     fun parseGraph(tokens: List<String>, fragments: Map<String, Fragment.External> = emptyMap()): Graph {
+        return parseGraph(ParsingContext(tokens, fragments))
+    }
+
+    private fun parseGraph(ctx : ParsingContext) : Graph {
         val graph = GraphBuilder()
-        var index = 0
-        var nestedBrackets = 0
-        var nestedParenthesis = 0
-
-        while (index < tokens.size) {
-            val token = tokens[index]
+        while (ctx.index < ctx.tokens.size) {
+            val token = ctx.currentToken()
             if(token in OPERANDS){
-                when(token){
-                    "{" -> nestedBrackets++
-                    "}" -> {
-                        nestedBrackets--
-                        if(nestedBrackets < 0){
-                            throw SyntaxException("No matching opening bracket for closing bracket at ${getIndexOfTokenInString(tokens)}")
-                        }
-                    }
-                    "(" -> nestedParenthesis++
-                    ")" -> {
-                        nestedParenthesis--
-                        if(nestedParenthesis < 0){
-                            throw SyntaxException("No matching opening parenthesis for closing parenthesis at ${getIndexOfTokenInString(tokens)}")
-                        }
-                    }
-                }
+                handleOperands(token, ctx)
             } else {
-                val (alias, key) = if (tokens.size > index + 1 && tokens[index + 1] == ":") {
-                    index += 2
-                    token to tokens[index]
-                } else {
-                    null to token
-                }
-
-                when (tokens.getOrNull(index + 1)) {
-                    "{" -> {
-                        val subGraphTokens = objectSubTokens(tokens, index + 1)
-                        validateAndAdd(graph, GraphNode(key, alias, parseGraph(subGraphTokens, fragments)))
-                        index += subGraphTokens.size + 2 //subtokens do not contain '{' and '}'
-                    }
-                    "(" -> {
-                        val argTokens = argsSubTokens(tokens, index + 1)
-                        val arguments = parseArguments(argTokens)
-                        index += argTokens.size + 2 //subtokens do not contain '(' and ')'
-
-                        var subGraph: Graph? = null
-                        if (tokens.getOrNull(index + 1) == "{") {
-                            val subGraphTokens = objectSubTokens(tokens, index + 1)
-                            subGraph = parseGraph(subGraphTokens, fragments)
-                            index += subGraphTokens.size + 2 //subtokens do not contain '{' and '}'
-                        }
-                        validateAndAdd(graph, GraphNode(key, alias, subGraph, arguments))
-                    }
+                val (alias, key) = extractAliasAndKey(ctx)
+                val directives : List<DirectiveInvocation>? = parseDirectives(ctx)
+                when (ctx.followingTokenOrNull()) {
+                    "{" -> graph.add(parseNode(ctx, key, alias, directives))
+                    "(" -> graph.add(parseNodeWithArguments(ctx, key, alias, directives))
                     else -> {
                         if(key.startsWith("...")){
                             if(key == "..."){
-                                if(tokens.getOrNull(index + 1) != "on"){
-                                    throw SyntaxException("expected 'on #typeCondition {selection set}' after '...' in inline fragment")
-                                }
-
-                                val typeCondition = tokens[index + 2]
-                                val subGraphTokens = objectSubTokens(tokens, index + 3)
-                                validateAndAdd(graph, Fragment.Inline(parseGraph(subGraphTokens, fragments), typeCondition))
-                                index += (subGraphTokens.size + 4)
+                                graph.add(parseInlineFragment(ctx, directives))
                             } else {
-                                val fragment = fragments[key] ?: throw SyntaxException("Fragment $key} does not exist")
-                                validateAndAdd(graph, fragment)
+                                graph.add(ctx.fragments[key] ?: throw SyntaxException("Fragment $key} does not exist"))
                             }
                         } else {
-                            validateAndAdd(graph, GraphNode(key, alias))
+                            graph.add(GraphNode(key = key, alias = alias, directives = directives))
                         }
                     }
                 }
             }
-            ++index
+            ctx.index++
         }
 
         when {
-            nestedBrackets != 0 -> throw SyntaxException("Missing closing bracket")
-            nestedParenthesis != 0 -> throw SyntaxException("Missing closing parenthesis")
+            ctx.nestedBrackets != 0 -> throw SyntaxException("Missing closing bracket")
+            ctx.nestedParenthesis != 0 -> throw SyntaxException("Missing closing parenthesis")
         }
 
         return graph.build()
     }
 
-    fun parseArguments(tokens: List<String>): Arguments {
+    private fun extractAliasAndKey(ctx: ParsingContext): Pair<String?, String> {
+        val token = ctx[ctx.index]
+        return if (ctx.tokens.size > ctx.index + 1 && ctx[ctx.index + 1] == ":") {
+            ctx.index += 2
+            token to ctx[ctx.index]
+        } else {
+            null to token
+        }
+    }
+
+    /**
+     * Assumption is that directive is always 'on' some token, so this method starts from following token, not current
+     */
+    private fun parseDirectives(ctx: ParsingContext) : List<DirectiveInvocation>? {
+        val directives = arrayListOf<DirectiveInvocation>()
+        var nextDirective : DirectiveInvocation? = parseDirective(ctx, true)
+        if(nextDirective != null){
+            while(nextDirective != null){
+                ctx.index++
+                directives.add(nextDirective)
+                nextDirective = parseDirective(ctx)
+            }
+            return directives
+        } else {
+            return null
+        }
+    }
+
+    private fun parseDirective(ctx: ParsingContext, following : Boolean = false) : DirectiveInvocation? {
+        val directiveName = if(following) ctx.followingTokenOrNull() else ctx.currentTokenOrNull()
+        if(directiveName != null && directiveName.startsWith("@")){
+            if(following) ctx.index++
+            if(ctx.followingTokenOrNull() == "("){
+                val arguments = parseArguments(ctx, ctx.index+1)
+                return (DirectiveInvocation(directiveName, arguments))
+            } else {
+                return (DirectiveInvocation(directiveName))
+            }
+        } else {
+            return null
+        }
+    }
+
+    private fun parseInlineFragment(ctx: ParsingContext, directives: List<DirectiveInvocation>?): Fragment.Inline {
+        if (ctx.followingTokenOrNull() != "on") {
+            throw SyntaxException("expected 'on #typeCondition {selection set}' after '...' in inline fragment")
+        }
+
+        val typeCondition = ctx[ctx.index + 2]
+        val subGraphTokens = objectSubTokens(ctx.tokens, ctx.index + 3)
+        ctx.index += (subGraphTokens.size + 4)
+        return Fragment.Inline(parseGraph(subGraphTokens, ctx.fragments), typeCondition, directives)
+    }
+
+    private fun parseNodeWithArguments(ctx: ParsingContext, key: String, alias: String?, directives: List<DirectiveInvocation>?): GraphNode {
+        val arguments = parseArguments(ctx, ctx.index + 1)
+
+        var subGraph: Graph? = null
+        if (ctx.tokens.getOrNull(ctx.index + 1) == "{") {
+            val subGraphTokens = objectSubTokens(ctx.tokens, ctx.index + 1)
+            subGraph = parseGraph(subGraphTokens, ctx.fragments)
+            ctx.index += subGraphTokens.size + 2 //subtokens do not contain '{' and '}'
+        }
+        return GraphNode(key, alias, subGraph, arguments, directives)
+    }
+
+    private fun parseArguments(ctx: ParsingContext, startIndex: Int): Arguments {
+        val argTokens = argsSubTokens(ctx.tokens, startIndex)
         val arguments = Arguments()
         var i = 0
-        while (i + 2 < tokens.size) {
-            assert(tokens[i + 1] == ":")
-            arguments.put(tokens[i], tokens[i + 2])
+        while (i + 2 < argTokens.size) {
+            assert(argTokens[i + 1] == ":")
+            arguments.put(argTokens[i], argTokens[i + 2])
             i += 3
         }
+        ctx.index += argTokens.size + 2 //subtokens do not contain '(' and ')'
         return arguments
+    }
+
+    private fun parseNode(ctx: ParsingContext, key: String, alias: String?, directives: List<DirectiveInvocation>?): GraphNode {
+        val subGraphTokens = objectSubTokens(ctx.tokens, ctx.index + 1)
+        ctx.index += subGraphTokens.size + 2 //subtokens do not contain '{' and '}'
+        return GraphNode(key, alias, parseGraph(subGraphTokens, ctx.fragments), null, directives)
+    }
+
+    private fun handleOperands(token: String, ctx: ParsingContext) {
+        when (token) {
+            "{" -> ctx.nestedBrackets++
+            "}" -> ctx.nestedBrackets--
+            "(" -> ctx.nestedParenthesis++
+            ")" -> ctx.nestedParenthesis--
+        }
+        if (ctx.nestedBrackets < 0) {
+            throw SyntaxException("No matching opening bracket for closing bracket at ${getIndexOfTokenInString(ctx.tokens)}")
+        }
+        if (ctx.nestedParenthesis < 0) {
+            throw SyntaxException("No matching opening parenthesis for closing parenthesis at ${getIndexOfTokenInString(ctx.tokens)}")
+        }
     }
 
     private fun objectSubTokens(allTokens: List<String>, startIndex: Int) = subTokens(allTokens, startIndex, "{", "}")
@@ -142,13 +201,5 @@ class DocumentParser {
             if (nestedLevel == 0) return tokens.subList(1, index)
         }
         throw SyntaxException("Couldn't find matching closing token")
-    }
-
-    private fun validateAndAdd(graph: GraphBuilder, node: GraphNode) {
-        when {
-            node.key.isBlank() -> throw SyntaxException("cannot handle blank property in object : $graph")
-            graph.any { it.aliasOrKey == node.aliasOrKey } -> throw SyntaxException("Duplicated property name/alias: ${node.aliasOrKey}")
-            else -> graph.add(node)
-        }
     }
 }

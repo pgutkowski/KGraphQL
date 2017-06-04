@@ -26,6 +26,7 @@ interface Fragment {
 
     class Inline (
             override val fragmentGraph: Graph,
-            override val typeCondition: String?
-    ) : Fragment, GraphNode("on $typeCondition", null, fragmentGraph, null)
+            override val typeCondition: String?,
+            directives: List<DirectiveInvocation>?
+    ) : Fragment, GraphNode("on $typeCondition", null, fragmentGraph, null, directives)
 }

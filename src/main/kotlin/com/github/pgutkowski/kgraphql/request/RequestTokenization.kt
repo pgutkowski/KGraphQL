@@ -2,11 +2,11 @@ package com.github.pgutkowski.kgraphql.request
 
 import com.github.pgutkowski.kgraphql.SyntaxException
 
-val DELIMITERS = "{}\n(): "
+val OPERANDS = "{}():[]"
 
 val IGNORED_CHARACTERS = "\n\t, "
 
-val OPERANDS = "{}():"
+val DELIMITERS = OPERANDS + IGNORED_CHARACTERS
 
 fun tokenizeRequest(input : String) : List<String> {
     var i = 0
@@ -130,6 +130,6 @@ fun indexOfClosingBracket(tokens: List<String>, startIndex: Int) : Int {
     throw SyntaxException("Missing closing bracket for opening bracket at $indexOfTokenInString")
 }
 
-fun getIndexOfTokenInString(tokens: List<String>): Int {
+private fun getIndexOfTokenInString(tokens: List<String>): Int {
     return tokens.fold(0, { index, token -> index + token.length })
 }

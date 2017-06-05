@@ -12,7 +12,7 @@ class DocumentParserTest {
 
     @Test
     fun `nested query parsing`() {
-        val map = graphParser.parseGraph(tokenizeRequest("{hero{name appearsIn}\nvillain{name deeds}}"))
+        val map = graphParser.parseGraph("{hero{name appearsIn}\nvillain{name deeds}}")
         val expected = Graph(
                 branch( "hero",
                         leaf("name"),
@@ -29,7 +29,7 @@ class DocumentParserTest {
 
     @Test
     fun `double nested query parsing`() {
-        val map = graphParser.parseGraph(tokenizeRequest("{hero{name appearsIn{title, year}}\nvillain{name deeds}}"))
+        val map = graphParser.parseGraph("{hero{name appearsIn{title, year}}\nvillain{name deeds}}")
 
         val expected = Graph(
                 branch( "hero",
@@ -50,7 +50,7 @@ class DocumentParserTest {
 
     @Test
     fun `triple nested query parsing`() {
-        val map = graphParser.parseGraph(tokenizeRequest("{hero{name appearsIn{title{abbr full} year}}\nvillain{name deeds}}"))
+        val map = graphParser.parseGraph("{hero{name appearsIn{title{abbr full} year}}\nvillain{name deeds}}")
 
         val expected = Graph(
                 branch( "hero",
@@ -73,7 +73,7 @@ class DocumentParserTest {
 
     @Test
     fun `query with arguments parsing`() {
-        val map = graphParser.parseGraph(tokenizeRequest("{hero(name: \"Batman\"){ power }}"))
+        val map = graphParser.parseGraph("{hero(name: \"Batman\"){ power }}")
 
         val expected = Graph(
                 argBranch("hero",
@@ -87,7 +87,7 @@ class DocumentParserTest {
 
     @Test
     fun `query with alias parsing`() {
-        val map = graphParser.parseGraph(tokenizeRequest("{batman: hero(name: \"Batman\"){ power }}"))
+        val map = graphParser.parseGraph("{batman: hero(name: \"Batman\"){ power }}")
 
         val expected = Graph(
                 argBranch("hero", "batman",
@@ -101,7 +101,7 @@ class DocumentParserTest {
 
     @Test
     fun `query with field alias parsing`() {
-        val map = graphParser.parseGraph(tokenizeRequest("{batman: hero(name: \"Batman\"){ skills : powers }}"))
+        val map = graphParser.parseGraph("{batman: hero(name: \"Batman\"){ skills : powers }}")
 
         val expected = Graph(
                 argBranch("hero", "batman",
@@ -115,7 +115,7 @@ class DocumentParserTest {
 
     @Test
     fun `mutation with field alias parsing`(){
-        val map = graphParser.parseGraph(tokenizeRequest("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\")}"))
+        val map = graphParser.parseGraph(("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\")}"))
         val expected = Graph (
                 argLeaf("createHero", args("name" to "\"Batman\"", "appearsIn" to "\"The Dark Knight\""))
         )
@@ -124,7 +124,7 @@ class DocumentParserTest {
 
     @Test
     fun `field arguments parsing`(){
-        val map = graphParser.parseGraph(tokenizeRequest("{hero{name height(unit: FOOT)}}"))
+        val map = graphParser.parseGraph(("{hero{name height(unit: FOOT)}}"))
         val expected = Graph(
                 branch("hero",
                         leaf("name"),
@@ -136,7 +136,7 @@ class DocumentParserTest {
 
     @Test
     fun `mutation selection set parsing`(){
-        val map = graphParser.parseGraph(tokenizeRequest("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\"){id name timestamp}}"))
+        val map = graphParser.parseGraph(("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\"){id name timestamp}}"))
         val expected = Graph (
                 argBranch("createHero",
                         args("name" to "\"Batman\"", "appearsIn" to "\"The Dark Knight\""),
@@ -148,7 +148,7 @@ class DocumentParserTest {
 
     @Test
     fun `mutation nested selection set parsing`(){
-        val map = graphParser.parseGraph(tokenizeRequest("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\"){id name {real asHero}}}"))
+        val map = graphParser.parseGraph(("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\"){id name {real asHero}}}"))
         val expected = Graph (
                 argBranch("createHero",
                         args("name" to "\"Batman\"", "appearsIn" to "\"The Dark Knight\""),

@@ -138,7 +138,7 @@ class SchemaStructureBuilder(
     private fun <T : Any>handleEnumType(kType: KType, kClass: KClass<T>) : SchemaNode.Type? {
         if(kClass.isSubclassOf(Enum::class)){
             val kqlType = enums.find { it.kClass == kClass }
-                    ?: throw SchemaException("Please explicitly declare enum in schema")
+                    ?: throw SchemaException("Failed to build schema. Please explicitly declare enum $kClass in schema")
             return createSchemaNodeType(kType, kqlType)
         } else return null
     }

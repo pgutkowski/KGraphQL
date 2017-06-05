@@ -40,4 +40,14 @@ class RequestTokenizationTest {
                 )
         )
     }
+
+    @Test
+    fun `Tokenize list argument`(){
+        testTokenization(
+                input = "{List(value : [23, 3, 23])}",
+                expected = listOf(
+                        "{", "List","(", "value", ":", "[", "23", "3", "23", "]", ")","}"
+                )
+        )
+    }
 }

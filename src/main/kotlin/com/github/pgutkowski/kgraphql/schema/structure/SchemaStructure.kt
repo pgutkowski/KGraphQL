@@ -8,21 +8,22 @@ import com.github.pgutkowski.kgraphql.graph.GraphNode
 import com.github.pgutkowski.kgraphql.request.Operation
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
-import com.github.pgutkowski.kgraphql.schema.execution.TypeCondition
 import com.github.pgutkowski.kgraphql.schema.execution.Execution
 import com.github.pgutkowski.kgraphql.schema.execution.ExecutionPlan
-import com.github.pgutkowski.kgraphql.schema.model.SchemaModel
+import com.github.pgutkowski.kgraphql.schema.execution.TypeCondition
 import com.github.pgutkowski.kgraphql.schema.model.*
 import kotlin.reflect.KType
 
 
-class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
-                      val mutations : Map<String, SchemaNode.Mutation<*>>,
-                      val nodes : Map<KType, SchemaNode.Type>,
-                      val directives: Map<String, Directive>) {
+class SchemaStructure (
+        val queries : Map<String, SchemaNode.Query<*>>,
+        val mutations : Map<String, SchemaNode.Mutation<*>>,
+        val nodes : Map<KType, SchemaNode.Type>,
+        val directives: Map<String, Directive>
+) {
 
     companion object {
-        fun of(
+        fun of (
                 queries: List<KQLQuery<*>>,
                 mutations: List<KQLMutation<*>>,
                 objects: List<KQLType.Object<*>>,
@@ -51,25 +52,7 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
 
     fun createExecutionPlan(request: Operation) : ExecutionPlan {
         val children = mutableListOf<Execution.Operation<*>>()
-        val root = when(request.action){
-            Operation.Action.QUERY -> queries
-            Operation.Action.MUTATION -> mutations
-            else -> {
-                val keys = request.graph.nodes.map { it.key }
-                if(keys.all { queries.containsKey(it) }) {
-                    queries
-                } else if(keys.all { mutations.containsKey(it) }){
-                    mutations
-                } else {
-                    keys.forEach { key ->
-                        if(queries.none { it.key == key } && mutations.none{ it.key == key }){
-                            throw SyntaxException("$key is not supported by this schema")
-                        }
-                    }
-                    throw SyntaxException("Cannot infer operation from fields")
-                }
-            }
-        }
+        val root = getRoot(request)
 
         for(requestNode in request.graph){
             val operation = root[requestNode.key]
@@ -78,6 +61,32 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
         }
 
         return ExecutionPlan(children)
+    }
+
+    private fun getRoot(request: Operation): Map<String, SchemaNode.Operation<*>> {
+        return when (request.action) {
+            Operation.Action.QUERY -> queries
+            Operation.Action.MUTATION -> mutations
+            else -> {
+                val keys = request.graph.nodes.map { it.key }
+                when {
+                    keys.all { queries.containsKey(it) } -> queries
+                    keys.all { mutations.containsKey(it) } -> mutations
+                    else -> {
+                        handleUnsupportedOperations(keys)
+                        throw SyntaxException("Cannot infer operation from fields")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleUnsupportedOperations(keys: List<String>) {
+        keys.forEach { key ->
+            if (queries.none { it.key == key } && mutations.none { it.key == key }) {
+                throw SyntaxException("$key is not supported by this schema")
+            }
+        }
     }
 
     private fun <T>handleOperation(requestNode: GraphNode, operation: SchemaNode.Operation<T>): Execution.Operation<T>{
@@ -105,17 +114,7 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
     fun List<DirectiveInvocation>.lookup() = associate { findDirective(it) to it.arguments }
 
     private fun handleUnion(requestNode: GraphNode, property: SchemaNode.UnionProperty): Execution.Union {
-        //validate that only typed fragments are present
-        val illegalChildren = requestNode.children?.filterNot {
-            it is Fragment.Inline || it is Fragment.External
-        }
-
-        if(illegalChildren?.any() ?: false){
-            throw SyntaxException(
-                    "Invalid selection set with properties: $illegalChildren " +
-                    "on union type property ${property.kqlProperty.name} : ${property.returnTypes.map { it.kqlType.name }}"
-            )
-        }
+        validateUnionRequest(requestNode, property)
 
         val unionMembersChildren = property.returnTypes.associate { returnType ->
             val fragmentRequestNode = requestNode.children?.get("on ${returnType.kqlType.name}")
@@ -125,13 +124,29 @@ class SchemaStructure(val queries : Map<String, SchemaNode.Query<*>>,
             returnType to handleReturnType(returnType, fragmentRequestNode)
         }
         return Execution.Union (
-                property,
-                unionMembersChildren,
-                requestNode.key,
-                requestNode.alias,
-                null,
-                requestNode.directives?.lookup()
+                unionNode = property,
+                memberChildren = unionMembersChildren,
+                key = requestNode.key,
+                alias = requestNode.alias,
+                condition = null,
+                directives = requestNode.directives?.lookup()
         )
+    }
+
+    /**
+     * validate that only typed fragments are present
+     */
+    private fun validateUnionRequest(requestNode: GraphNode, property: SchemaNode.UnionProperty) {
+        val illegalChildren = requestNode.children?.filterNot {
+            it is Fragment.Inline || it is Fragment.External
+        }
+
+        if (illegalChildren?.any() ?: false) {
+            throw SyntaxException(
+                    "Invalid selection set with properties: $illegalChildren " +
+                            "on union type property ${property.kqlProperty.name} : ${property.returnTypes.map { it.kqlType.name }}"
+            )
+        }
     }
 
     private fun handleChildren(operation: SchemaNode.SingleBranch, requestNode: GraphNode): List<Execution> {

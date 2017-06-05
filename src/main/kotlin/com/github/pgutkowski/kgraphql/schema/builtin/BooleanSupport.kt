@@ -4,7 +4,13 @@ import com.github.pgutkowski.kgraphql.schema.ScalarSupport
 
 
 class BooleanSupport : ScalarSupport<Boolean> {
-    override fun serialize(input: String): Boolean = input.toBoolean()
+    override fun serialize(input: String): Boolean {
+        return when {
+            input.equals("true", true) -> true
+            input.equals("false", true) -> false
+            else -> throw IllegalArgumentException("$input does not represent valid Boolean value")
+        }
+    }
 
     override fun deserialize(input: Boolean): String = input.toString()
 

@@ -48,8 +48,8 @@ class QueryTest : BaseSchemaTest() {
 
     @Test
     fun `query with invalid field name`(){
-        expect<SyntaxException>("property [favActors] on Director does not exist"){
-            execute("{film{title, director{name, [favActors]}}}")
+        expect<SyntaxException>("property favDish on Director does not exist"){
+            execute("{film{title, director{name, favDish}}}")
         }
     }
 

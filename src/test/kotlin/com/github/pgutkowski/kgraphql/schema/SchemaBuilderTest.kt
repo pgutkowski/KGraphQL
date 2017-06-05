@@ -180,6 +180,6 @@ class SchemaBuilderTest {
         }
 
         //just see if it works
-        val result = deserialize(schema.execute("{actor{favDishes(size: 2)}}"))
+        deserialize(schema.execute("{actor{favDishes(size: 2)}}"))
     }
 }

@@ -18,7 +18,7 @@ class ArgumentsSpecificationTest {
         type<Actor>{
             property<List<String>> {
                 name = "favDishes"
-                resolver { actor: Actor, size: Int, prefix: String? ->
+                resolver { _: Actor, size: Int, prefix: String? ->
                     listOf("steak", "burger", "soup", "salad", "bread", "bird").let { dishes ->
                         if(prefix != null){
                             dishes.filter { it.startsWith(prefix) }

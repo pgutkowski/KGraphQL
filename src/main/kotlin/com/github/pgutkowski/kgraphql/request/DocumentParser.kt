@@ -10,6 +10,7 @@ import com.github.pgutkowski.kgraphql.graph.*
 class DocumentParser {
 
     private data class ParsingContext(
+            val fullString : String,
             val tokens: List<String>,
             val fragments: Map<String, Fragment.External>,
             var index : Int = 0,
@@ -23,6 +24,11 @@ class DocumentParser {
         fun currentTokenOrNull() = tokens.getOrNull(index)
 
         fun followingTokenOrNull() = tokens.getOrNull(index + 1)
+
+        fun getFullStringIndex(tokenIndex : Int = index) : Int {
+            //TODO: Provide reliable index
+            return 0
+        }
     }
 
     /**
@@ -35,19 +41,27 @@ class DocumentParser {
         val fragments = mutableMapOf<String, Fragment.External>()
 
         documentTokens.fragmentsTokens.forEach { (name, typeCondition, graphTokens) ->
-            fragments.put("...$name", Fragment.External("...$name", parseGraph(graphTokens, fragments), typeCondition))
+            val fragmentGraph = parseGraph(ParsingContext(input, graphTokens, fragments))
+            fragments.put("...$name", Fragment.External("...$name", fragmentGraph, typeCondition))
         }
 
         return documentTokens.operationTokens.map { (name, type, graphTokens) ->
-            Operation(parseGraph(graphTokens, fragments), name, Operation.Action.parse(type))
+            Operation(parseGraph(ParsingContext(input, graphTokens, fragments)), name, Operation.Action.parse(type))
         }
     }
 
     /**
      * @param tokens - should be list of valid GraphQL tokens
      */
-    fun parseGraph(tokens: List<String>, fragments: Map<String, Fragment.External> = emptyMap()): Graph {
-        return parseGraph(ParsingContext(tokens, fragments))
+    fun parseGraph(input: String, fragments: Map<String, Fragment.External> = emptyMap()): Graph {
+        return parseGraph(ParsingContext(input, tokenizeRequest(input), fragments))
+    }
+
+    /**
+     * @param tokens - should be list of valid GraphQL tokens
+     */
+    private fun parseGraph(input: String, tokens: List<String>, fragments: Map<String, Fragment.External> = emptyMap()): Graph {
+        return parseGraph(ParsingContext(input, tokens, fragments))
     }
 
     private fun parseGraph(ctx : ParsingContext) : Graph {
@@ -137,7 +151,7 @@ class DocumentParser {
         val typeCondition = ctx[ctx.index + 2]
         val subGraphTokens = objectSubTokens(ctx.tokens, ctx.index + 3)
         ctx.index += (subGraphTokens.size + 4)
-        return Fragment.Inline(parseGraph(subGraphTokens, ctx.fragments), typeCondition, directives)
+        return Fragment.Inline(parseGraph(ctx.fullString, subGraphTokens, ctx.fragments), typeCondition, directives)
     }
 
     private fun parseNodeWithArguments(ctx: ParsingContext, key: String, alias: String?, directives: List<DirectiveInvocation>?): GraphNode {
@@ -146,7 +160,7 @@ class DocumentParser {
         var subGraph: Graph? = null
         if (ctx.tokens.getOrNull(ctx.index + 1) == "{") {
             val subGraphTokens = objectSubTokens(ctx.tokens, ctx.index + 1)
-            subGraph = parseGraph(subGraphTokens, ctx.fragments)
+            subGraph = parseGraph(ctx.fullString, subGraphTokens, ctx.fragments)
             ctx.index += subGraphTokens.size + 2 //subtokens do not contain '{' and '}'
         }
         return GraphNode(key, alias, subGraph, arguments, directives)
@@ -157,9 +171,25 @@ class DocumentParser {
         val arguments = Arguments()
         var i = 0
         while (i + 2 < argTokens.size) {
-            assert(argTokens[i + 1] == ":")
-            arguments.put(argTokens[i], argTokens[i + 2])
-            i += 3
+            when{
+                argTokens[i+1] == ":" && argTokens[i + 2] == "[" -> {
+                    val argumentName = argTokens[i]
+                    i += 2 // effectively 'i' is index of '['
+                    val deltaOfClosingBracket = argTokens.subList(i, argTokens.size).indexOfFirst { it == "]" }
+                    if(deltaOfClosingBracket == -1) throw SyntaxException("Missing closing ']' in arguments ${argTokens.joinToString(" ")}")
+                    val indexOfClosingBracket = i + deltaOfClosingBracket
+                    //exclude '[' and ']'
+                    arguments.put(argumentName, argTokens.subList(i + 1, indexOfClosingBracket))
+                    i += deltaOfClosingBracket + 1
+                }
+                argTokens[i+1] == ":" ->{
+                    arguments.put(argTokens[i], argTokens[i + 2])
+                    i += 3
+                }
+                else -> {
+                    throw SyntaxException("Invalid arguments: ${argTokens.joinToString(" ")}")
+                }
+            }
         }
         ctx.index += argTokens.size + 2 //subtokens do not contain '(' and ')'
         return arguments
@@ -168,7 +198,7 @@ class DocumentParser {
     private fun parseNode(ctx: ParsingContext, key: String, alias: String?, directives: List<DirectiveInvocation>?): GraphNode {
         val subGraphTokens = objectSubTokens(ctx.tokens, ctx.index + 1)
         ctx.index += subGraphTokens.size + 2 //subtokens do not contain '{' and '}'
-        return GraphNode(key, alias, parseGraph(subGraphTokens, ctx.fragments), null, directives)
+        return GraphNode(key, alias, parseGraph(ctx.fullString, subGraphTokens, ctx.fragments), null, directives)
     }
 
     private fun handleOperands(token: String, ctx: ParsingContext) {
@@ -177,12 +207,13 @@ class DocumentParser {
             "}" -> ctx.nestedBrackets--
             "(" -> ctx.nestedParenthesis++
             ")" -> ctx.nestedParenthesis--
+            "[","]" -> throw SyntaxException("Unexpected token : $token at ${ctx.getFullStringIndex()}")
         }
         if (ctx.nestedBrackets < 0) {
-            throw SyntaxException("No matching opening bracket for closing bracket at ${getIndexOfTokenInString(ctx.tokens)}")
+            throw SyntaxException("No matching opening bracket for closing bracket at ${ctx.getFullStringIndex()}")
         }
         if (ctx.nestedParenthesis < 0) {
-            throw SyntaxException("No matching opening parenthesis for closing parenthesis at ${getIndexOfTokenInString(ctx.tokens)}")
+            throw SyntaxException("No matching opening parenthesis for closing parenthesis at ${ctx.getFullStringIndex()}")
         }
     }
 

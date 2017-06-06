@@ -1,5 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.execution
 
+import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.request.Arguments
 import com.github.pgutkowski.kgraphql.request.Variables
 import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
@@ -16,12 +17,16 @@ internal class FunctionInvoker(private val argumentsHandler: ArgumentsHandler) {
                             args: Arguments?,
                             variables: Variables): T? {
 
-        val transformedArgs = argumentsHandler.transformArguments(functionWrapper, args, variables)
-
-        return if(receiver != null){
-            functionWrapper.invoke(receiver, *transformedArgs.toTypedArray())
-        } else {
-            functionWrapper.invoke(*transformedArgs.toTypedArray())
+        try {
+            val transformedArgs = argumentsHandler.transformArguments(functionWrapper, args, variables)
+            throw
+            return if(receiver != null){
+                functionWrapper.invoke(receiver, *transformedArgs.toTypedArray())
+            } else {
+                functionWrapper.invoke(*transformedArgs.toTypedArray())
+            }
+        } catch (e: IllegalArgumentException){
+            throw ExecutionException("Failed to invoke function $funName", e)
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.github.pgutkowski.kgraphql.schema.execution
 
 import com.github.pgutkowski.kgraphql.request.Arguments
+import com.github.pgutkowski.kgraphql.request.Variable
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
 import com.github.pgutkowski.kgraphql.schema.structure.SchemaNode
 
@@ -32,7 +33,8 @@ sealed class Execution {
             alias: String? = null,
             arguments : Arguments? = null,
             condition : TypeCondition? = null,
-            directives: Map<Directive, Arguments?>?
+            directives: Map<Directive, Arguments?>?,
+            val variables: List<Variable>?
     ) : Execution.Node(operationNode, children, key, alias, arguments, condition, directives)
 
     class Union (

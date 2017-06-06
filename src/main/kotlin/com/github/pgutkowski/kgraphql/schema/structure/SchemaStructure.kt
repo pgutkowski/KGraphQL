@@ -6,6 +6,7 @@ import com.github.pgutkowski.kgraphql.graph.DirectiveInvocation
 import com.github.pgutkowski.kgraphql.graph.Fragment
 import com.github.pgutkowski.kgraphql.graph.GraphNode
 import com.github.pgutkowski.kgraphql.request.Operation
+import com.github.pgutkowski.kgraphql.request.Variable
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
 import com.github.pgutkowski.kgraphql.schema.execution.Execution
@@ -57,7 +58,7 @@ class SchemaStructure (
         for(requestNode in request.graph){
             val operation = root[requestNode.key]
                     ?: throw SyntaxException("${requestNode.key} is not supported by this schema")
-            children.add(handleOperation(requestNode, operation))
+            children.add(handleOperation(requestNode, operation, request.variables))
         }
 
         return ExecutionPlan(children)
@@ -89,14 +90,17 @@ class SchemaStructure (
         }
     }
 
-    private fun <T>handleOperation(requestNode: GraphNode, operation: SchemaNode.Operation<T>): Execution.Operation<T>{
+    private fun <T>handleOperation(requestNode: GraphNode,
+                                   operation: SchemaNode.Operation<T>,
+                                   variables: List<Variable>?): Execution.Operation<T>{
         return Execution.Operation(
                 operationNode = operation,
                 children = handleChildren(operation, requestNode),
                 key = requestNode.key,
                 alias = requestNode.alias,
                 arguments = requestNode.arguments,
-                directives = requestNode.directives?.lookup()
+                directives = requestNode.directives?.lookup(),
+                variables = variables
         )
     }
 

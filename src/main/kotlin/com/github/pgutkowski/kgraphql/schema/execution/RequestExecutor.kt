@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonGenerator
 import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.request.Variables
+import com.github.pgutkowski.kgraphql.request.VariablesJson
 import com.github.pgutkowski.kgraphql.schema.ScalarSupport
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
@@ -26,7 +27,7 @@ class RequestExecutor(val schema: DefaultSchema) {
 
     private val functionHandler = FunctionInvoker(argumentsHandler)
 
-    fun execute(plan : ExecutionPlan, variables: Variables) : String {
+    fun execute(plan : ExecutionPlan, variables: VariablesJson) : String {
 
         StringWriter().use { stringWriter ->
             jsonFactory.createGenerator(stringWriter).use { gen ->
@@ -35,7 +36,7 @@ class RequestExecutor(val schema: DefaultSchema) {
                 gen.writeFieldName("data")
                 gen.writeStartObject()
                 for(child in plan){
-                    writeOperation(Context(gen, variables), child, child.operationNode)
+                    writeOperation(Context(gen, Variables(variables, child.variables)), child, child.operationNode)
                 }
                 gen.writeEndObject()
                 gen.writeEndObject()

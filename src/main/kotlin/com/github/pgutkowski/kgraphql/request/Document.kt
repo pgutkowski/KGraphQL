@@ -14,5 +14,5 @@ data class Document(val fragmentsTokens: List<FragmentTokens>, val operationToke
     /**
      * Represents half-structured data of operation declaration in query document
      */
-    data class OperationTokens(val name : String?, val type: String?, val graphTokens : List<String>)
+    data class OperationTokens(val name : String?, val type: String?, val variables: List<Variable>?, val graphTokens : List<String>)
 }

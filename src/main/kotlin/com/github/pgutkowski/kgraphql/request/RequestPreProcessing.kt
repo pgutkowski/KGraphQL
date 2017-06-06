@@ -94,12 +94,18 @@ fun createOperationTokens(tokens : List<String>, startIndex: Int) : Pair<Int, Do
     var index = startIndex
     var name : String? = null
     var type : String? = null
+    var operationVariables : List<Variable>? = null
     while(index < tokens.size){
         val token = tokens[index]
         when {
             token == "{" -> {
                 val indexOfClosingBracket = indexOfClosingBracket(tokens, index)
-                return indexOfClosingBracket to Document.OperationTokens(name, type, tokens.subList(index, indexOfClosingBracket))
+                return indexOfClosingBracket to Document.OperationTokens(name, type, operationVariables?.toList(), tokens.subList(index, indexOfClosingBracket))
+            }
+            token == "(" -> {
+                val variablesTokens = tokens.subList(index + 1, tokens.size).takeWhile { it != ")" }
+                operationVariables = (parseOperationVariables(variablesTokens))
+                index += variablesTokens.size
             }
             type == null -> {
                 if(token.equals("query", true) || token.equals("mutation", true)){
@@ -114,6 +120,43 @@ fun createOperationTokens(tokens : List<String>, startIndex: Int) : Pair<Int, Do
         index++
     }
     throw SyntaxException("Invalid operation $name without selection set")
+}
+
+private fun parseOperationVariables(variablesTokens: List<String>): MutableList<Variable> {
+    val operationVariables= mutableListOf<Variable>()
+    var variableName: String? = null
+    var variableType: String? = null
+    var defaultTypeStarted = false
+    var variableDefaultValue: String? = null
+    for(variableToken in variablesTokens) {
+        when {
+            variableToken == ":" -> {
+                if(variableName == null) throw SyntaxException("Unexpected token ':', before variable name")
+            }
+            variableToken == "=" -> {
+                if (variableName == null || variableType == null) {
+                    throw SyntaxException("Unexpected token '=', before variable name and type declaration")
+                } else {
+                    defaultTypeStarted = true
+                }
+            }
+            variableName == null -> variableName = variableToken
+            variableType == null -> variableType = variableToken
+            defaultTypeStarted && variableDefaultValue == null -> variableDefaultValue = variableToken
+            else -> {
+                //if variableName of variableType would be null, it would already be matched
+                operationVariables.add(Variable(variableName, variableType, variableDefaultValue))
+                variableName = variableToken
+                variableType = null
+                defaultTypeStarted = false
+                variableDefaultValue = null
+            }
+        }
+    }
+    if(variableName != null && variableType != null){
+        operationVariables.add(Variable(variableName, variableType, variableDefaultValue))
+    }
+    return operationVariables
 }
 
 fun indexOfClosingBracket(tokens: List<String>, startIndex: Int) : Int {

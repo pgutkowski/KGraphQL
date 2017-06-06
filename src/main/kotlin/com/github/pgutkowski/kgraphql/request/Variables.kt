@@ -1,36 +1,36 @@
 package com.github.pgutkowski.kgraphql.request
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.treeToValue
+import com.github.pgutkowski.kgraphql.ExecutionException
+import com.github.pgutkowski.kgraphql.typeName
 import kotlin.reflect.KClass
 
-/**
- * Represents already parsed variables json
- */
-class Variables(val json: JsonNode? = null){
 
-    companion object {
-        //TODO: make object mapper configurable by user
-        private val objectMapper = ObjectMapper()
-    }
-
-    constructor(json : String) : this(objectMapper.readTree(json))
-
+data class Variables(private val variablesJson: VariablesJson, private val variables: List<Variable>?){
     /**
      * map and return object of requested class
      */
-    fun <T : Any>get(kClass: KClass<T>, key : String) : T? {
-        if(json != null){
-            return objectMapper.treeToValue(json[key], kClass.java)
-        } else return null
+    fun <T : Any>get(kClass: KClass<T>, key : String, transform: (value: String, type: KClass<T>)-> Any?) : T? {
+        val variable = variables?.find { key == it.name }
+                ?: throw IllegalArgumentException("Variable '$key' was not declared for this operation")
+        if(kClass.typeName() != variable.type){
+            throw IllegalArgumentException("Invalid variable argument type ${variable.type}, expected ${kClass.typeName()}")
+        }
+        val value = variablesJson.get(kClass, key.substring(1))
+        when {
+            value != null -> return value
+            variable.defaultValue != null -> return transformDefaultValue(transform, variable.defaultValue, kClass)
+            else -> return null
+        }
     }
 
-    /**
-     * reified generic wrapper for [get]
-     * map and return object of requested class
-     */
-    inline fun <reified T : Any>get(key: String) : T? {
-        return get(T::class, key)
+    private fun <T : Any> transformDefaultValue(transform: (value: String, type: KClass<T>) -> Any?, defaultValue: String, kClass: KClass<T>): T? {
+        val defaultValue = transform.invoke(defaultValue, kClass)
+        when {
+            defaultValue == null -> return null
+            kClass.isInstance(defaultValue) -> return defaultValue as T?
+            else -> {
+                throw ExecutionException("Invalid transform function returned ")
+            }
+        }
     }
 }

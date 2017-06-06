@@ -3,9 +3,11 @@ package com.github.pgutkowski.kgraphql.schema.execution
 import com.github.pgutkowski.kgraphql.*
 import com.github.pgutkowski.kgraphql.request.Arguments
 import com.github.pgutkowski.kgraphql.request.Variables
+import com.github.pgutkowski.kgraphql.request.VariablesJson
 import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
 import com.github.pgutkowski.kgraphql.schema.model.SchemaModel
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
+import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 import kotlin.reflect.KType
 import kotlin.reflect.full.createType
@@ -33,9 +35,15 @@ internal class ArgumentsHandler(val schema : SchemaModel) {
             when {
                 value == null && parameter.isNullable() -> null
                 value == null && parameter.isNotNullable() -> {
-                    throw IllegalArgumentException("${functionWrapper.kFunction.name} argument ${parameter.name} is not optional, value cannot be null")
+                    throw IllegalArgumentException("argument ${parameter.name} is not optional, value cannot be null")
                 }
-                value is String -> transformPropertyValue(parameter, value, variables)
+                value is String -> {
+                    val transformedValue = transformPropertyValue(parameter, value, variables)
+                    if(transformedValue == null && parameter.isNotNullable()){
+                        throw IllegalArgumentException("argument ${parameter.name} is not optional, value cannot be null")
+                    }
+                    transformedValue
+                }
                 value is List<*> && parameter.type.jvmErasure == List::class -> {
                     value.map { element ->
                         if(element is String){
@@ -67,7 +75,11 @@ internal class ArgumentsHandler(val schema : SchemaModel) {
 
     private fun transformValue(type: KType, value: String, variables: Variables) : Any? {
         return when {
-            value.startsWith("$") -> variables.get(type.jvmErasure, value.substring(1))
+            value.startsWith("$") -> {
+                variables.get (
+                        type.jvmErasure, value, {value, type -> transformValue(type.starProjectedType, value, variables) }
+                )
+            }
             value == "null" && type.isMarkedNullable -> null
             value == "null" && !type.isMarkedNullable -> {
                 throw SyntaxException("argument '$value' is not valid value of type ${type.typeName()}")

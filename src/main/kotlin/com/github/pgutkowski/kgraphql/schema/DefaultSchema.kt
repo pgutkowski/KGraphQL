@@ -2,7 +2,7 @@ package com.github.pgutkowski.kgraphql.schema
 
 import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.request.DocumentParser
-import com.github.pgutkowski.kgraphql.request.Variables
+import com.github.pgutkowski.kgraphql.request.VariablesJson
 import com.github.pgutkowski.kgraphql.schema.execution.RequestExecutor
 import com.github.pgutkowski.kgraphql.schema.model.SchemaModel
 import com.github.pgutkowski.kgraphql.schema.structure.SchemaStructure
@@ -23,7 +23,7 @@ class DefaultSchema(internal val model : SchemaModel) : Schema {
     private val documentParser = DocumentParser()
 
     override fun execute(request: String, variables: String?): String {
-        val parsedVariables = variables?.let { Variables(variables) } ?: Variables()
+        val parsedVariables = variables?.let { VariablesJson(variables) } ?: VariablesJson()
         val operations = documentParser.parseDocument(request)
 
         when(operations.size){

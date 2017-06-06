@@ -45,8 +45,13 @@ class DocumentParser {
             fragments.put("...$name", Fragment.External("...$name", fragmentGraph, typeCondition))
         }
 
-        return documentTokens.operationTokens.map { (name, type, graphTokens) ->
-            Operation(parseGraph(ParsingContext(input, graphTokens, fragments)), name, Operation.Action.parse(type))
+        return documentTokens.operationTokens.map { (name, type, operationVariables, graphTokens) ->
+            Operation (
+                    graph = parseGraph(ParsingContext(input, graphTokens, fragments)),
+                    variables = operationVariables,
+                    name = name,
+                    action = Operation.Action.parse(type)
+            )
         }
     }
 
@@ -181,6 +186,14 @@ class DocumentParser {
                     //exclude '[' and ']'
                     arguments.put(argumentName, argTokens.subList(i + 1, indexOfClosingBracket))
                     i += deltaOfClosingBracket + 1
+                }
+                argTokens[i+1] == ":" && argTokens[i + 2] == "{" -> {
+                    //not implemented yet
+                    throw UnsupportedOperationException("")
+//                    val argumentName = argTokens[i]
+//                    i += 2
+//                    val subTokens = objectSubTokens(argTokens, i)
+//                    i += subTokens.size + 1
                 }
                 argTokens[i+1] == ":" ->{
                     arguments.put(argTokens[i], argTokens[i + 2])

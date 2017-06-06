@@ -9,7 +9,7 @@ class FloatSupport : ScalarSupport<Float>{
 
     override fun serialize(input: String): Float = input.toFloat()
 
-    override fun deserialize(input: Float): String = input.toString()
+    override fun deserialize(input: Float): String = input.toDouble().toString()
 
     override fun validate(input: String): Boolean = input.matches(floatRegex)
 }

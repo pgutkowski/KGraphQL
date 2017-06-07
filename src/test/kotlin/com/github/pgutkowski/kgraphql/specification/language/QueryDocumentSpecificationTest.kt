@@ -3,8 +3,6 @@ package com.github.pgutkowski.kgraphql.specification.language
 import com.github.pgutkowski.kgraphql.*
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 @Specification("2.2 Query Document")

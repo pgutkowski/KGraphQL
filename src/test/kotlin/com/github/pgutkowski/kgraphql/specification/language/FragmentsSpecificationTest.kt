@@ -3,7 +3,10 @@ package com.github.pgutkowski.kgraphql.specification.language
 import com.github.pgutkowski.kgraphql.*
 import com.github.pgutkowski.kgraphql.integration.BaseSchemaTest
 import org.hamcrest.CoreMatchers
+import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.MatcherAssert
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
@@ -58,9 +61,14 @@ class FragmentsSpecificationTest {
     }
 
     @Test
-    @Disabled("Directived are not implemented yet")
     fun `Inline fragments may also be used to apply a directive to a group of fields`(){
-        schema.execute("{actor{name ... @include(if: \$expandedInfo){ age }}}", "{\"expandedInfo\":true}")
+        val response = deserialize(schema.execute (
+                "query (\$expandedInfo : Boolean){actor{actualActor{name ... @include(if: \$expandedInfo){ age }}}}",
+                "{\"expandedInfo\":false}"
+        ))
+        assertNoErrors(response)
+        assertThat(extractOrNull(response, "data/actor/actualActor/name"), equalTo("Boguś Linda"))
+        assertThat(extractOrNull(response, "data/actor/actualActor/age"), nullValue())
     }
 
     @Test

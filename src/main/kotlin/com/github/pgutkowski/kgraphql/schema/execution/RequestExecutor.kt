@@ -3,10 +3,12 @@ package com.github.pgutkowski.kgraphql.schema.execution
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonGenerator
 import com.github.pgutkowski.kgraphql.ExecutionException
+import com.github.pgutkowski.kgraphql.request.Arguments
 import com.github.pgutkowski.kgraphql.request.Variables
 import com.github.pgutkowski.kgraphql.request.VariablesJson
 import com.github.pgutkowski.kgraphql.schema.ScalarSupport
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
+import com.github.pgutkowski.kgraphql.schema.directive.Directive
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import com.github.pgutkowski.kgraphql.schema.structure.SchemaNode
@@ -170,25 +172,21 @@ class RequestExecutor(val schema: DefaultSchema) {
 
     private fun <T> handleFragment(ctx: Context, value: T, container: Execution.Fragment) {
         val schemaNode = container.condition.schemaNode
-        if(schemaNode.kqlType is KQLType.Object<*>){
-            if(schemaNode.kqlType.kClass.isInstance(value)){
-                container.elements.forEach{ handleProperty(ctx, value, it, schemaNode)}
+        val include = determineInclude(ctx, container.directives)
+
+        if(include){
+            if(schemaNode.kqlType is KQLType.Object<*>){
+                if(schemaNode.kqlType.kClass.isInstance(value)){
+                    container.elements.forEach{ handleProperty(ctx, value, it, schemaNode)}
+                }
+            } else {
+                throw IllegalStateException("fragments can be specified on object types, interfaces, and unions")
             }
-        } else {
-            throw IllegalStateException("fragments can be specified on object types, interfaces, and unions")
         }
     }
 
     private fun <T> writeProperty(ctx: Context, parentValue: T, node: Execution.Node, property: SchemaNode.Property) {
-        val include = node.directives?.map { (directive, arguments) ->
-            functionHandler.invokeFunWrapper(
-                    funName = directive.name,
-                    functionWrapper = directive.execution,
-                    receiver = null,
-                    args = arguments,
-                    variables = ctx.variables
-            )?.include ?: throw ExecutionException("Illegal directive implementation returning null result")
-        }?.reduce { acc, b -> acc && b } ?: true
+        val include = determineInclude(ctx, node.directives)
 
         if(include){
             val kqlProperty = property.kqlProperty
@@ -222,5 +220,17 @@ class RequestExecutor(val schema: DefaultSchema) {
                 }
             }
         }
+    }
+
+    private fun determineInclude(ctx: Context, directives: Map<Directive, Arguments?>?): Boolean {
+        return directives?.map { (directive, arguments) ->
+            functionHandler.invokeFunWrapper(
+                    funName = directive.name,
+                    functionWrapper = directive.execution,
+                    receiver = null,
+                    args = arguments,
+                    variables = ctx.variables
+            )?.include ?: throw ExecutionException("Illegal directive implementation returning null result")
+        }?.reduce { acc, b -> acc && b } ?: true
     }
 }

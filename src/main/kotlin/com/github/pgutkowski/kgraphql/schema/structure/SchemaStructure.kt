@@ -174,15 +174,16 @@ class SchemaStructure (
         val children = mutableListOf<Execution>()
         when(node){
             is Fragment -> {
-                if(node.typeCondition == null){
-                    node.fragmentGraph.mapTo(children) { handleTypeChild(it, returnType) }
+                val type = if(node.typeCondition == null && node.directives?.isNotEmpty() ?: false){
+                    returnType.type
                 } else {
-                    val type = nodes.values.find { it.kqlType.name == node.typeCondition }
+                    nodes.values.find { it.kqlType.name == node.typeCondition }
                             ?: throw SyntaxException("Unknown type ${node.typeCondition} in type condition on fragment ${node.aliasOrKey}")
-                    val condition = TypeCondition(type)
-                    val elements = node.fragmentGraph.map { handleTypeChild(it, type) }
-                    children.add(Execution.Fragment(condition, elements, node.directives?.lookup()))
                 }
+
+                val condition = TypeCondition(type)
+                val elements = node.fragmentGraph.map { handleTypeChild(it, type) }
+                children.add(Execution.Fragment(condition, elements, node.directives?.lookup()))
             }
             else -> {
                 children.add(handleTypeChild(node, returnType))

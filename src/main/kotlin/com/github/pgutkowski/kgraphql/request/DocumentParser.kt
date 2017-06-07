@@ -149,14 +149,20 @@ class DocumentParser {
     }
 
     private fun parseInlineFragment(ctx: ParsingContext, directives: List<DirectiveInvocation>?): Fragment.Inline {
-        if (ctx.followingTokenOrNull() != "on") {
-            throw SyntaxException("expected 'on #typeCondition {selection set}' after '...' in inline fragment")
+        when{
+            ctx.followingTokenOrNull() == "on" -> {
+                val typeCondition = ctx[ctx.index + 2]
+                val subGraphTokens = objectSubTokens(ctx.tokens, ctx.index + 3)
+                ctx.index += (subGraphTokens.size + 4)
+                return Fragment.Inline(parseGraph(ctx.fullString, subGraphTokens, ctx.fragments), typeCondition, null)
+            }
+            ctx.currentToken() == "{" && directives?.isNotEmpty() ?: false -> {
+                val subGraphTokens = objectSubTokens(ctx.tokens, ctx.index)
+                ctx.index += (subGraphTokens.size + 4)
+                return Fragment.Inline(parseGraph(ctx.fullString, subGraphTokens, ctx.fragments), null, directives)
+            }
+            else -> throw SyntaxException("expected type condition or directive after '...' in inline fragment")
         }
-
-        val typeCondition = ctx[ctx.index + 2]
-        val subGraphTokens = objectSubTokens(ctx.tokens, ctx.index + 3)
-        ctx.index += (subGraphTokens.size + 4)
-        return Fragment.Inline(parseGraph(ctx.fullString, subGraphTokens, ctx.fragments), typeCondition, directives)
     }
 
     private fun parseNodeWithArguments(ctx: ParsingContext, key: String, alias: String?, directives: List<DirectiveInvocation>?): GraphNode {

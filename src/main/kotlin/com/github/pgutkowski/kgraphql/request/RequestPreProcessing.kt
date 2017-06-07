@@ -105,7 +105,7 @@ fun createOperationTokens(tokens : List<String>, startIndex: Int) : Pair<Int, Do
             token == "(" -> {
                 val variablesTokens = tokens.subList(index + 1, tokens.size).takeWhile { it != ")" }
                 operationVariables = (parseOperationVariables(variablesTokens))
-                index += variablesTokens.size
+                index += variablesTokens.size +1
             }
             type == null -> {
                 if(token.equals("query", true) || token.equals("mutation", true)){

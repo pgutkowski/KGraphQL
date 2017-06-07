@@ -36,6 +36,11 @@ val r2d2 = Droid("2001", "R2-D2", emptyList(), Episode.values().toSet(), "Astrom
 
 fun main(args: Array<String>) {
     val schema = KGraphQL.schema {
+
+        configure {
+            useDefaultPrettyPrinter = true
+        }
+
         query("hero") {
             resolver {episode: Episode -> when(episode){
                 Episode.NEWHOPE, Episode.JEDI -> r2d2

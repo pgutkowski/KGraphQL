@@ -1,36 +1,31 @@
 package com.github.pgutkowski.kgraphql.request
 
-import com.fasterxml.jackson.core.TreeNode
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import com.fasterxml.jackson.module.kotlin.treeToValue
 import kotlin.reflect.KClass
 
 /**
  * Represents already parsed variables json
  */
-class VariablesJson(val json: JsonNode? = null){
+interface VariablesJson{
 
-    companion object {
-        //TODO: make object mapper configurable by user
-        private val objectMapper = ObjectMapper().registerKotlinModule()
+    fun <T : Any>get(kClass: KClass<T>, key : String) : T?
+
+    class Empty : VariablesJson {
+        override fun <T : Any> get(kClass: KClass<T>, key: String): T? {
+            return null
+        }
     }
 
-    constructor(json : String) : this(objectMapper.readTree(json))
+    class Defined(val objectMapper: ObjectMapper, val json: JsonNode? = null) : VariablesJson {
 
-    /**
-     * map and return object of requested class
-     */
-    fun <T : Any>get(kClass: KClass<T>, key : String) : T? {
-        return json?.let { node ->  node[key] }?.let { tree -> objectMapper.treeToValue(tree, kClass.java) }
-    }
+        constructor(objectMapper: ObjectMapper, json : String) : this(objectMapper, objectMapper.readTree(json))
 
-    /**
-     * reified generic wrapper for [get]
-     * map and return object of requested class
-     */
-    inline fun <reified T : Any>get(key: String) : T? {
-        return get(T::class, key)
+        /**
+         * map and return object of requested class
+         */
+        override fun <T : Any>get(kClass: KClass<T>, key : String) : T? {
+            return json?.let { node ->  node[key] }?.let { tree -> objectMapper.treeToValue(tree, kClass.java) }
+        }
     }
 }

@@ -31,7 +31,12 @@ class RequestExecutor(val schema: DefaultSchema) {
 
         StringWriter().use { stringWriter ->
             jsonFactory.createGenerator(stringWriter).use { gen ->
-//                gen.useDefaultPrettyPrinter()
+                if(schema.configuration.useDefaultPrettyPrinter){
+                    gen.useDefaultPrettyPrinter()
+                }
+                if(schema.configuration.prettyPrinter != null) {
+                    gen.prettyPrinter = schema.configuration.prettyPrinter
+                }
                 gen.writeStartObject()
                 gen.writeFieldName("data")
                 gen.writeStartObject()

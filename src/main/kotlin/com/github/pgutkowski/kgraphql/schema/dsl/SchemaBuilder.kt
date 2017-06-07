@@ -1,5 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.dsl
 
+import com.github.pgutkowski.kgraphql.configuration.SchemaConfiguration
 import com.github.pgutkowski.kgraphql.schema.ScalarSupport
 import com.github.pgutkowski.kgraphql.schema.Schema
 import com.github.pgutkowski.kgraphql.schema.SchemaException
@@ -15,9 +16,15 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
 
     private val model = MutableSchemaModel()
 
+    private var configuration = SchemaConfigurationDSL()
+
     fun build(): Schema {
         init()
-        return DefaultSchema(model.toSchemaModel())
+        return DefaultSchema(model.toSchemaModel(), configuration.build())
+    }
+
+    fun configure(block: SchemaConfigurationDSL.() -> Unit){
+        configuration.update(block)
     }
 
     fun query(name : String, init: QueryOrMutationDSL.() -> Unit){

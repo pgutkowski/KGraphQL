@@ -12,7 +12,8 @@ data class Variables(private val variablesJson: VariablesJson, private val varia
     fun <T : Any>get(kClass: KClass<T>, key : String, transform: (value: String, type: KClass<T>)-> Any?) : T? {
         val variable = variables?.find { key == it.name }
                 ?: throw IllegalArgumentException("Variable '$key' was not declared for this operation")
-        if(kClass.typeName() != variable.type){
+        //remove "!", it only denotes non-nullability
+        if(kClass.typeName() != variable.type.removeSuffix("!")){
             throw IllegalArgumentException("Invalid variable argument type ${variable.type}, expected ${kClass.typeName()}")
         }
         val value = variablesJson.get(kClass, key.substring(1))

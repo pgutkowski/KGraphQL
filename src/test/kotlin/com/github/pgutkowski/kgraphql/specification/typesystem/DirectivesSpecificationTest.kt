@@ -3,8 +3,7 @@ package com.github.pgutkowski.kgraphql.specification.typesystem
 import com.github.pgutkowski.kgraphql.Specification
 import com.github.pgutkowski.kgraphql.extractOrNull
 import com.github.pgutkowski.kgraphql.integration.BaseSchemaTest
-import org.hamcrest.CoreMatchers.notNullValue
-import org.hamcrest.CoreMatchers.nullValue
+import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -40,12 +39,11 @@ class DirectivesSpecificationTest : BaseSchemaTest() {
     }
 
     @Test
-    @Disabled
     fun `query with @include directive on field with variable`(){
         val map = execute(
-                "query film (\$include: Boolean!){film{title, year @include(if: \$include)}}",
+                "query film (\$include: Boolean!) {film{title, year @include(if: \$include)}}",
                 "{\"include\":\"false\"}"
         )
-        println(map)
+        assertThat(extractOrNull(map, "data/film/year"), nullValue())
     }
 }

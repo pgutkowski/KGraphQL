@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.PrettyPrinter
 import com.fasterxml.jackson.databind.ObjectMapper
 
 data class SchemaConfiguration (
-        val prettyPrinter: PrettyPrinter,
+        val prettyPrinter: PrettyPrinter?,
         val useDefaultPrettyPrinter: Boolean,
         val objectMapper: ObjectMapper
 )

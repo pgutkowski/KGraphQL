@@ -5,9 +5,11 @@
 
 KGraphQL is [Kotlin](https://kotlinlang.org/) implementation of [GraphQL](http://graphql.org/). It provides rich DSL to setup GraphQL schema. 
 
-For example, let's partially reproduce part of Star Wars schema from [official GraphQL tutorial](http://graphql.org/learn/queries/). First, we need to define our domain model, by plain kotlin classes: 
+## Introduction
 
-````kotlin
+As example, let's partially reproduce part of Star Wars schema from [official GraphQL tutorial](http://graphql.org/learn/queries/). First, we need to define our domain model, by plain kotlin classes: 
+
+```kotlin
 enum class Episode {
     NEWHOPE, EMPIRE, JEDI
 }
@@ -35,17 +37,17 @@ data class Droid (
         override val appearsIn: Set<Episode>,
         val primaryFunction : String
 ) : Character
-````
+```
 Next, we define our data 
-```` kotlin
+``` kotlin
 val luke = Human("2000", "Luke Skywalker", emptyList(), Episode.values().toSet(), "Tatooine", 1.72)
 
 val r2d2 = Droid("2001", "R2-D2", emptyList(), Episode.values().toSet(), "Astromech")
-````
+```
 
 Then, we can create schema:
 
-```` kotlin
+``` kotlin
 val schema = KGraphQL.schema {
 
         configure {
@@ -68,13 +70,13 @@ val schema = KGraphQL.schema {
 
         enum<Episode>()
     }
-````
+```
 Now, we can query our schema:
-````kotlin
+```kotlin
 schema.execute("{hero(episode: JEDI){id, name, ... on Droid{primaryFunction} ... on Human{height}}}")
-````
+```
 Returns:
-````json
+```json
 {
   "data" : {
     "hero" : {
@@ -84,14 +86,13 @@ Returns:
     }
   }
 }
-````
-
+```
 Query for all heroes:
-````kotlin
+```kotlin
 schema.execute("{heroes {id, name, ... on Droid{primaryFunction} ... on Human{height}}}")
-````
+```
 Returns:
-````
+```json
 {
   "data" : {
     "heroes" : [ {
@@ -105,16 +106,16 @@ Returns:
     } ]
   }
 }
-````
-More specific documentation is coming soon.
+```
+More specific documentation is available in `API.MD`
 
 ## Building
 
 To build KGraphQL you only need to have JDK8 installed. invoke
 
-```` bash
+``` bash
 ./gradlew build
-````
+```
 To perform local build.
 
 ## Versioning

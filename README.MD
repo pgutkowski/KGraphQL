@@ -5,9 +5,7 @@
 
 KGraphQL is [Kotlin](https://kotlinlang.org/) implementation of [GraphQL](http://graphql.org/). It provides rich DSL to setup GraphQL schema. 
 
-For example, let's partially reproduce part of Star Wars schema from (official GraphQL tutorial)[http://graphql.org/learn/queries/].
-
-First, we need to define our domain model, by plain kotlin classes: 
+For example, let's partially reproduce part of Star Wars schema from [official GraphQL tutorial](http://graphql.org/learn/queries/). First, we need to define our domain model, by plain kotlin classes: 
 
 ````kotlin
 enum class Episode {

@@ -56,7 +56,7 @@ val schema = KGraphQL.schema {
             useDefaultPrettyPrinter = true
         }
 
-        //this closure creates query "hero" with example implementation which returns instance of Character
+        //create query "hero" which returns instance of Character
         query("hero") {
             resolver {episode: Episode -> when(episode){
                 Episode.NEWHOPE, Episode.JEDI -> r2d2
@@ -64,13 +64,15 @@ val schema = KGraphQL.schema {
             }}
         }
     
-        //this closure creates query "heroes" with example implementation which returns list of luke and r2d2
+        //create query "heroes" which returns list of luke and r2d2
         query("heroes") {
             resolver{ -> listOf(luke, r2d2)}
         }
 
-        //kotlin classes need to be registered with "type" method to be included in created schema type system
-        //class Character is automatically included, as it is return type of both created queries  
+        //kotlin classes need to be registered with "type" method 
+        //to be included in created schema type system
+        //class Character is automatically included, 
+        //as it is return type of both created queries  
         type<Droid>()
         type<Human>()
         enum<Episode>()
@@ -79,7 +81,13 @@ val schema = KGraphQL.schema {
 Now, we can query our schema:
 ```kotlin
 //query for hero from episode JEDI and take id, name for any Character, and primaryFunction for Droid or height for Human
-schema.execute("{hero(episode: JEDI){id, name, ... on Droid{primaryFunction} ... on Human{height}}}")
+schema.execute("{hero(episode: JEDI){
+                    id
+                    name 
+                    ... on Droid{primaryFunction} 
+                    ... on Human{height}
+                    }
+                }")
 ```
 Returns:
 ```json
@@ -96,7 +104,13 @@ Returns:
 Query for all heroes:
 ```kotlin
 //query for all heroes and take id, name for any Character, and primaryFunction for Droid or height for Human
-schema.execute("{heroes {id, name, ... on Droid{primaryFunction} ... on Human{height}}}")
+schema.execute("{heroes {
+                    id 
+                    name 
+                    ... on Droid{primaryFunction} 
+                    ... on Human{height}
+                    }
+                }")
 ```
 Returns:
 ```json

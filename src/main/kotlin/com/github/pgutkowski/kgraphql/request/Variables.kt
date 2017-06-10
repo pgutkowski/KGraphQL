@@ -25,10 +25,10 @@ data class Variables(private val variablesJson: VariablesJson, private val varia
     }
 
     private fun <T : Any> transformDefaultValue(transform: (value: String, type: KClass<T>) -> Any?, defaultValue: String, kClass: KClass<T>): T? {
-        val defaultValue = transform.invoke(defaultValue, kClass)
+        val transformedDefaultValue = transform.invoke(defaultValue, kClass)
         when {
-            defaultValue == null -> return null
-            kClass.isInstance(defaultValue) -> return defaultValue as T?
+            transformedDefaultValue == null -> return null
+            kClass.isInstance(transformedDefaultValue) -> return transformedDefaultValue as T?
             else -> {
                 throw ExecutionException("Invalid transform function returned ")
             }

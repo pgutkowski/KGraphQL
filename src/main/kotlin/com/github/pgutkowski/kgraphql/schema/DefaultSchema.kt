@@ -4,6 +4,7 @@ import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.configuration.SchemaConfiguration
 import com.github.pgutkowski.kgraphql.request.DocumentParser
 import com.github.pgutkowski.kgraphql.request.VariablesJson
+import com.github.pgutkowski.kgraphql.schema.execution.ParallelRequestExecutor
 import com.github.pgutkowski.kgraphql.schema.execution.RequestExecutor
 import com.github.pgutkowski.kgraphql.schema.model.SchemaModel
 import com.github.pgutkowski.kgraphql.schema.structure.SchemaStructure
@@ -16,7 +17,7 @@ class DefaultSchema(internal val model : SchemaModel, internal val configuration
 
     val structure = SchemaStructure.of(model)
 
-    val requestExecutor = RequestExecutor(this)
+    val requestExecutor : RequestExecutor = ParallelRequestExecutor(this)
 
     /**
      * objects for request handling

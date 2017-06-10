@@ -1,5 +1,7 @@
 package com.github.pgutkowski.kgraphql.integration
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.github.pgutkowski.kgraphql.assertNoErrors
 import com.github.pgutkowski.kgraphql.extract
 import org.hamcrest.CoreMatchers
@@ -23,4 +25,11 @@ class EnumTest : BaseSchemaTest() {
         MatcherAssert.assertThat(extract<String>(map, "data/films[0]/type"), CoreMatchers.equalTo("FULL_LENGTH"))
         MatcherAssert.assertThat(extract<String>(map, "data/films[1]/type"), CoreMatchers.equalTo("FULL_LENGTH"))
     }
+
+//    @Test
+//    fun `generator`(){
+//        val objectNode = JsonNodeFactory.instance.objectNode()
+//        objectNode.put("3434", 3434)
+//        ObjectMapper().writeValueAsString(objectNode)
+//    }
 }

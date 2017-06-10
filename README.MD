@@ -5,9 +5,11 @@
 
 KGraphQL is [Kotlin](https://kotlinlang.org/) implementation of [GraphQL](http://graphql.org/). It provides rich DSL to setup GraphQL schema. 
 
-For example, let's partially reproduce part of Star Wars schema from [official GraphQL tutorial](http://graphql.org/learn/queries/). First, we need to define our domain model, by plain kotlin classes: 
+## Introduction
 
-````kotlin
+As example, let's partially reproduce part of Star Wars schema from [official GraphQL tutorial](http://graphql.org/learn/queries/). First, we need to define our domain model, by plain kotlin classes: 
+
+```kotlin
 enum class Episode {
     NEWHOPE, EMPIRE, JEDI
 }
@@ -35,46 +37,60 @@ data class Droid (
         override val appearsIn: Set<Episode>,
         val primaryFunction : String
 ) : Character
-````
+```
 Next, we define our data 
-```` kotlin
+``` kotlin
 val luke = Human("2000", "Luke Skywalker", emptyList(), Episode.values().toSet(), "Tatooine", 1.72)
 
 val r2d2 = Droid("2001", "R2-D2", emptyList(), Episode.values().toSet(), "Astromech")
-````
+```
 
 Then, we can create schema:
 
-```` kotlin
+``` kotlin
+//KGraphQL#schema { } is entry point to create KGraphQL schema
 val schema = KGraphQL.schema {
 
+        //configure method allows you customize schema behaviour
         configure {
             useDefaultPrettyPrinter = true
         }
 
+        //create query "hero" which returns instance of Character
         query("hero") {
             resolver {episode: Episode -> when(episode){
                 Episode.NEWHOPE, Episode.JEDI -> r2d2
                 Episode.EMPIRE -> luke
             }}
         }
-
+    
+        //create query "heroes" which returns list of luke and r2d2
         query("heroes") {
             resolver{ -> listOf(luke, r2d2)}
         }
 
+        //kotlin classes need to be registered with "type" method 
+        //to be included in created schema type system
+        //class Character is automatically included, 
+        //as it is return type of both created queries  
         type<Droid>()
         type<Human>()
-
         enum<Episode>()
     }
-````
+```
 Now, we can query our schema:
-````kotlin
-schema.execute("{hero(episode: JEDI){id, name, ... on Droid{primaryFunction} ... on Human{height}}}")
-````
+```kotlin
+//query for hero from episode JEDI and take id, name for any Character, and primaryFunction for Droid or height for Human
+schema.execute("{hero(episode: JEDI){
+                    id
+                    name 
+                    ... on Droid{primaryFunction} 
+                    ... on Human{height}
+                    }
+                }")
+```
 Returns:
-````json
+```json
 {
   "data" : {
     "hero" : {
@@ -84,14 +100,20 @@ Returns:
     }
   }
 }
-````
-
+```
 Query for all heroes:
-````kotlin
-schema.execute("{heroes {id, name, ... on Droid{primaryFunction} ... on Human{height}}}")
-````
+```kotlin
+//query for all heroes and take id, name for any Character, and primaryFunction for Droid or height for Human
+schema.execute("{heroes {
+                    id 
+                    name 
+                    ... on Droid{primaryFunction} 
+                    ... on Human{height}
+                    }
+                }")
+```
 Returns:
-````
+```json
 {
   "data" : {
     "heroes" : [ {
@@ -105,16 +127,18 @@ Returns:
     } ]
   }
 }
-````
-More specific documentation is coming soon.
+```
+As stated by GraphQL specification, client receives only what is requested. No more, no less.
+
+For further documentation, look into [API.MD](API.MD)
 
 ## Building
 
 To build KGraphQL you only need to have JDK8 installed. invoke
 
-```` bash
+``` bash
 ./gradlew build
-````
+```
 To perform local build.
 
 ## Versioning

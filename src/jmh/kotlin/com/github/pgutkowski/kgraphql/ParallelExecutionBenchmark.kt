@@ -15,15 +15,9 @@ open class ParallelExecutionBenchmark {
 
     var schema : Schema = KGraphQL.schema {  }
 
-    @Param(value = *arrayOf("false", "true"))
-    var parallel : Boolean = false
-
     @Setup
     fun setup(){
         schema = KGraphQL.schema {
-            configure {
-                executeParalleled = parallel
-            }
 
             query("sample1") {
                 resolver { ->

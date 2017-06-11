@@ -15,11 +15,8 @@ import com.github.pgutkowski.kgraphql.schema.directive.Directive
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import com.github.pgutkowski.kgraphql.schema.structure.SchemaNode
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.CoroutineName
+import kotlinx.coroutines.experimental.*
 import kotlinx.coroutines.experimental.channels.Channel
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.runBlocking
 import kotlin.reflect.KProperty1
 
 
@@ -33,6 +30,8 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
     private val functionHandler = FunctionInvoker(argumentsHandler)
 
     private val jsonNodeFactory = JsonNodeFactory.instance
+
+    private val dispatcher = schema.configuration.coroutineDispatcher
 
     private val objectWriter = schema.configuration.objectMapper.writer().let {
         if(schema.configuration.useDefaultPrettyPrinter){
@@ -48,7 +47,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
             val channel = Channel<Pair<String, JsonNode>>()
             val jobs = plan
                     .map {
-                        launch(CommonPool + CoroutineName(it.aliasOrKey)) {
+                        launch(dispatcher + CoroutineName(it.aliasOrKey)) {
                             try {
                                 val writeOperation = writeOperation(Context(Variables(variables, it.variables)), it, it.operationNode)
                                 channel.send(it.aliasOrKey to writeOperation)

@@ -130,7 +130,7 @@ Returns:
 ```
 As stated by GraphQL specification, client receives only what is requested. No more, no less.
 
-For further documentation, look into [API.MD](API.MD)
+Detailed documentation can be found in [wiki](https://github.com/pgutkowski/KGraphQL/wiki)
 
 ## Building
 

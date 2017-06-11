@@ -1,14 +1,18 @@
-package com.github.pgutkowski.kgraphql.integration
+package com.github.pgutkowski.kgraphql.specification.language
 
+import com.github.pgutkowski.kgraphql.Specification
 import com.github.pgutkowski.kgraphql.assertNoErrors
+import com.github.pgutkowski.kgraphql.expect
 import com.github.pgutkowski.kgraphql.extract
+import com.github.pgutkowski.kgraphql.integration.BaseSchemaTest
+import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Test
 
-
-class VariablesTest : BaseSchemaTest() {
-
+@Specification("2.10 Variables")
+class VariablesSpecificationTest : BaseSchemaTest() {
     @Test
     fun `query with variables`(){
         val map = execute(
@@ -16,7 +20,7 @@ class VariablesTest : BaseSchemaTest() {
                 variables = "{\"name\":\"Boguś Linda\", \"age\": 22}"
         )
         assertNoErrors(map)
-        MatcherAssert.assertThat(
+        assertThat(
                 extract<Map<String, Any>>(map, "data/createActor"),
                 equalTo(mapOf("name" to "Boguś Linda", "age" to 22))
         )
@@ -26,14 +30,14 @@ class VariablesTest : BaseSchemaTest() {
     fun `query with boolean variable`(){
         val map = execute(query = "query(\$big: Boolean) {number(big: \$big)}", variables = "{\"big\": true}")
         assertNoErrors(map)
-        MatcherAssert.assertThat(extract<Int>(map, "data/number"), equalTo(10000))
+        assertThat(extract<Int>(map, "data/number"), equalTo(10000))
     }
 
     @Test
     fun `query with boolean variable default value`(){
         val map = execute(query = "query(\$big: Boolean = true) {number(big: \$big)}")
         assertNoErrors(map)
-        MatcherAssert.assertThat(extract<Int>(map, "data/number"), equalTo(10000))
+        assertThat(extract<Int>(map, "data/number"), equalTo(10000))
     }
 
     @Test
@@ -43,7 +47,7 @@ class VariablesTest : BaseSchemaTest() {
                 variables = "{\"age\": 22}"
         )
         assertNoErrors(map)
-        MatcherAssert.assertThat(
+        assertThat(
                 extract<Map<String, Any>>(map, "data/createActor"),
                 equalTo(mapOf("name" to "Boguś Linda", "age" to 22))
         )
@@ -57,9 +61,34 @@ class VariablesTest : BaseSchemaTest() {
                 variables = "{\"defaultAge\": 22}"
         )
         assertNoErrors(map)
-        MatcherAssert.assertThat(
+        assertThat(
                 extract<Map<String, Any>>(map, "data/createActor"),
                 equalTo(mapOf("name" to "Boguś Linda", "age" to 22))
         )
+    }
+
+    @Test
+    fun `fragment with variable`(){
+        val map = execute(
+                query = "mutation(\$name: String = \"Boguś Linda\", \$age : Int, \$big: Boolean) {createActor(name: \$name, age: \$age){...Linda}}" +
+                        "fragment Linda on Actor {picture(big: \$big)}",
+                variables = "{\"age\": 22, \"big\": true}"
+        )
+        assertNoErrors(map)
+        assertThat(
+                extract<String>(map, "data/createActor/picture"),
+                equalTo("http://picture.server/pic/Boguś_Linda?big=true")
+        )
+    }
+
+    @Test
+    fun `fragment with missing variable`(){
+        expect<IllegalArgumentException>("Variable '\$big' was not declared for this operation"){
+            execute(
+                    query = "mutation(\$name: String = \"Boguś Linda\", \$age : Int) {createActor(name: \$name, age: \$age){...Linda}}" +
+                            "fragment Linda on Actor {picture(big: \$big)}",
+                    variables = "{\"age\": 22}"
+            )
+        }
     }
 }

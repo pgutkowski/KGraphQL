@@ -9,28 +9,6 @@ import com.github.pgutkowski.kgraphql.graph.*
  */
 class DocumentParser {
 
-    private data class ParsingContext(
-            val fullString : String,
-            val tokens: List<String>,
-            val fragments: Map<String, Fragment.External>,
-            var index : Int = 0,
-            var nestedBrackets: Int = 0,
-            var nestedParenthesis: Int = 0
-    ) {
-        operator fun get(index: Int): String = tokens[index]
-
-        fun currentToken() = tokens[index]
-
-        fun currentTokenOrNull() = tokens.getOrNull(index)
-
-        fun followingTokenOrNull() = tokens.getOrNull(index + 1)
-
-        fun getFullStringIndex(tokenIndex : Int = index) : Int {
-            //TODO: Provide reliable index
-            return 0
-        }
-    }
-
     /**
      * Performs validation and parsing of query document, returning all declared operations.
      * Fragments declared in document are parsed as well, but only used to create operations and not persisted.
@@ -55,46 +33,24 @@ class DocumentParser {
         }
     }
 
-    /**
-     * @param tokens - should be list of valid GraphQL tokens
-     */
     fun parseGraph(input: String, fragments: Map<String, Fragment.External> = emptyMap()): Graph {
         return parseGraph(ParsingContext(input, tokenizeRequest(input), fragments))
     }
 
-    /**
-     * @param tokens - should be list of valid GraphQL tokens
-     */
     private fun parseGraph(input: String, tokens: List<String>, fragments: Map<String, Fragment.External> = emptyMap()): Graph {
         return parseGraph(ParsingContext(input, tokens, fragments))
     }
 
     private fun parseGraph(ctx : ParsingContext) : Graph {
         val graph = GraphBuilder()
-        while (ctx.index < ctx.tokens.size) {
+        while (ctx.index() < ctx.tokens.size) {
             val token = ctx.currentToken()
             if(token in OPERANDS){
                 handleOperands(token, ctx)
             } else {
-                val (alias, key) = extractAliasAndKey(ctx)
-                val directives : List<DirectiveInvocation>? = parseDirectives(ctx)
-                when (ctx.followingTokenOrNull()) {
-                    "{" -> graph.add(parseNode(ctx, key, alias, directives))
-                    "(" -> graph.add(parseNodeWithArguments(ctx, key, alias, directives))
-                    else -> {
-                        if(key.startsWith("...")){
-                            if(key == "..."){
-                                graph.add(parseInlineFragment(ctx, directives))
-                            } else {
-                                graph.add(ctx.fragments[key] ?: throw SyntaxException("Fragment $key} does not exist"))
-                            }
-                        } else {
-                            graph.add(GraphNode(key = key, alias = alias, directives = directives))
-                        }
-                    }
-                }
+                handleNode(ctx, graph)
             }
-            ctx.index++
+            ctx.next()
         }
 
         when {
@@ -105,11 +61,31 @@ class DocumentParser {
         return graph.build()
     }
 
+    private fun handleNode(ctx: ParsingContext, graph: GraphBuilder) {
+        val (alias, key) = extractAliasAndKey(ctx)
+        val directives: List<DirectiveInvocation>? = parseDirectives(ctx)
+        when (ctx.peekToken()) {
+            "{" -> graph.add(parseNode(ctx, key, alias, directives))
+            "(" -> graph.add(parseNodeWithArguments(ctx, key, alias, directives))
+            else -> {
+                if (key.startsWith("...")) {
+                    if (key == "...") {
+                        graph.add(parseInlineFragment(ctx, directives))
+                    } else {
+                        graph.add(ctx.fragments[key] ?: throw SyntaxException("Fragment $key} does not exist"))
+                    }
+                } else {
+                    graph.add(GraphNode(key = key, alias = alias, directives = directives))
+                }
+            }
+        }
+    }
+
     private fun extractAliasAndKey(ctx: ParsingContext): Pair<String?, String> {
-        val token = ctx[ctx.index]
-        return if (ctx.tokens.size > ctx.index + 1 && ctx[ctx.index + 1] == ":") {
-            ctx.index += 2
-            token to ctx[ctx.index]
+        val token = ctx.currentToken()
+        return if (ctx.tokens.size > ctx.index() + 1 && ctx.peekToken() == ":") {
+            ctx.next(2)
+            token to ctx.currentToken()
         } else {
             null to token
         }
@@ -123,7 +99,7 @@ class DocumentParser {
         var nextDirective : DirectiveInvocation? = parseDirective(ctx, true)
         if(nextDirective != null){
             while(nextDirective != null){
-                ctx.index++
+                ctx.next()
                 directives.add(nextDirective)
                 nextDirective = parseDirective(ctx)
             }
@@ -134,11 +110,12 @@ class DocumentParser {
     }
 
     private fun parseDirective(ctx: ParsingContext, following : Boolean = false) : DirectiveInvocation? {
-        val directiveName = if(following) ctx.followingTokenOrNull() else ctx.currentTokenOrNull()
+        val directiveName = if(following) ctx.peekToken() else ctx.currentTokenOrNull()
         if(directiveName != null && directiveName.startsWith("@")){
-            if(following) ctx.index++
-            if(ctx.followingTokenOrNull() == "("){
-                val arguments = parseArguments(ctx, ctx.index+1)
+            if(following) ctx.next()
+            if(ctx.peekToken() == "("){
+                ctx.next(1)
+                val arguments = parseArguments(ctx)
                 return (DirectiveInvocation(directiveName, arguments))
             } else {
                 return (DirectiveInvocation(directiveName))
@@ -150,15 +127,14 @@ class DocumentParser {
 
     private fun parseInlineFragment(ctx: ParsingContext, directives: List<DirectiveInvocation>?): Fragment.Inline {
         when{
-            ctx.followingTokenOrNull() == "on" -> {
-                val typeCondition = ctx[ctx.index + 2]
-                val subGraphTokens = objectSubTokens(ctx.tokens, ctx.index + 3)
-                ctx.index += (subGraphTokens.size + 4)
+            ctx.peekToken() == "on" -> {
+                val typeCondition = ctx.peekToken(2)
+                ctx.next(3)
+                val subGraphTokens = ctx.traverseObject()
                 return Fragment.Inline(parseGraph(ctx.fullString, subGraphTokens, ctx.fragments), typeCondition, null)
             }
             ctx.currentToken() == "{" && directives?.isNotEmpty() ?: false -> {
-                val subGraphTokens = objectSubTokens(ctx.tokens, ctx.index)
-                ctx.index += (subGraphTokens.size + 4)
+                val subGraphTokens = ctx.traverseObject()
                 return Fragment.Inline(parseGraph(ctx.fullString, subGraphTokens, ctx.fragments), null, directives)
             }
             else -> throw SyntaxException("expected type condition or directive after '...' in inline fragment")
@@ -166,19 +142,20 @@ class DocumentParser {
     }
 
     private fun parseNodeWithArguments(ctx: ParsingContext, key: String, alias: String?, directives: List<DirectiveInvocation>?): GraphNode {
-        val arguments = parseArguments(ctx, ctx.index + 1)
+        ctx.next()
+        val arguments = parseArguments(ctx)
 
         var subGraph: Graph? = null
-        if (ctx.tokens.getOrNull(ctx.index + 1) == "{") {
-            val subGraphTokens = objectSubTokens(ctx.tokens, ctx.index + 1)
+        if (ctx.peekToken(1) == "{") {
+            ctx.next()
+            val subGraphTokens = ctx.traverseObject()
             subGraph = parseGraph(ctx.fullString, subGraphTokens, ctx.fragments)
-            ctx.index += subGraphTokens.size + 2 //subtokens do not contain '{' and '}'
         }
         return GraphNode(key, alias, subGraph, arguments, directives)
     }
 
-    private fun parseArguments(ctx: ParsingContext, startIndex: Int): Arguments {
-        val argTokens = argsSubTokens(ctx.tokens, startIndex)
+    private fun parseArguments(ctx: ParsingContext): Arguments {
+        val argTokens = ctx.traverseArguments()
         val arguments = Arguments()
         var i = 0
         while (i + 2 < argTokens.size) {
@@ -194,12 +171,7 @@ class DocumentParser {
                     i += deltaOfClosingBracket + 1
                 }
                 argTokens[i+1] == ":" && argTokens[i + 2] == "{" -> {
-                    //not implemented yet
-                    throw UnsupportedOperationException("")
-//                    val argumentName = argTokens[i]
-//                    i += 2
-//                    val subTokens = objectSubTokens(argTokens, i)
-//                    i += subTokens.size + 1
+                    throw UnsupportedOperationException("Object literal arguments are not supported yet")
                 }
                 argTokens[i+1] == ":" ->{
                     arguments.put(argTokens[i], argTokens[i + 2])
@@ -210,13 +182,12 @@ class DocumentParser {
                 }
             }
         }
-        ctx.index += argTokens.size + 2 //subtokens do not contain '(' and ')'
         return arguments
     }
 
     private fun parseNode(ctx: ParsingContext, key: String, alias: String?, directives: List<DirectiveInvocation>?): GraphNode {
-        val subGraphTokens = objectSubTokens(ctx.tokens, ctx.index + 1)
-        ctx.index += subGraphTokens.size + 2 //subtokens do not contain '{' and '}'
+        ctx.next()
+        val subGraphTokens = ctx.traverseObject()
         return GraphNode(key, alias, parseGraph(ctx.fullString, subGraphTokens, ctx.fragments), null, directives)
     }
 
@@ -234,22 +205,5 @@ class DocumentParser {
         if (ctx.nestedParenthesis < 0) {
             throw SyntaxException("No matching opening parenthesis for closing parenthesis at ${ctx.getFullStringIndex()}")
         }
-    }
-
-    private fun objectSubTokens(allTokens: List<String>, startIndex: Int) = subTokens(allTokens, startIndex, "{", "}")
-
-    private fun argsSubTokens(allTokens: List<String>, startIndex: Int) = subTokens(allTokens, startIndex, "(", ")")
-
-    private fun subTokens(allTokens: List<String>, startIndex: Int, openingToken: String, closingToken: String): List<String> {
-        val tokens = allTokens.subList(startIndex, allTokens.size)
-        var nestedLevel = 0
-        tokens.forEachIndexed { index, token ->
-            when (token) {
-                openingToken -> nestedLevel++
-                closingToken -> nestedLevel--
-            }
-            if (nestedLevel == 0) return tokens.subList(1, index)
-        }
-        throw SyntaxException("Couldn't find matching closing token")
     }
 }

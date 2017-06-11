@@ -64,6 +64,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
                     data.set(key, node)
                 } catch(e : Exception){
                     jobs.forEach{ it.cancel() }
+                    throw e
                 }
             }
             channel.close()

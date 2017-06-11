@@ -16,15 +16,15 @@ internal class FunctionInvoker(private val argumentsHandler: ArgumentsHandler) {
                             receiver: Any?,
                             args: Arguments?,
                             variables: Variables): T? {
+        val transformedArgs = argumentsHandler.transformArguments(functionWrapper, args, variables)
 
         try {
-            val transformedArgs = argumentsHandler.transformArguments(functionWrapper, args, variables)
             if(receiver != null){
                 return functionWrapper.invoke(receiver, *transformedArgs.toTypedArray())
             } else {
                 return functionWrapper.invoke(*transformedArgs.toTypedArray())
             }
-        } catch (e: IllegalArgumentException){
+        } catch (e: Exception){
             throw ExecutionException("Failed to invoke function $funName", e)
         }
     }

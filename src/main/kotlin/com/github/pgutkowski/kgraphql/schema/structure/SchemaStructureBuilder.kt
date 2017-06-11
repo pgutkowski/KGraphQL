@@ -13,15 +13,7 @@ import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.jvmErasure
 
 
-class SchemaStructureBuilder(
-        val queries: List<KQLQuery<*>>,
-        val mutations: List<KQLMutation<*>>,
-        val objects: List<KQLType.Object<*>>,
-        val scalars: List<KQLType.Scalar<*>>,
-        val enums: List<KQLType.Enumeration<*>>,
-        val unions: List<KQLType.Union>,
-        val directives: List<Directive>
-) {
+class SchemaStructureBuilder(model : SchemaModel) {
 
     /**
      * MutableType allows to avoid circular reference issues when building schema.
@@ -33,6 +25,14 @@ class SchemaStructureBuilder(
             val mutableProperties: MutableMap<String, SchemaNode.Property> = mutableMapOf(),
             val mutableUnionProperties: MutableMap<String, SchemaNode.UnionProperty> = mutableMapOf()
     ) : SchemaNode.Type(kqlObjectType, mutableProperties, mutableUnionProperties)
+
+    val queries: List<KQLQuery<*>> = model.queries
+    val mutations: List<KQLMutation<*>> = model.mutations
+    val objects: List<KQLType.Object<*>> = model.objects
+    val scalars: List<KQLType.Scalar<*>> = model.scalars
+    val enums: List<KQLType.Enumeration<*>> = model.enums
+    val unions: List<KQLType.Union> = model.unions
+    val directives: List<Directive> = model.directives
 
     private val mutableTypesCache = mutableMapOf<KType, MutableType>()
 

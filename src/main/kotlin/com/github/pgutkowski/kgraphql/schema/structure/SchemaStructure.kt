@@ -1,7 +1,7 @@
 package com.github.pgutkowski.kgraphql.schema.structure
 
+import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.SyntaxException
-import com.github.pgutkowski.kgraphql.ValidationException
 import com.github.pgutkowski.kgraphql.graph.DirectiveInvocation
 import com.github.pgutkowski.kgraphql.graph.Fragment
 import com.github.pgutkowski.kgraphql.graph.GraphNode
@@ -24,31 +24,7 @@ class SchemaStructure (
 ) {
 
     companion object {
-        fun of (
-                queries: List<KQLQuery<*>>,
-                mutations: List<KQLMutation<*>>,
-                objects: List<KQLType.Object<*>>,
-                scalars: List<KQLType.Scalar<*>>,
-                enums: List<KQLType.Enumeration<*>>,
-                unions: List<KQLType.Union>,
-                directives: List<Directive>
-        ): SchemaStructure {
-            return SchemaStructureBuilder(queries, mutations, objects, scalars, enums, unions, directives).build()
-        }
-
-        fun of(schema: SchemaModel) : SchemaStructure {
-            with(schema) {
-                return SchemaStructureBuilder(
-                        queries,
-                        mutations,
-                        objects,
-                        scalars,
-                        enums,
-                        unions,
-                        directives
-                ).build()
-            }
-        }
+        fun of(schema: SchemaModel) : SchemaStructure = SchemaStructureBuilder(schema).build()
     }
 
     fun createExecutionPlan(request: Operation) : ExecutionPlan {
@@ -137,22 +113,6 @@ class SchemaStructure (
         )
     }
 
-    /**
-     * validate that only typed fragments are present
-     */
-    private fun validateUnionRequest(requestNode: GraphNode, property: SchemaNode.UnionProperty) {
-        val illegalChildren = requestNode.children?.filterNot {
-            it is Fragment.Inline || it is Fragment.External
-        }
-
-        if (illegalChildren?.any() ?: false) {
-            throw SyntaxException(
-                    "Invalid selection set with properties: $illegalChildren " +
-                            "on union type property ${property.kqlProperty.name} : ${property.returnTypes.map { it.kqlType.name }}"
-            )
-        }
-    }
-
     private fun handleChildren(operation: SchemaNode.SingleBranch, requestNode: GraphNode): List<Execution> {
         return handleReturnType(operation.returnType, requestNode)
     }
@@ -161,35 +121,45 @@ class SchemaStructure (
         val children = mutableListOf<Execution>()
         if (requestNode.children != null) {
             val childrenRequestNodes = requestNode.children
-            for (childRequestNode in childrenRequestNodes) {
-                children.addAll(handleReturnTypeChildOrFragment(childRequestNode, returnType))
-            }
+            childrenRequestNodes.mapTo(children) { handleReturnTypeChildOrFragment(it, returnType) }
         } else if(returnType.properties.isNotEmpty()){
             throw SyntaxException("Missing selection set on property ${requestNode.aliasOrKey} of type ${returnType.kqlType.name}")
         }
         return children
     }
 
-    private fun handleReturnTypeChildOrFragment(node: GraphNode, returnType: SchemaNode.ReturnType): List<Execution> {
-        val children = mutableListOf<Execution>()
-        when(node){
+    private fun handleReturnTypeChildOrFragment(node: GraphNode, returnType: SchemaNode.ReturnType): Execution {
+        return when(node){
             is Fragment -> {
-                val type = if(node.typeCondition == null && node.directives?.isNotEmpty() ?: false){
-                    returnType.type
-                } else {
-                    nodes.values.find { it.kqlType.name == node.typeCondition }
-                            ?: throw SyntaxException("Unknown type ${node.typeCondition} in type condition on fragment ${node.aliasOrKey}")
-                }
-
+                val type = findFragmentType(node, returnType)
                 val condition = TypeCondition(type)
                 val elements = node.fragmentGraph.map { handleTypeChild(it, type) }
-                children.add(Execution.Fragment(condition, elements, node.directives?.lookup()))
+                Execution.Fragment(condition, elements, node.directives?.lookup())
             }
             else -> {
-                children.add(handleTypeChild(node, returnType))
+                handleTypeChild(node, returnType)
             }
         }
-        return children
+    }
+
+    private fun findFragmentType(fragment: Fragment, enclosingType: SchemaNode.ReturnType) : SchemaNode.Type {
+        when(fragment){
+            is Fragment.External -> {
+                return findNodeByTypeName(fragment.typeCondition) ?: throw createUnknownFragmentType(fragment)
+            }
+            is Fragment.Inline -> {
+                if(fragment.typeCondition == null && fragment.directives?.isNotEmpty() ?: false){
+                    return enclosingType.type
+                } else {
+                    return findNodeByTypeName(fragment.typeCondition) ?: throw createUnknownFragmentType(fragment)
+                }
+            }
+            else -> throw ExecutionException("Unexpected fragment type: ${fragment.javaClass}")
+        }
+    }
+
+    private fun createUnknownFragmentType(fragment: Fragment) : SyntaxException {
+        return SyntaxException("Unknown type ${fragment.typeCondition} in type condition on fragment ${fragment.fragmentKey}")
     }
 
     private fun handleTypeChild(childRequestNode: GraphNode, returnType: SchemaNode.Type): Execution.Node {
@@ -201,9 +171,7 @@ class SchemaStructure (
                 throw SyntaxException("property ${childRequestNode.key} on ${returnType.kqlType.name} does not exist")
             }
             property != null && unionProperty == null -> {
-                val kqlType = returnType.kqlType
-                val kqlProperty = property.kqlProperty
-                validatePropertyArguments(kqlProperty, kqlType, childRequestNode, property.transformation)
+                validatePropertyArguments(property, returnType.kqlType, childRequestNode)
                 return handleBranch(childRequestNode, property)
             }
             property == null && unionProperty != null -> {
@@ -213,38 +181,11 @@ class SchemaStructure (
         }
     }
 
-    /**
-     * needs to be simplified
-     */
-    private fun validatePropertyArguments(kqlProperty: KQLProperty, kqlType: KQLType, requestNode: GraphNode, transformation: Transformation<*, *>?) {
-
-        fun illegalArguments(): List<ValidationException> {
-            return listOf(ValidationException(
-                    "Property ${kqlProperty.name} on type ${kqlType.name} has no arguments, found: ${requestNode.arguments?.map { it.key }}")
-            )
-        }
-
-        val argumentValidationExceptions = when {
-            //extension property function
-            kqlProperty is KQLProperty.Function<*> -> {
-                kqlProperty.validateArguments(requestNode.arguments)
-            }
-            //property with transformation
-            kqlProperty is KQLProperty.Kotlin<*, *> && kqlType is KQLType.Object<*> -> {
-                transformation
-                        ?.validateArguments(requestNode.arguments)
-                        ?: if(requestNode.arguments == null) emptyList() else illegalArguments()
-            }
-            requestNode.arguments == null -> emptyList()
-            else -> illegalArguments()
-        }
-
-        if (argumentValidationExceptions.isNotEmpty()) {
-            throw ValidationException(argumentValidationExceptions.fold("", { sum, exc -> sum + "${exc.message}; " }))
-        }
-    }
-
     fun findDirective(invocation : DirectiveInvocation) : Directive {
         return directives[invocation.key.removePrefix("@")] ?: throw SyntaxException("Directive ${invocation.key} does not exist")
+    }
+
+    fun findNodeByTypeName(typeName: String?) : SchemaNode.Type? {
+        return nodes.values.find { it.kqlType.name == typeName }
     }
 }

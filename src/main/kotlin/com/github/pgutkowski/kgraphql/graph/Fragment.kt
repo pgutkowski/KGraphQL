@@ -12,11 +12,13 @@ interface Fragment {
      */
     val typeCondition: String?
 
+    val fragmentKey : String
+
     class External (
-            key : String,
+            override val fragmentKey : String,
             override val fragmentGraph: Graph,
             override val typeCondition: String
-    ) : Fragment, GraphNode(key, null, fragmentGraph, null){
+    ) : Fragment, GraphNode(fragmentKey, null, fragmentGraph, null){
         init {
             if(!key.startsWith("...")){
                 throw IllegalArgumentException("External fragment key has to start with '...'")
@@ -27,6 +29,8 @@ interface Fragment {
     class Inline (
             override val fragmentGraph: Graph,
             override val typeCondition: String?,
-            directives: List<DirectiveInvocation>?
-    ) : Fragment, GraphNode("on $typeCondition", null, fragmentGraph, null, directives)
+            directives: List<DirectiveInvocation>?,
+            @Deprecated("It is highly not recommended to override default value of fragmentKey for inline fragments")
+            override val fragmentKey: String = "on $typeCondition"
+    ) : Fragment, GraphNode(fragmentKey, null, fragmentGraph, null, directives)
 }

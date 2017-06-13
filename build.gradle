@@ -76,6 +76,7 @@ project.afterEvaluate {
                 executionData junitPlatformTestTask
 
                 reports {
+                    xml.destination = "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"
                     xml.enabled = true // coveralls plugin depends on xml format report
                     html.enabled = true
                 }

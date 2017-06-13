@@ -1,12 +1,12 @@
 package com.github.pgutkowski.kgraphql.schema.dsl
 
-import com.github.pgutkowski.kgraphql.typeName
+import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import kotlin.reflect.KClass
 
 
 class ScalarDSL<T : Any>(kClass: KClass<T>, block: ScalarDSL<T>.() -> Unit) : ItemDSL() {
 
-    override var name = kClass.typeName()
+    override var name = kClass.defaultKQLTypeName()
 
     init {
         block()

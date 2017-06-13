@@ -25,7 +25,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
 
     data class Context(val variables: Variables)
 
-    private val argumentsHandler = ArgumentsHandler(schema.model)
+    private val argumentsHandler = ArgumentsHandler(schema)
 
     private val functionHandler = FunctionInvoker(argumentsHandler)
 
@@ -49,7 +49,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
                     .map {
                         launch(dispatcher + CoroutineName(it.aliasOrKey)) {
                             try {
-                                val writeOperation = writeOperation(Context(Variables(variables, it.variables)), it, it.operationNode)
+                                val writeOperation = writeOperation(Context(Variables(schema, variables, it.variables)), it, it.operationNode)
                                 channel.send(it.aliasOrKey to writeOperation)
                             } catch (e: Exception) {
                                 channel.close(e)

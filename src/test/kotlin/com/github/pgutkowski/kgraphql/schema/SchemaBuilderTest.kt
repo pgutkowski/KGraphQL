@@ -182,4 +182,20 @@ class SchemaBuilderTest {
         //just see if it works
         deserialize(schema.execute("{actor{favDishes(size: 2)}}"))
     }
+
+    @Test
+    fun `Custom type name`(){
+        val schema = defaultSchema {
+            query("actor") {
+                resolver { type: FilmType -> Actor("Boguś Linda $type", 4343)  }
+            }
+
+            enum<FilmType> {
+                name = "TYPE"
+            }
+        }
+
+        val result = deserialize(schema.execute("query(\$type : TYPE = FULL_LENGTH){actor(type: \$type){name}}"))
+        assertThat(extract<String>(result, "data/actor/name"), equalTo("Boguś Linda FULL_LENGTH"))
+    }
 }

@@ -4,7 +4,7 @@ import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.structure.SchemaNode
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
-import com.github.pgutkowski.kgraphql.typeName
+import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
 import kotlin.reflect.KType
@@ -182,8 +182,8 @@ private fun FlowContent.arguments(args: Map<String, KType>?) : Unit {
 
 private fun FlowContent.typeLink(kType: KType, collection: Boolean = false, nullable: Boolean = false) : Unit {
     if(collection) +"["
-    a("$K_GRAPH_QL_DOCS_PREFIX/type/${kType.typeName()}"){
-        +kType.typeName()
+    a("$K_GRAPH_QL_DOCS_PREFIX/type/${kType.defaultKQLTypeName()}"){
+        +kType.defaultKQLTypeName()
     }
     if(!nullable) +"!"
     if(collection) + "]"

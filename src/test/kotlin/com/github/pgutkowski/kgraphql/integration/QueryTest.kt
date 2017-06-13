@@ -68,13 +68,6 @@ class QueryTest : BaseSchemaTest() {
     }
 
     @Test
-    fun `query with additional argument`(){
-        val map = execute("{filmByRank(rank: 2, additional: true){title}}")
-        assertNoErrors(map)
-        assertThat(extract<String>(map, "data/filmByRank/title"), equalTo("Se7en"))
-    }
-
-    @Test
     fun `query with alias`(){
         val map = execute("{bestFilm: filmByRank(rank: 1){title}}")
         assertNoErrors(map)

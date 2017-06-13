@@ -3,7 +3,7 @@ package com.github.pgutkowski.kgraphql.request
 import com.github.pgutkowski.kgraphql.graph.Graph
 
 
-data class Operation(val graph : Graph, val variables: List<Variable>?, val name : String?, val action : Action?) {
+data class Operation(val graph : Graph, val variables: List<OperationVariable>?, val name : String?, val action : Action?) {
 
     enum class Action {
         QUERY, MUTATION;

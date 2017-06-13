@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit
 @Warmup(iterations = 5)
 @Measurement(iterations = 5)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
+@Fork(value = 5)
 open class ParallelExecutionBenchmark {
 
     var schema : Schema = KGraphQL.schema {  }

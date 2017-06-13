@@ -6,10 +6,15 @@ import com.github.pgutkowski.kgraphql.request.DocumentParser
 import com.github.pgutkowski.kgraphql.request.VariablesJson
 import com.github.pgutkowski.kgraphql.schema.execution.ParallelRequestExecutor
 import com.github.pgutkowski.kgraphql.schema.execution.RequestExecutor
+import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import com.github.pgutkowski.kgraphql.schema.model.SchemaModel
 import com.github.pgutkowski.kgraphql.schema.structure.SchemaStructure
+import com.github.pgutkowski.kgraphql.schema.structure.TypeDefinitionProvider
+import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.jvm.jvmErasure
 
-class DefaultSchema(internal val model : SchemaModel, internal val configuration: SchemaConfiguration) : Schema {
+class DefaultSchema(internal val model : SchemaModel, internal val configuration: SchemaConfiguration) : Schema, TypeDefinitionProvider {
 
     companion object {
         val OPERATION_NAME_PARAM = "operationName"
@@ -51,4 +56,8 @@ class DefaultSchema(internal val model : SchemaModel, internal val configuration
             }
         }
     }
+
+    override fun <T : Any> typeByKClass(kClass: KClass<T>): KQLType? = model.allTypesByKClass[kClass]
+
+    override fun typeByKType(kType: KType): KQLType? = typeByKClass(kType.jvmErasure)
 }

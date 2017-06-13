@@ -5,14 +5,14 @@ import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
 import com.github.pgutkowski.kgraphql.schema.model.Transformation
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
-import com.github.pgutkowski.kgraphql.typeName
+import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 
 open class TypeDSL<T : Any>(private val supportedUnions: Collection<KQLType.Union>, val kClass: KClass<T>, block: TypeDSL<T>.() -> Unit) : ItemDSL() {
 
-    override var name = kClass.typeName()
+    override var name = kClass.defaultKQLTypeName()
 
     internal val ignoredProperties = mutableSetOf<KProperty1<T, *>>()
 

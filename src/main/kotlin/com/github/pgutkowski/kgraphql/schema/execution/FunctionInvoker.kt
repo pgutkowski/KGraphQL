@@ -16,7 +16,7 @@ internal class FunctionInvoker(private val argumentsHandler: ArgumentsHandler) {
                             receiver: Any?,
                             args: Arguments?,
                             variables: Variables): T? {
-        val transformedArgs = argumentsHandler.transformArguments(functionWrapper, args, variables)
+        val transformedArgs = argumentsHandler.transformArguments(funName, functionWrapper, args, variables)
 
         try {
             if(receiver != null){

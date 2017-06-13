@@ -17,6 +17,7 @@ class InputValuesSpecificationTest {
 
     val schema = defaultSchema {
         enum<FakeEnum>()
+        type<FakeData>()
 
         query("Int") { resolver { value: Int -> value } }
         query("Float") {resolver {value: Float -> value } }
@@ -159,5 +160,13 @@ class InputValuesSpecificationTest {
                 extract<List<String>>(response, "data/Object/list"),
                 equalTo(listOf("number", "description", "little number"))
         )
+    }
+
+    @Test
+    @Specification("2.9.8 Object Value")
+    fun `Unknown object input value type`(){
+        expect<IllegalArgumentException>("Invalid variable argument type FakeDate, expected FakeData"){
+            schema.execute("query(\$object: FakeDate){Object(value: \$object){list}}")
+        }
     }
 }

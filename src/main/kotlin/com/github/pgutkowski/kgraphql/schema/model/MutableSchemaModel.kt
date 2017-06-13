@@ -1,8 +1,9 @@
 package com.github.pgutkowski.kgraphql.schema.model
 
+import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.builtin.BuiltInType
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
-import com.github.pgutkowski.kgraphql.typeName
+import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 
 /**
  * Intermediate, mutable data structure used to prepare [SchemaModel]
@@ -42,7 +43,7 @@ data class MutableSchemaModel (
                                 }
 
                                 if(compiledObjects.none { it.kClass == member }){
-                                        compiledObjects.add(KQLType.Object(member.typeName(), member))
+                                        compiledObjects.add(KQLType.Object(member.defaultKQLTypeName(), member))
                                 }
                         }
                 }
@@ -52,14 +53,14 @@ data class MutableSchemaModel (
 
         fun addQuery(query : KQLQuery<*>){
                 if(query.checkEqualName(queries)){
-                        throw com.github.pgutkowski.kgraphql.schema.SchemaException("Cannot add query with duplicated name ${query.name}")
+                        throw SchemaException("Cannot add query with duplicated name ${query.name}")
                 }
                 queries.add(query)
         }
 
         fun addMutation(mutation : KQLMutation<*>){
                 if(mutation.checkEqualName(mutations)){
-                        throw com.github.pgutkowski.kgraphql.schema.SchemaException("Cannot add mutation with duplicated name ${mutation.name}")
+                        throw SchemaException("Cannot add mutation with duplicated name ${mutation.name}")
                 }
                 mutations.add(mutation)
         }
@@ -73,8 +74,11 @@ data class MutableSchemaModel (
         fun addUnion(union: KQLType.Union) = addType(union, unions, "Union")
 
         fun <T : KQLObject>addType(type: T, target: ArrayList<T>, typeCategory: String, alternativeObjects: List<KQLType.Object<*>>? = null){
+                if(type.name.startsWith("__")){
+                        throw SchemaException("Type name starting with \"__\" are excluded for introspection system")
+                }
                 if(type.checkEqualName(alternativeObjects ?: objects, scalars, unions, enums)){
-                        throw com.github.pgutkowski.kgraphql.schema.SchemaException("Cannot add $typeCategory with duplicated name ${type.name}")
+                        throw SchemaException("Cannot add $typeCategory type with duplicated name ${type.name}")
                 }
                 target.add(type)
         }

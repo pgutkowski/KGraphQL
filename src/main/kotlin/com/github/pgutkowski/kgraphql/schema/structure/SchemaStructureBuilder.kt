@@ -3,7 +3,7 @@ package com.github.pgutkowski.kgraphql.schema.structure
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
 import com.github.pgutkowski.kgraphql.schema.model.*
-import com.github.pgutkowski.kgraphql.typeName
+import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
@@ -93,7 +93,7 @@ class SchemaStructureBuilder(model : SchemaModel) {
     private fun getType(kClass: KClass<*>, kType: KType): SchemaNode.Type {
 
         fun createMutableType(kType: KType): MutableType {
-            val kqlObject = objects.find { it.kClass == kClass } ?: KQLType.Object(kType.typeName(), kClass)
+            val kqlObject = objects.find { it.kClass == kClass } ?: KQLType.Object(kType.defaultKQLTypeName(), kClass)
             val type = MutableType(kqlObject)
             mutableTypesCache.put(kType, type)
             return type

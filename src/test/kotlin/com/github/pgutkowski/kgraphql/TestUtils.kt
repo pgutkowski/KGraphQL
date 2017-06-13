@@ -68,6 +68,7 @@ fun assertError(map : Map<*,*>, vararg messageElements : String) {
 inline fun <reified T: Exception> expect(message: String, block: () -> Unit){
     try {
         block()
+        throw AssertionError("No exception caught")
     } catch (e : Exception){
         assertThat(e, instanceOf(T::class.java))
         assertThat(e, ExceptionMessageMatcher(message))

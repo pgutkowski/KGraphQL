@@ -94,7 +94,7 @@ fun createOperationTokens(tokens : List<String>, startIndex: Int) : Pair<Int, Do
     var index = startIndex
     var name : String? = null
     var type : String? = null
-    var operationVariables : List<Variable>? = null
+    var operationVariables : List<OperationVariable>? = null
     while(index < tokens.size){
         val token = tokens[index]
         when {
@@ -122,8 +122,8 @@ fun createOperationTokens(tokens : List<String>, startIndex: Int) : Pair<Int, Do
     throw SyntaxException("Invalid operation $name without selection set")
 }
 
-private fun parseOperationVariables(variablesTokens: List<String>): MutableList<Variable> {
-    val operationVariables= mutableListOf<Variable>()
+private fun parseOperationVariables(variablesTokens: List<String>): MutableList<OperationVariable> {
+    val operationVariables= mutableListOf<OperationVariable>()
     var variableName: String? = null
     var variableType: String? = null
     var defaultTypeStarted = false
@@ -145,7 +145,7 @@ private fun parseOperationVariables(variablesTokens: List<String>): MutableList<
             defaultTypeStarted && variableDefaultValue == null -> variableDefaultValue = variableToken
             else -> {
                 //if variableName of variableType would be null, it would already be matched
-                operationVariables.add(Variable(variableName, variableType, variableDefaultValue))
+                operationVariables.add(OperationVariable(variableName, variableType, variableDefaultValue))
                 variableName = variableToken
                 variableType = null
                 defaultTypeStarted = false
@@ -154,7 +154,7 @@ private fun parseOperationVariables(variablesTokens: List<String>): MutableList<
         }
     }
     if(variableName != null && variableType != null){
-        operationVariables.add(Variable(variableName, variableType, variableDefaultValue))
+        operationVariables.add(OperationVariable(variableName, variableType, variableDefaultValue))
     }
     return operationVariables
 }

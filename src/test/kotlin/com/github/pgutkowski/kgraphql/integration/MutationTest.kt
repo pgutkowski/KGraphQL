@@ -40,14 +40,14 @@ class MutationTest : BaseSchemaTest() {
 
     @Test
     fun `invalid argument type`(){
-        expect<SyntaxException>("argument 'fwfwf' is not value of type Int"){
+        expect<SyntaxException>("argument 'fwfwf' is not valid value of type Int"){
             execute("mutation {createActor(name: \"${testActor.name}\", age: \"fwfwf\"){age}}")
         }
     }
 
     @Test
     fun `invalid arguments number`(){
-        expect<SyntaxException>("createActor does support arguments: [name, age]. found arguments: [name, bananan, age]"){
+        expect<SyntaxException>("createActor does support arguments [name, age]. found arguments [name, bananan, age]"){
             execute("mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}, bananan: \"fwfwf\"){age}}")
         }
     }

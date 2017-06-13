@@ -1,27 +1,43 @@
 package com.github.pgutkowski.kgraphql.request
 
 import com.github.pgutkowski.kgraphql.ExecutionException
-import com.github.pgutkowski.kgraphql.typeName
+import com.github.pgutkowski.kgraphql.SyntaxException
+import com.github.pgutkowski.kgraphql.schema.structure.TypeDefinitionProvider
+import com.github.pgutkowski.kgraphql.defaultKQLTypeName
+import java.util.*
 import kotlin.reflect.KClass
 
 
-data class Variables(private val variablesJson: VariablesJson, private val variables: List<Variable>?){
+data class Variables(private val typeNameProvider: TypeDefinitionProvider,
+                     private val variablesJson: VariablesJson,
+                     private val variables: List<OperationVariable>?) {
+
+    private data class CacheKey(val kClass: KClass<*>, val variableKey: String)
+
+    private val cache : MutableMap<CacheKey, Any?> = Collections.synchronizedMap(mutableMapOf())
+
     /**
      * map and return object of requested class
      */
-    fun <T : Any>get(kClass: KClass<T>, key : String, transform: (value: String, type: KClass<T>)-> Any?) : T? {
-        val variable = variables?.find { key == it.name }
-                ?: throw IllegalArgumentException("Variable '$key' was not declared for this operation")
-        //remove "!", it only denotes non-nullability
-        if(kClass.typeName() != variable.type.removeSuffix("!")){
-            throw IllegalArgumentException("Invalid variable argument type ${variable.type}, expected ${kClass.typeName()}")
+    fun <T : Any> get(kClass: KClass<T>, key: String, transform: (value: String, type: KClass<T>) -> Any?): T? {
+        val returnValue = cache.getOrPut(CacheKey(kClass, key)){
+            val variable = variables?.find { key == it.name }
+                    ?: throw IllegalArgumentException("Variable '$key' was not declared for this operation")
+            //remove "!", it only denotes non-nullability
+            val kqlType = typeNameProvider.typeByKClass(kClass)
+                    ?: throw SyntaxException("Unknown type ${variable.type}. Maybe it was not registered in schema?")
+            if (kqlType.name != variable.type.removeSuffix("!")) {
+                throw IllegalArgumentException("Invalid variable argument type ${variable.type}, expected ${kClass.defaultKQLTypeName()}")
+            }
+            val value = variablesJson.get(kClass, key.substring(1))
+
+            when {
+                value != null -> value
+                variable.defaultValue != null -> transformDefaultValue(transform, variable.defaultValue, kClass)
+                else -> null
+            }
         }
-        val value = variablesJson.get(kClass, key.substring(1))
-        when {
-            value != null -> return value
-            variable.defaultValue != null -> return transformDefaultValue(transform, variable.defaultValue, kClass)
-            else -> return null
-        }
+        return returnValue as T?
     }
 
     private fun <T : Any> transformDefaultValue(transform: (value: String, type: KClass<T>) -> Any?, defaultValue: String, kClass: KClass<T>): T? {

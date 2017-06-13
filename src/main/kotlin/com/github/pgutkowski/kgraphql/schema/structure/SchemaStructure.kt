@@ -6,7 +6,7 @@ import com.github.pgutkowski.kgraphql.graph.DirectiveInvocation
 import com.github.pgutkowski.kgraphql.graph.Fragment
 import com.github.pgutkowski.kgraphql.graph.GraphNode
 import com.github.pgutkowski.kgraphql.request.Operation
-import com.github.pgutkowski.kgraphql.request.Variable
+import com.github.pgutkowski.kgraphql.request.OperationVariable
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
 import com.github.pgutkowski.kgraphql.schema.execution.Execution
@@ -68,7 +68,7 @@ class SchemaStructure (
 
     private fun <T>handleOperation(requestNode: GraphNode,
                                    operation: SchemaNode.Operation<T>,
-                                   variables: List<Variable>?): Execution.Operation<T>{
+                                   variables: List<OperationVariable>?): Execution.Operation<T>{
         return Execution.Operation(
                 operationNode = operation,
                 children = handleChildren(operation, requestNode),

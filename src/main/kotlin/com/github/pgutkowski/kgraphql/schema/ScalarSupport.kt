@@ -18,7 +18,7 @@ interface ScalarSupport<T> {
 
     /**
      * strategy for validation of serialized representation of scalar, returns true if input is valid
-     * @throws com.pgutkowski.kql.ValidationException
+     * @throws ValidationException
      */
     fun validate(input : String): Boolean
 

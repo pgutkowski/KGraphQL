@@ -37,6 +37,12 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
         model.addQuery(KQLQuery(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))
     }
 
+    fun mutation(name : String, init: QueryOrMutationDSL.() -> Unit){
+        val wrapperDSL = QueryOrMutationDSL(init)
+        wrapperDSL.name = name
+        model.addMutation(KQLMutation(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))
+    }
+
     fun mutation(init: QueryOrMutationDSL.() -> Unit){
         val wrapperDSL = QueryOrMutationDSL(init)
         model.addMutation(KQLMutation(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))

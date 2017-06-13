@@ -1,12 +1,11 @@
 package com.github.pgutkowski.kgraphql.server
 
+import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
-import com.github.pgutkowski.kgraphql.schema.structure.SchemaNode
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
-import com.github.pgutkowski.kgraphql.defaultKQLTypeName
+import com.github.pgutkowski.kgraphql.schema.structure.SchemaNode
 import kotlinx.html.*
-import kotlinx.html.stream.createHTML
 import kotlin.reflect.KType
 import kotlin.reflect.full.starProjectedType
 
@@ -61,16 +60,16 @@ private fun writeObjectTypeDescriptor(schemaNode: SchemaNode.Type, objectType: K
         h1 { +objectType.name }
         hr {}
 
-        if(objectType.description != null){
-            p {+ objectType.description }
+        if (objectType.description != null) {
+            p { +objectType.description.toString() }
             hr {}
         }
 
-        for ((_, property) in schemaNode.properties){
+        for ((_, property) in schemaNode.properties) {
             property(property)
         }
 
-        for((_, unionProperty) in schemaNode.unionProperties){
+        for ((_, unionProperty) in schemaNode.unionProperties) {
             unionProperty(unionProperty)
         }
     }
@@ -81,8 +80,8 @@ private fun writeScalarTypeDescriptor(scalar: KQLType.Scalar<*>): String {
         h1 { +scalar.name }
         hr {}
 
-        if(scalar.description != null){
-            p {+ scalar.description }
+        if (scalar.description != null) {
+            p { +scalar.description.toString() }
             hr {}
         }
 
@@ -95,8 +94,8 @@ private fun writeEnumTypeDescriptor(enum: KQLType.Enumeration<*>): String {
         h1 { +(enum.name + " (ENUM)") }
         hr {}
 
-        if(enum.description != null){
-            p {+enum.description}
+        if (enum.description != null) {
+            p { +enum.description.toString() }
             hr {}
         }
 
@@ -109,11 +108,11 @@ private fun writeEnumTypeDescriptor(enum: KQLType.Enumeration<*>): String {
 }
 
 private fun writeHTML(block : FlowContent.() -> Unit) : String {
-    return createHTML().html {
+    return kotlinx.html.stream.createHTML().html {
         head {
             title { +"GraphQL Docs" }
             style {
-                + STYLESHEET
+                +STYLESHEET
             }
         }
         body {
@@ -128,7 +127,7 @@ private fun FlowContent.property(property: SchemaNode.Property) : Unit {
     p {
         + property.kqlProperty.name
         if(property.kqlProperty is KQLProperty.Function<*>){
-            arguments(property.kqlProperty.argumentsDescriptor)
+            arguments((property.kqlProperty as KQLProperty.Function<*>).argumentsDescriptor)
         }
         + " : "
         returnType(property.returnType)

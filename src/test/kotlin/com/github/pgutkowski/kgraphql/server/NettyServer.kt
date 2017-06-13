@@ -1,7 +1,7 @@
 package com.github.pgutkowski.kgraphql.server
 
-import com.github.pgutkowski.kgraphql.schema.Schema
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
+import com.github.pgutkowski.kgraphql.schema.Schema
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.ChannelOption

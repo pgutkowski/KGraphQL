@@ -63,7 +63,7 @@ class HttpRequestHandler(val schema : DefaultSchema) : SimpleChannelInboundHandl
 
     private fun writeResponse(ctx: ChannelHandlerContext, response: String, contentType: AsciiString = HttpHeaderValues.APPLICATION_JSON) {
 
-        val httpResponse = DefaultFullHttpResponse (
+        val httpResponse = io.netty.handler.codec.http.DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
                 HttpResponseStatus.OK,
                 Unpooled.wrappedBuffer(response.toByteArray())

@@ -58,6 +58,10 @@ kotlin {
     }
 }
 
+coveralls {
+    sourceDirs += ['src/main/kotlin']
+}
+
 project.afterEvaluate {
     def junitPlatformTestTask = project.tasks.getByName('junitPlatformTest')
 

@@ -4,7 +4,7 @@ import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.graph.DirectiveInvocation
 import com.github.pgutkowski.kgraphql.graph.Fragment
-import com.github.pgutkowski.kgraphql.graph.GraphNode
+import com.github.pgutkowski.kgraphql.graph.SelectionNode
 import com.github.pgutkowski.kgraphql.request.Operation
 import com.github.pgutkowski.kgraphql.request.OperationVariable
 import com.github.pgutkowski.kgraphql.schema.SchemaException
@@ -31,7 +31,7 @@ class SchemaStructure (
         val children = mutableListOf<Execution.Operation<*>>()
         val root = getRoot(request)
 
-        for(requestNode in request.graph){
+        for(requestNode in request.selectionTree){
             val operation = root[requestNode.key]
                     ?: throw SyntaxException("${requestNode.key} is not supported by this schema")
             children.add(handleOperation(requestNode, operation, request.variables))
@@ -45,7 +45,7 @@ class SchemaStructure (
             Operation.Action.QUERY -> queries
             Operation.Action.MUTATION -> mutations
             else -> {
-                val keys = request.graph.nodes.map { it.key }
+                val keys = request.selectionTree.nodes.map { it.key }
                 when {
                     keys.all { queries.containsKey(it) } -> queries
                     keys.all { mutations.containsKey(it) } -> mutations
@@ -66,7 +66,7 @@ class SchemaStructure (
         }
     }
 
-    private fun <T>handleOperation(requestNode: GraphNode,
+    private fun <T>handleOperation(requestNode: SelectionNode,
                                    operation: SchemaNode.Operation<T>,
                                    variables: List<OperationVariable>?): Execution.Operation<T>{
         return Execution.Operation(
@@ -80,7 +80,7 @@ class SchemaStructure (
         )
     }
 
-    private fun handleBranch(requestNode: GraphNode, operation: SchemaNode.SingleBranch): Execution.Node {
+    private fun handleBranch(requestNode: SelectionNode, operation: SchemaNode.SingleBranch): Execution.Node {
         return Execution.Node(
                 schemaNode = operation,
                 children = handleChildren(operation, requestNode),
@@ -93,7 +93,7 @@ class SchemaStructure (
 
     fun List<DirectiveInvocation>.lookup() = associate { findDirective(it) to it.arguments }
 
-    private fun handleUnion(requestNode: GraphNode, property: SchemaNode.UnionProperty): Execution.Union {
+    private fun handleUnion(requestNode: SelectionNode, property: SchemaNode.UnionProperty): Execution.Union {
         validateUnionRequest(requestNode, property)
 
         val unionMembersChildren = property.returnTypes.associate { returnType ->
@@ -113,11 +113,11 @@ class SchemaStructure (
         )
     }
 
-    private fun handleChildren(operation: SchemaNode.SingleBranch, requestNode: GraphNode): List<Execution> {
+    private fun handleChildren(operation: SchemaNode.SingleBranch, requestNode: SelectionNode): List<Execution> {
         return handleReturnType(operation.returnType, requestNode)
     }
 
-    fun handleReturnType(returnType: SchemaNode.ReturnType, requestNode: GraphNode) : List<Execution>{
+    fun handleReturnType(returnType: SchemaNode.ReturnType, requestNode: SelectionNode) : List<Execution>{
         val children = mutableListOf<Execution>()
         if (requestNode.children != null) {
             val childrenRequestNodes = requestNode.children
@@ -128,7 +128,7 @@ class SchemaStructure (
         return children
     }
 
-    private fun handleReturnTypeChildOrFragment(node: GraphNode, returnType: SchemaNode.ReturnType): Execution {
+    private fun handleReturnTypeChildOrFragment(node: SelectionNode, returnType: SchemaNode.ReturnType): Execution {
         return when(node){
             is Fragment -> {
                 val type = findFragmentType(node, returnType)
@@ -162,7 +162,7 @@ class SchemaStructure (
         return SyntaxException("Unknown type ${fragment.typeCondition} in type condition on fragment ${fragment.fragmentKey}")
     }
 
-    private fun handleTypeChild(childRequestNode: GraphNode, returnType: SchemaNode.Type): Execution.Node {
+    private fun handleTypeChild(childRequestNode: SelectionNode, returnType: SchemaNode.Type): Execution.Node {
         val property = returnType.properties[childRequestNode.key]
         val unionProperty = returnType.unionProperties[childRequestNode.key]
 

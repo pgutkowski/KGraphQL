@@ -62,4 +62,24 @@ class ScalarsSpecificationTest {
         val map = deserialize(schema.execute("{float(float: 1)}"))
         assertThat(extract<Double>(map, "data/float"), equalTo(1.0))
     }
+
+    @Test
+    fun `server can declare custom ID type`(){
+        val testedSchema = KGraphQL.schema {
+            scalar<UUID> {
+                name = "ID"
+                description = "unique identifier of object"
+                serialize = { uuid : String -> UUID.fromString(uuid) }
+                deserialize = UUID::toString
+                validate = String::isNotBlank
+            }
+            query("personById"){
+                resolver{ id: UUID -> Person(id, "John Smith")}
+            }
+        }
+
+        val randomUUID = UUID.randomUUID()
+        val map = deserialize(testedSchema.execute("query(\$id: ID = $randomUUID){personById(id: \$id){uuid, name}}"))
+        assertThat(extract<String>(map, "data/personById/uuid"), equalTo(randomUUID.toString()))
+    }
 }

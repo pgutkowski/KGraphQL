@@ -3,11 +3,12 @@ package com.github.pgutkowski.kgraphql.schema.structure
 import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.ValidationException
 import com.github.pgutkowski.kgraphql.graph.Fragment
-import com.github.pgutkowski.kgraphql.graph.GraphNode
+import com.github.pgutkowski.kgraphql.graph.SelectionNode
+import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 
-fun validatePropertyArguments(property: SchemaNode.Property, kqlType: KQLType, requestNode: GraphNode) {
+fun validatePropertyArguments(property: SchemaNode.Property, kqlType: KQLType, requestNode: SelectionNode) {
 
     val kqlProperty = property.kqlProperty
 
@@ -40,7 +41,7 @@ fun validatePropertyArguments(property: SchemaNode.Property, kqlType: KQLType, r
 /**
  * validate that only typed fragments are present
  */
-fun validateUnionRequest(requestNode: GraphNode, property: SchemaNode.UnionProperty) {
+fun validateUnionRequest(requestNode: SelectionNode, property: SchemaNode.UnionProperty) {
     val illegalChildren = requestNode.children?.filterNot {
         it is Fragment.Inline || it is Fragment.External
     }
@@ -53,3 +54,10 @@ fun validateUnionRequest(requestNode: GraphNode, property: SchemaNode.UnionPrope
     }
 }
 
+fun validateName(name : String) {
+    if(name.startsWith("__")){
+        throw SchemaException("Illegal name '$name'. " +
+                "Names starting with '__' are reserved for introspection system"
+        )
+    }
+}

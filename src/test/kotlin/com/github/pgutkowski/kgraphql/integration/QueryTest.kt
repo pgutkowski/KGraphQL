@@ -97,13 +97,6 @@ class QueryTest : BaseSchemaTest() {
     }
 
     @Test
-    fun `invalid query wth duplicated aliases`(){
-        expect<SyntaxException>("Duplicated property name/alias: bestFilm"){
-            execute("{bestFilm: filmByRank(rank: 1){title}, bestFilm: filmByRank(rank: 2){title}}")
-        }
-    }
-
-    @Test
     fun `query with interface`(){
         val map = execute("{randomPerson{name \n age}}")
         assertThat(extract<Map<String, String>>(map, "data/randomPerson"), equalTo(mapOf(

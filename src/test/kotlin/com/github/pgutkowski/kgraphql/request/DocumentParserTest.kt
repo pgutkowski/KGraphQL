@@ -12,8 +12,8 @@ class DocumentParserTest {
 
     @Test
     fun `nested query parsing`() {
-        val map = graphParser.parseGraph("{hero{name appearsIn}\nvillain{name deeds}}")
-        val expected = Graph(
+        val map = graphParser.parseSelectionTree("{hero{name appearsIn}\nvillain{name deeds}}")
+        val expected = SelectionTree(
                 branch( "hero",
                         leaf("name"),
                         leaf("appearsIn")
@@ -29,9 +29,9 @@ class DocumentParserTest {
 
     @Test
     fun `double nested query parsing`() {
-        val map = graphParser.parseGraph("{hero{name appearsIn{title, year}}\nvillain{name deeds}}")
+        val map = graphParser.parseSelectionTree("{hero{name appearsIn{title, year}}\nvillain{name deeds}}")
 
-        val expected = Graph(
+        val expected = SelectionTree(
                 branch( "hero",
                         leaf("name"),
                         branch("appearsIn",
@@ -50,9 +50,9 @@ class DocumentParserTest {
 
     @Test
     fun `triple nested query parsing`() {
-        val map = graphParser.parseGraph("{hero{name appearsIn{title{abbr full} year}}\nvillain{name deeds}}")
+        val map = graphParser.parseSelectionTree("{hero{name appearsIn{title{abbr full} year}}\nvillain{name deeds}}")
 
-        val expected = Graph(
+        val expected = SelectionTree(
                 branch( "hero",
                         leaf("name"),
                         branch("appearsIn",
@@ -73,9 +73,9 @@ class DocumentParserTest {
 
     @Test
     fun `query with arguments parsing`() {
-        val map = graphParser.parseGraph("{hero(name: \"Batman\"){ power }}")
+        val map = graphParser.parseSelectionTree("{hero(name: \"Batman\"){ power }}")
 
-        val expected = Graph(
+        val expected = SelectionTree(
                 argBranch("hero",
                         args("name" to "\"Batman\""),
                         leaf("power")
@@ -87,9 +87,9 @@ class DocumentParserTest {
 
     @Test
     fun `query with alias parsing`() {
-        val map = graphParser.parseGraph("{batman: hero(name: \"Batman\"){ power }}")
+        val map = graphParser.parseSelectionTree("{batman: hero(name: \"Batman\"){ power }}")
 
-        val expected = Graph(
+        val expected = SelectionTree(
                 argBranch("hero", "batman",
                         args("name" to "\"Batman\""),
                         leaf("power")
@@ -101,9 +101,9 @@ class DocumentParserTest {
 
     @Test
     fun `query with field alias parsing`() {
-        val map = graphParser.parseGraph("{batman: hero(name: \"Batman\"){ skills : powers }}")
+        val map = graphParser.parseSelectionTree("{batman: hero(name: \"Batman\"){ skills : powers }}")
 
-        val expected = Graph(
+        val expected = SelectionTree(
                 argBranch("hero", "batman",
                         args("name" to "\"Batman\""),
                         leaf("powers", "skills")
@@ -115,8 +115,8 @@ class DocumentParserTest {
 
     @Test
     fun `mutation with field alias parsing`(){
-        val map = graphParser.parseGraph(("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\")}"))
-        val expected = Graph (
+        val map = graphParser.parseSelectionTree(("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\")}"))
+        val expected = SelectionTree(
                 argLeaf("createHero", args("name" to "\"Batman\"", "appearsIn" to "\"The Dark Knight\""))
         )
         assertThat(map, equalTo(expected))
@@ -124,8 +124,8 @@ class DocumentParserTest {
 
     @Test
     fun `field arguments parsing`(){
-        val map = graphParser.parseGraph(("{hero{name height(unit: FOOT)}}"))
-        val expected = Graph(
+        val map = graphParser.parseSelectionTree(("{hero{name height(unit: FOOT)}}"))
+        val expected = SelectionTree(
                 branch("hero",
                         leaf("name"),
                         argLeaf("height", args("unit" to "FOOT"))
@@ -136,8 +136,8 @@ class DocumentParserTest {
 
     @Test
     fun `mutation selection set parsing`(){
-        val map = graphParser.parseGraph(("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\"){id name timestamp}}"))
-        val expected = Graph (
+        val map = graphParser.parseSelectionTree(("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\"){id name timestamp}}"))
+        val expected = SelectionTree(
                 argBranch("createHero",
                         args("name" to "\"Batman\"", "appearsIn" to "\"The Dark Knight\""),
                         *leafs("id", "name", "timestamp")
@@ -148,8 +148,8 @@ class DocumentParserTest {
 
     @Test
     fun `mutation nested selection set parsing`(){
-        val map = graphParser.parseGraph(("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\"){id name {real asHero}}}"))
-        val expected = Graph (
+        val map = graphParser.parseSelectionTree(("{createHero(name: \"Batman\", appearsIn: \"The Dark Knight\"){id name {real asHero}}}"))
+        val expected = SelectionTree(
                 argBranch("createHero",
                         args("name" to "\"Batman\"", "appearsIn" to "\"The Dark Knight\""),
                         leaf("id"),
@@ -162,19 +162,19 @@ class DocumentParserTest {
     @Test
     fun `fragment parsing`(){
         val map = graphParser.parseDocument("{hero {id ...heroName}} fragment heroName on Hero {name {real asHero}}")
-        val expected = Graph (
+        val expected = SelectionTree(
                 branch("hero",
                         leaf("id"),
                         extFragment( "...heroName", "Hero", branch("name", *leafs("real", "asHero")))
                 )
         )
-        assertThat(map.first().graph, equalTo(expected))
+        assertThat(map.first().selectionTree, equalTo(expected))
     }
 
     @Test
     fun `fragment with type condition parsing`(){
         val map = graphParser.parseDocument("{hero {id ...heroName}} fragment heroName on Hero {name {real asHero}}")
-        val expected = Graph (
+        val expected = SelectionTree(
                 branch("hero",
                         leaf("id"),
                         extFragment( "...heroName", "Hero",
@@ -182,13 +182,13 @@ class DocumentParserTest {
                         )
                 )
         )
-        assertThat(map.first().graph, equalTo(expected))
+        assertThat(map.first().selectionTree, equalTo(expected))
     }
 
     @Test
     fun `inline fragment parsing`(){
         val map = graphParser.parseDocument("{hero {id ... on Hero {height, power}}}")
-        val expected = Graph (
+        val expected = SelectionTree(
                 branch("hero",
                         leaf("id"),
                         inlineFragment("Hero",
@@ -197,13 +197,13 @@ class DocumentParserTest {
                         )
                 )
         )
-        assertThat(map.first().graph, equalTo(expected))
+        assertThat(map.first().selectionTree, equalTo(expected))
     }
 
     @Test
     fun `two inline fragments parsing`(){
         val map = graphParser.parseDocument("{hero {id ... on Hero {height, power}, ... on Villain {height, deeds}}}")
-        val expected = Graph (
+        val expected = SelectionTree(
                 branch("hero",
                         leaf("id"),
                         inlineFragment("Hero",
@@ -216,6 +216,6 @@ class DocumentParserTest {
                         )
                 )
         )
-        assertThat(map.first().graph, equalTo(expected))
+        assertThat(map.first().selectionTree, equalTo(expected))
     }
 }

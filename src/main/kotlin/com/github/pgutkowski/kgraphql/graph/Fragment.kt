@@ -5,7 +5,7 @@ package com.github.pgutkowski.kgraphql.graph
  */
 interface Fragment {
 
-    val fragmentGraph: Graph
+    val fragmentGraph: SelectionTree
 
     /**
      * If the typeCondition is omitted, an inline fragment is considered to be of the same type as the enclosing context
@@ -16,9 +16,9 @@ interface Fragment {
 
     class External (
             override val fragmentKey : String,
-            override val fragmentGraph: Graph,
+            override val fragmentGraph: SelectionTree,
             override val typeCondition: String
-    ) : Fragment, GraphNode(fragmentKey, null, fragmentGraph, null){
+    ) : Fragment, SelectionNode(fragmentKey, null, fragmentGraph, null){
         init {
             if(!key.startsWith("...")){
                 throw IllegalArgumentException("External fragment key has to start with '...'")
@@ -27,10 +27,10 @@ interface Fragment {
     }
 
     class Inline (
-            override val fragmentGraph: Graph,
+            override val fragmentGraph: SelectionTree,
             override val typeCondition: String?,
             directives: List<DirectiveInvocation>?,
             @Deprecated("It is highly not recommended to override default value of fragmentKey for inline fragments")
             override val fragmentKey: String = "on $typeCondition"
-    ) : Fragment, GraphNode(fragmentKey, null, fragmentGraph, null, directives)
+    ) : Fragment, SelectionNode(fragmentKey, null, fragmentGraph, null, directives)
 }

@@ -2,7 +2,10 @@
 
 package com.github.pgutkowski.kgraphql.schema.model
 
+import com.github.pgutkowski.kgraphql.ValidationException
 import com.github.pgutkowski.kgraphql.isNullable
+import com.github.pgutkowski.kgraphql.request.Arguments
+import kotlin.reflect.KFunction
 import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.reflect
 
@@ -26,7 +29,7 @@ interface FunctionWrapper <T>{
         fun <T, R, E, W, Q> on (function : (R, E, W, Q) -> T, hasReceiver: Boolean = false) = FunctionWrapper.ArityFour(function, hasReceiver)
     }
 
-    val kFunction: kotlin.reflect.KFunction<T>
+    val kFunction: KFunction<T>
 
     fun invoke(vararg args: Any?) : T?
 
@@ -40,14 +43,14 @@ interface FunctionWrapper <T>{
      */
     val hasReceiver : Boolean
 
-    fun validateArguments(args: com.github.pgutkowski.kgraphql.request.Arguments?) : List<com.github.pgutkowski.kgraphql.ValidationException> {
-        val exceptions = mutableListOf<com.github.pgutkowski.kgraphql.ValidationException>()
+    fun validateArguments(args: Arguments?) : List<ValidationException> {
+        val exceptions = mutableListOf<ValidationException>()
 
         val parameterNames = kFunction.parameters.map { it.name }
         val invalidArguments = args?.filterKeys { it !in parameterNames }
 
         if(invalidArguments != null && invalidArguments.isNotEmpty()){
-            invalidArguments.forEach { name, _ -> exceptions.add(com.github.pgutkowski.kgraphql.ValidationException("Invalid argument $name")) }
+            invalidArguments.forEach { name, _ -> exceptions.add(ValidationException("Invalid argument $name")) }
         }
 
         kFunction.parameters.forEachIndexed { index, kParameter ->
@@ -55,7 +58,7 @@ interface FunctionWrapper <T>{
             if(value != null || (kParameter.isNullable() || (hasReceiver && index == 0))){
                 //is valid
             } else {
-                exceptions.add(com.github.pgutkowski.kgraphql.ValidationException("Missing value for non-nullable argument ${kParameter.name}"))
+                exceptions.add(ValidationException("Missing value for non-nullable argument ${kParameter.name}"))
             }
         }
         return exceptions
@@ -71,7 +74,7 @@ interface FunctionWrapper <T>{
     }
 
     class ArityZero<T>(val implementation : ()-> T, override val hasReceiver: Boolean = false ) : FunctionWrapper<T> {
-        override val kFunction: kotlin.reflect.KFunction<T>
+        override val kFunction: KFunction<T>
             get() = implementation.reflect()!!
 
         override fun arity(): Int = 0
@@ -86,7 +89,7 @@ interface FunctionWrapper <T>{
     }
 
     class ArityOne<T, R>(val implementation : (R)-> T, override val hasReceiver: Boolean) : FunctionWrapper<T> {
-        override val kFunction: kotlin.reflect.KFunction<T>
+        override val kFunction: KFunction<T>
             get() = implementation.reflect()!!
 
         override fun arity(): Int = 1
@@ -101,7 +104,7 @@ interface FunctionWrapper <T>{
     }
 
     class ArityTwo<T, R, E>(val implementation : (R, E)-> T, override val hasReceiver: Boolean ) : FunctionWrapper<T> {
-        override val kFunction: kotlin.reflect.KFunction<T>
+        override val kFunction: KFunction<T>
             get() = implementation.reflect()!!
 
         override fun arity(): Int = 2
@@ -116,7 +119,7 @@ interface FunctionWrapper <T>{
     }
 
     class ArityThree<T, R, E, W>(val implementation : (R, E, W)-> T, override val hasReceiver: Boolean ) : FunctionWrapper<T> {
-        override val kFunction: kotlin.reflect.KFunction<T>
+        override val kFunction: KFunction<T>
             get() = implementation.reflect()!!
 
         override fun arity(): Int = 3
@@ -131,7 +134,7 @@ interface FunctionWrapper <T>{
     }
 
     class ArityFour<T, R, E, W, Q>(val implementation : (R, E, W, Q)-> T, override val hasReceiver: Boolean ) : FunctionWrapper<T> {
-        override val kFunction: kotlin.reflect.KFunction<T>
+        override val kFunction: KFunction<T>
             get() = implementation.reflect()!!
 
         override fun arity(): Int = 4

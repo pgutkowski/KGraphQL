@@ -179,7 +179,6 @@ class SchemaBuilderTest {
             }
         }
 
-        //just see if it works
         deserialize(schema.execute("{actor{favDishes(size: 2)}}"))
     }
 
@@ -197,5 +196,18 @@ class SchemaBuilderTest {
 
         val result = deserialize(schema.execute("query(\$type : TYPE = FULL_LENGTH){actor(type: \$type){name}}"))
         assertThat(extract<String>(result, "data/actor/name"), equalTo("Boguś Linda FULL_LENGTH"))
+    }
+
+    private data class LambdaWrapper(val lambda : () -> Int)
+
+    @Test
+    fun `function properties cannot be handled`(){
+        expect<SchemaException>("Cannot handle function class kotlin.Function0 as Object type"){
+            KGraphQL.schema {
+                query("lambda"){
+                    resolver { -> LambdaWrapper({ 1 }) }
+                }
+            }
+        }
     }
 }

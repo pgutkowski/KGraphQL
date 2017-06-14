@@ -1,5 +1,0 @@
-- parallel query/mutation execution
-- Create some basic benchmarks
-- better error messages in responses
-- support full unicode in string literals and comments
-- resolver default argument value

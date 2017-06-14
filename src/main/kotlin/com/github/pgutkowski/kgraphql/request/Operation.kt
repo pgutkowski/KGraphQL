@@ -1,9 +1,9 @@
 package com.github.pgutkowski.kgraphql.request
 
-import com.github.pgutkowski.kgraphql.graph.Graph
+import com.github.pgutkowski.kgraphql.graph.SelectionTree
 
 
-data class Operation(val graph : Graph, val variables: List<OperationVariable>?, val name : String?, val action : Action?) {
+data class Operation(val selectionTree: SelectionTree, val variables: List<OperationVariable>?, val name : String?, val action : Action?) {
 
     enum class Action {
         QUERY, MUTATION;

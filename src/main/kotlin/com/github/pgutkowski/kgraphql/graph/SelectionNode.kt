@@ -2,15 +2,15 @@ package com.github.pgutkowski.kgraphql.graph
 
 import com.github.pgutkowski.kgraphql.request.Arguments
 
-open class GraphNode (
+open class SelectionNode(
         val key : String,
         val alias: String? = null,
-        val children: Graph? = null,
+        val children: SelectionTree? = null,
         val arguments : Arguments? = null,
         val directives: List<DirectiveInvocation>? = null
-) : Comparable<GraphNode> {
+) : Comparable<SelectionNode> {
 
-    override fun compareTo(other: GraphNode): Int {
+    override fun compareTo(other: SelectionNode): Int {
         return this.aliasOrKey.compareTo(other.aliasOrKey)
     }
 
@@ -37,7 +37,7 @@ open class GraphNode (
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as GraphNode
+        other as SelectionNode
 
         if (key != other.key) return false
         if (alias != other.alias) return false

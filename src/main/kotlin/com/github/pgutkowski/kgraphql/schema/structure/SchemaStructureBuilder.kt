@@ -100,15 +100,19 @@ class SchemaStructureBuilder(model : SchemaModel) {
         }
 
         fun <T : Any>handleObjectType(type : MutableType, kClass: KClass<T>) : MutableType {
-            if(kClass.isSubclassOf(Enum::class)){
-                throw SchemaException("Cannot handle enum class $kClass as Object type")
-            }
+            when {
+                kClass.isSubclassOf(Enum::class) ->
+                    throw SchemaException("Cannot handle enum class $kClass as Object type")
+                kClass.isSubclassOf(Function::class) ->
+                    throw SchemaException("Cannot handle function $kClass as Object type")
 
+            }
             val kqlObject = type.kqlObjectType
 
             kClass.memberProperties
                     .filterNot { kqlObject.isIgnored(it) }
                     .associateTo(type.mutableProperties) { property ->
+                        validateName(property.name)
                         property.name to handleKotlinProperty (
                                 property, kqlObject.transformations.find { it.kProperty == property }
                         )
@@ -120,6 +124,10 @@ class SchemaStructureBuilder(model : SchemaModel) {
 
             kqlObject.unionProperties.associateTo(type.mutableUnionProperties) { property ->
                 property.name to handleUnionProperty(property)
+            }
+
+            if(type.mutableProperties.isEmpty() && type.mutableUnionProperties.isEmpty()){
+                throw SchemaException("An Object type must define one or more fields. Found none on type ${kqlObject.name}")
             }
 
             return type

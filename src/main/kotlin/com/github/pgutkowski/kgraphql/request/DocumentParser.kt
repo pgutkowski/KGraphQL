@@ -19,13 +19,13 @@ class DocumentParser {
         val fragments = mutableMapOf<String, Fragment.External>()
 
         documentTokens.fragmentsTokens.forEach { (name, typeCondition, graphTokens) ->
-            val fragmentGraph = parseGraph(ParsingContext(input, graphTokens, fragments))
+            val fragmentGraph = parseSelectionTree(ParsingContext(input, graphTokens, fragments))
             fragments.put("...$name", Fragment.External("...$name", fragmentGraph, typeCondition))
         }
 
         return documentTokens.operationTokens.map { (name, type, operationVariables, graphTokens) ->
             Operation (
-                    graph = parseGraph(ParsingContext(input, graphTokens, fragments)),
+                    selectionTree = parseSelectionTree(ParsingContext(input, graphTokens, fragments)),
                     variables = operationVariables,
                     name = name,
                     action = Operation.Action.parse(type)
@@ -33,16 +33,16 @@ class DocumentParser {
         }
     }
 
-    fun parseGraph(input: String, fragments: Map<String, Fragment.External> = emptyMap()): Graph {
-        return parseGraph(ParsingContext(input, tokenizeRequest(input), fragments))
+    fun parseSelectionTree(input: String, fragments: Map<String, Fragment.External> = emptyMap()): SelectionTree {
+        return parseSelectionTree(ParsingContext(input, tokenizeRequest(input), fragments))
     }
 
-    private fun parseGraph(input: String, tokens: List<String>, fragments: Map<String, Fragment.External> = emptyMap()): Graph {
-        return parseGraph(ParsingContext(input, tokens, fragments))
+    private fun parseSelectionTree(input: String, tokens: List<String>, fragments: Map<String, Fragment.External> = emptyMap()): SelectionTree {
+        return parseSelectionTree(ParsingContext(input, tokens, fragments))
     }
 
-    private fun parseGraph(ctx : ParsingContext) : Graph {
-        val graph = GraphBuilder()
+    private fun parseSelectionTree(ctx : ParsingContext) : SelectionTree {
+        val graph = SelectionSetBuilder()
         while (ctx.index() < ctx.tokens.size) {
             val token = ctx.currentToken()
             if(token in OPERANDS){
@@ -61,7 +61,7 @@ class DocumentParser {
         return graph.build()
     }
 
-    private fun handleNode(ctx: ParsingContext, graph: GraphBuilder) {
+    private fun handleNode(ctx: ParsingContext, graph: SelectionSetBuilder) {
         val (alias, key) = extractAliasAndKey(ctx)
         val directives: List<DirectiveInvocation>? = parseDirectives(ctx)
         when (ctx.peekToken()) {
@@ -75,7 +75,7 @@ class DocumentParser {
                         graph.add(ctx.fragments[key] ?: throw SyntaxException("Fragment $key} does not exist"))
                     }
                 } else {
-                    graph.add(GraphNode(key = key, alias = alias, directives = directives))
+                    graph.add(SelectionNode(key = key, alias = alias, directives = directives))
                 }
             }
         }
@@ -131,27 +131,27 @@ class DocumentParser {
                 val typeCondition = ctx.peekToken(2)
                 ctx.next(3)
                 val subGraphTokens = ctx.traverseObject()
-                return Fragment.Inline(parseGraph(ctx.fullString, subGraphTokens, ctx.fragments), typeCondition, null)
+                return Fragment.Inline(parseSelectionTree(ctx.fullString, subGraphTokens, ctx.fragments), typeCondition, null)
             }
             ctx.currentToken() == "{" && directives?.isNotEmpty() ?: false -> {
                 val subGraphTokens = ctx.traverseObject()
-                return Fragment.Inline(parseGraph(ctx.fullString, subGraphTokens, ctx.fragments), null, directives)
+                return Fragment.Inline(parseSelectionTree(ctx.fullString, subGraphTokens, ctx.fragments), null, directives)
             }
             else -> throw SyntaxException("expected type condition or directive after '...' in inline fragment")
         }
     }
 
-    private fun parseNodeWithArguments(ctx: ParsingContext, key: String, alias: String?, directives: List<DirectiveInvocation>?): GraphNode {
+    private fun parseNodeWithArguments(ctx: ParsingContext, key: String, alias: String?, directives: List<DirectiveInvocation>?): SelectionNode {
         ctx.next()
         val arguments = parseArguments(ctx)
 
-        var subGraph: Graph? = null
+        var subGraph: SelectionTree? = null
         if (ctx.peekToken(1) == "{") {
             ctx.next()
             val subGraphTokens = ctx.traverseObject()
-            subGraph = parseGraph(ctx.fullString, subGraphTokens, ctx.fragments)
+            subGraph = parseSelectionTree(ctx.fullString, subGraphTokens, ctx.fragments)
         }
-        return GraphNode(key, alias, subGraph, arguments, directives)
+        return SelectionNode(key, alias, subGraph, arguments, directives)
     }
 
     private fun parseArguments(ctx: ParsingContext): Arguments {
@@ -185,10 +185,10 @@ class DocumentParser {
         return arguments
     }
 
-    private fun parseNode(ctx: ParsingContext, key: String, alias: String?, directives: List<DirectiveInvocation>?): GraphNode {
+    private fun parseNode(ctx: ParsingContext, key: String, alias: String?, directives: List<DirectiveInvocation>?): SelectionNode {
         ctx.next()
         val subGraphTokens = ctx.traverseObject()
-        return GraphNode(key, alias, parseGraph(ctx.fullString, subGraphTokens, ctx.fragments), null, directives)
+        return SelectionNode(key, alias, parseSelectionTree(ctx.fullString, subGraphTokens, ctx.fragments), null, directives)
     }
 
     private fun handleOperands(token: String, ctx: ParsingContext) {

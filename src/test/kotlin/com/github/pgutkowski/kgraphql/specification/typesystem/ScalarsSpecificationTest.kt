@@ -1,6 +1,7 @@
 package com.github.pgutkowski.kgraphql.specification.typesystem
 
 import com.github.pgutkowski.kgraphql.*
+import com.github.pgutkowski.kgraphql.schema.dsl.scalar
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Test

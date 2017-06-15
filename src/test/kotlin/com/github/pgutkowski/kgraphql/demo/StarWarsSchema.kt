@@ -1,6 +1,8 @@
 package com.github.pgutkowski.kgraphql.demo
 
 import com.github.pgutkowski.kgraphql.KGraphQL
+import com.github.pgutkowski.kgraphql.schema.dsl.enum
+import com.github.pgutkowski.kgraphql.schema.dsl.type
 
 enum class Episode {
     NEWHOPE, EMPIRE, JEDI

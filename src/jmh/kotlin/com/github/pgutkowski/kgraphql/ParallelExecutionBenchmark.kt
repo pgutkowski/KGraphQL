@@ -6,7 +6,6 @@ import org.openjdk.jmh.annotations.*
 import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.TimeUnit
 
-
 @State(Scope.Benchmark)
 @Warmup(iterations = 5)
 @Measurement(iterations = 5)

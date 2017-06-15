@@ -4,6 +4,7 @@ import com.github.pgutkowski.kgraphql.KGraphQL.Companion.schema
 import com.github.pgutkowski.kgraphql.Specification
 import com.github.pgutkowski.kgraphql.expect
 import com.github.pgutkowski.kgraphql.schema.SchemaException
+import com.github.pgutkowski.kgraphql.schema.dsl.type
 import org.junit.jupiter.api.Test
 
 @Specification("3 Type System")
@@ -17,7 +18,7 @@ class TypeSystemSpecificationTest {
     fun `All types within a GraphQL schema must have unique names`(){
         expect<SchemaException>("Cannot add Object type with duplicated name String"){
             schema {
-                type<com.github.pgutkowski.kgraphql.specification.typesystem.TypeSystemSpecificationTest.String>()
+                type<TypeSystemSpecificationTest.String>()
             }
         }
     }

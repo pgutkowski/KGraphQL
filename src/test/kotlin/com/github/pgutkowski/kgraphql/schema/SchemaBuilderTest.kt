@@ -1,6 +1,9 @@
 package com.github.pgutkowski.kgraphql.schema
 
 import com.github.pgutkowski.kgraphql.*
+import com.github.pgutkowski.kgraphql.schema.dsl.enum
+import com.github.pgutkowski.kgraphql.schema.dsl.scalar
+import com.github.pgutkowski.kgraphql.schema.dsl.type
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.*

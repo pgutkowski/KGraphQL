@@ -3,6 +3,7 @@ package com.github.pgutkowski.kgraphql.specification.typesystem
 import com.github.pgutkowski.kgraphql.KGraphQL
 import com.github.pgutkowski.kgraphql.expect
 import com.github.pgutkowski.kgraphql.schema.SchemaException
+import com.github.pgutkowski.kgraphql.schema.dsl.type
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.greaterThan

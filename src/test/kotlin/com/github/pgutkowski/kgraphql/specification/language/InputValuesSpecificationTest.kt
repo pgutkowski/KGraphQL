@@ -1,6 +1,8 @@
 package com.github.pgutkowski.kgraphql.specification.language
 
 import com.github.pgutkowski.kgraphql.*
+import com.github.pgutkowski.kgraphql.schema.dsl.enum
+import com.github.pgutkowski.kgraphql.schema.dsl.type
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Disabled

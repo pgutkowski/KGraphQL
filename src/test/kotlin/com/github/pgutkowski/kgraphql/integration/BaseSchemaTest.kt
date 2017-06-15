@@ -3,6 +3,9 @@ package com.github.pgutkowski.kgraphql.integration
 import com.github.pgutkowski.kgraphql.*
 import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilder
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
+import com.github.pgutkowski.kgraphql.schema.dsl.enum
+import com.github.pgutkowski.kgraphql.schema.dsl.supportedScalar
+import com.github.pgutkowski.kgraphql.schema.dsl.type
 import org.junit.jupiter.api.AfterEach
 
 
@@ -38,7 +41,8 @@ abstract class BaseSchemaTest {
         query {
             name = "actors"
             description = "all actors"
-            resolver { -> listOf(bradPitt, morganFreeman, kevinSpacey, tomHardy, christianBale) }
+            resolver { ->
+                listOf(bradPitt, morganFreeman, kevinSpacey, tomHardy, christianBale) }
         }
         query {
             name = "filmByRank"

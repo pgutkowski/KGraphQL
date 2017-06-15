@@ -17,7 +17,7 @@ import kotlin.reflect.jvm.jvmErasure
 class DefaultSchema(internal val model : SchemaModel, internal val configuration: SchemaConfiguration) : Schema, TypeDefinitionProvider {
 
     companion object {
-        val OPERATION_NAME_PARAM = "operationName"
+        const val OPERATION_NAME_PARAM = "operationName"
     }
 
     val structure = SchemaStructure.of(model)

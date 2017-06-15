@@ -26,26 +26,22 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
         configuration.update(block)
     }
 
-    fun query(name : String, init: QueryOrMutationDSL.() -> Unit){
-        val wrapperDSL = QueryOrMutationDSL(init)
-        wrapperDSL.name = name
+    fun query(name : String? = null, init: QueryOrMutationDSL.() -> Unit){
+        val wrapperDSL = handleQueryOrMutationDSL(init, name)
         model.addQuery(KQLQuery(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))
     }
 
-    fun query(init: QueryOrMutationDSL.() -> Unit){
-        val wrapperDSL = QueryOrMutationDSL(init)
-        model.addQuery(KQLQuery(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))
-    }
-
-    fun mutation(name : String, init: QueryOrMutationDSL.() -> Unit){
-        val wrapperDSL = QueryOrMutationDSL(init)
-        wrapperDSL.name = name
+    fun mutation(name : String? = null, init: QueryOrMutationDSL.() -> Unit){
+        val wrapperDSL = handleQueryOrMutationDSL(init, name)
         model.addMutation(KQLMutation(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))
     }
 
-    fun mutation(init: QueryOrMutationDSL.() -> Unit){
+    private fun handleQueryOrMutationDSL(init: QueryOrMutationDSL.() -> Unit, name: String?): QueryOrMutationDSL {
         val wrapperDSL = QueryOrMutationDSL(init)
-        model.addMutation(KQLMutation(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))
+        if (name != null) {
+            wrapperDSL.name = name
+        }
+        return wrapperDSL
     }
 
     fun <T : Any>supportedScalar(kClass: KClass<T>, block: SupportedScalarDSL<T>.() -> Unit){
@@ -53,10 +49,6 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
         val support = scalar.support ?: throw SchemaException("Please specify scalar support object")
 
         model.addScalar(KQLType.Scalar(scalar.name, kClass, support, scalar.description))
-    }
-
-    inline fun <reified T : Any> supportedScalar(noinline block: SupportedScalarDSL<T>.() -> Unit) {
-        supportedScalar(T::class, block)
     }
 
     fun <T : Any>scalar(kClass: KClass<T>, block: ScalarDSL<T>.() -> Unit){
@@ -77,35 +69,14 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
         return serialize == null || deserialize == null || validate == null
     }
 
-    inline fun <reified T : Any> scalar(noinline block: ScalarDSL<T>.() -> Unit) {
-        scalar(T::class, block)
-    }
-
     fun <T : Any>type(kClass: KClass<T>, block: TypeDSL<T>.() -> Unit){
         val type = TypeDSL(model.unionsMonitor, kClass, block)
         model.addObject(type.toKQLObject())
     }
 
-    inline fun <reified T : Any> type(noinline block: TypeDSL<T>.() -> Unit) {
-        type(T::class, block)
-    }
-
-    inline fun <reified T : Any> type() {
-        type(T::class, {})
-    }
-
     fun <T : Enum<T>>enum(kClass: KClass<T>, enumValues : Array<T>, block: (EnumDSL<T>.() -> Unit)? = null){
         val type = EnumDSL(kClass, block)
         model.addEnum(KQLType.Enumeration(type.name, kClass, enumValues, type.description))
-    }
-
-    inline fun <reified T : Enum<T>> enum(noinline block: (EnumDSL<T>.() -> Unit)? = null) {
-        val enumValues = enumValues<T>()
-        if(enumValues.isEmpty()){
-            throw SchemaException("Enum of type ${T::class} must have at least one value")
-        } else {
-            enum(T::class, enumValues<T>(), block)
-        }
     }
 
     fun unionType(block : UnionTypeDSL.() -> Unit){
@@ -114,3 +85,27 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
     }
 }
 
+inline fun <reified T : Any> SchemaBuilder.supportedScalar(noinline block: SupportedScalarDSL<T>.() -> Unit) {
+    supportedScalar(T::class, block)
+}
+
+inline fun <reified T : Any> SchemaBuilder.scalar(noinline block: ScalarDSL<T>.() -> Unit) {
+    scalar(T::class, block)
+}
+
+inline fun <reified T : Any> SchemaBuilder.type(noinline block: TypeDSL<T>.() -> Unit) {
+    type(T::class, block)
+}
+
+inline fun <reified T : Any> SchemaBuilder.type() {
+    type(T::class, {})
+}
+
+inline fun <reified T : Enum<T>> SchemaBuilder.enum(noinline block: (EnumDSL<T>.() -> Unit)? = null) {
+    val enumValues = enumValues<T>()
+    if(enumValues.isEmpty()){
+        throw SchemaException("Enum of type ${T::class} must have at least one value")
+    } else {
+        enum(T::class, enumValues<T>(), block)
+    }
+}

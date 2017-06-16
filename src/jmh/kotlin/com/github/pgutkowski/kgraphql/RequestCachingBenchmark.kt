@@ -13,34 +13,15 @@ import java.util.concurrent.TimeUnit
 open class RequestCachingBenchmark {
 
     @Param("true", "false")
-    var useParsedRequestCaching = true
-
-    val ones = listOf(ModelOne("DUDE"), ModelOne("GUY"), ModelOne("PAL"), ModelOne("FELLA"))
-
-    val oneResolver : () -> List<ModelOne> = { ones }
-
-    val twoResolver : (name : String)-> ModelTwo? = { name ->
-        ones.find { it.name == name }?.let { ModelTwo(it, it.quantity..12) }
-    }
-
-    val threeResolver : () -> ModelThree = { ModelThree("", ones.map { ModelTwo(it, it.quantity..10) }) }
+    var caching = true
 
     lateinit var schema : Schema
 
     @Setup
     fun setup(){
-        schema = KGraphQL.schema {
+        schema = Benchmark.benchmarkSchema{
             configure {
-                cacheParsedRequests = useParsedRequestCaching
-            }
-            query("one"){
-                resolver(oneResolver)
-            }
-            query("two"){
-                resolver(twoResolver)
-            }
-            query("three"){
-                resolver(threeResolver)
+                useCachingDocumentParser = caching
             }
         }
     }

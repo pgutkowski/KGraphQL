@@ -17,16 +17,6 @@ open class SimpleExecutionOverheadBenchmark {
     @Param("true", "false")
     var withKGraphQL = true
 
-    val ones = listOf(ModelOne("DUDE"),ModelOne("GUY"),ModelOne("PAL"),ModelOne("FELLA"))
-
-    val oneResolver : ()->List<ModelOne> = { ones }
-
-    val twoResolver : (name : String)-> ModelTwo? = { name ->
-        ones.find { it.name == name }?.let { ModelTwo(it, it.quantity..12) }
-    }
-
-    val threeResolver : ()-> ModelThree = { ModelThree("", ones.map { ModelTwo(it, it.quantity..10) }) }
-
     lateinit var schema : Schema
 
     lateinit var objectMapper : ObjectMapper
@@ -34,17 +24,7 @@ open class SimpleExecutionOverheadBenchmark {
     @Setup
     fun setup(){
         if(withKGraphQL){
-            schema = KGraphQL.schema {
-                query("one"){
-                    resolver(oneResolver)
-                }
-                query("two"){
-                    resolver(twoResolver)
-                }
-                query("three"){
-                    resolver(threeResolver)
-                }
-            }
+            schema = Benchmark.benchmarkSchema{}
         } else {
             objectMapper = jacksonObjectMapper()
         }

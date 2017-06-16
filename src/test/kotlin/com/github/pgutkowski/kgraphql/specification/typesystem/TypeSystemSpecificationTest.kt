@@ -5,7 +5,7 @@ import com.github.pgutkowski.kgraphql.Specification
 import com.github.pgutkowski.kgraphql.expect
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.dsl.type
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 @Specification("3 Type System")
 class TypeSystemSpecificationTest {

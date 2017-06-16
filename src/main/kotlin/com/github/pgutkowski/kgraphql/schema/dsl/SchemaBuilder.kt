@@ -26,22 +26,14 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
         configuration.update(block)
     }
 
-    fun query(name : String? = null, init: QueryOrMutationDSL.() -> Unit){
-        val wrapperDSL = handleQueryOrMutationDSL(init, name)
-        model.addQuery(KQLQuery(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))
-    }
-
-    fun mutation(name : String? = null, init: QueryOrMutationDSL.() -> Unit){
-        val wrapperDSL = handleQueryOrMutationDSL(init, name)
-        model.addMutation(KQLMutation(wrapperDSL.name, wrapperDSL.functionWrapper, wrapperDSL.description))
-    }
-
-    private fun handleQueryOrMutationDSL(init: QueryOrMutationDSL.() -> Unit, name: String?): QueryOrMutationDSL {
+    fun query(name : String, init: QueryOrMutationDSL.() -> Unit){
         val wrapperDSL = QueryOrMutationDSL(init)
-        if (name != null) {
-            wrapperDSL.name = name
-        }
-        return wrapperDSL
+        model.addQuery(KQLQuery(name, wrapperDSL.functionWrapper, wrapperDSL.description))
+    }
+
+    fun mutation(name : String, init: QueryOrMutationDSL.() -> Unit){
+        val wrapperDSL = QueryOrMutationDSL(init)
+        model.addMutation(KQLMutation(name, wrapperDSL.functionWrapper, wrapperDSL.description))
     }
 
     fun <T : Any>supportedScalar(kClass: KClass<T>, block: SupportedScalarDSL<T>.() -> Unit){
@@ -79,9 +71,10 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
         model.addEnum(KQLType.Enumeration(type.name, kClass, enumValues, type.description))
     }
 
-    fun unionType(block : UnionTypeDSL.() -> Unit){
+    fun unionType(name : String, block : UnionTypeDSL.() -> Unit) : TypeID {
         val union = UnionTypeDSL(block)
-        model.addUnion(KQLType.Union(union.name, union.possibleTypes, union.description))
+        model.addUnion(KQLType.Union(name, union.possibleTypes, union.description))
+        return TypeID(name)
     }
 }
 

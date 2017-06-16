@@ -4,9 +4,9 @@ import com.github.pgutkowski.kgraphql.*
 import com.github.pgutkowski.kgraphql.schema.dsl.type
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
-
+@Specification("3.1.3 Interfaces")
 class InterfacesSpecificationTest {
     interface SimpleInterface {
         val exe : String

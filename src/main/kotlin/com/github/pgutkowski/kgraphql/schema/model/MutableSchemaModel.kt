@@ -1,9 +1,12 @@
 package com.github.pgutkowski.kgraphql.schema.model
 
+import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.builtin.BuiltInType
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
 import com.github.pgutkowski.kgraphql.defaultKQLTypeName
+import kotlin.reflect.KClass
+import kotlin.reflect.full.isSubclassOf
 
 /**
  * Intermediate, mutable data structure used to prepare [SchemaModel]
@@ -35,20 +38,37 @@ data class MutableSchemaModel (
                 val compiledObjects = ArrayList(this.objects)
 
                 unions.forEach { union ->
+                        if(union.members.isEmpty()){
+                                throw SchemaException("A Union type must define one or more unique member types")
+                        }
                         union.members.forEach { member ->
-                                if(scalars.any { it.kClass == member } || enums.any { it.kClass == member }){
-                                        throw com.github.pgutkowski.kgraphql.schema.SchemaException(
-                                                "The member types of a Union type must all be Object base types; " +
-                                                        "Scalar, Interface and Union types may not be member types of a Union")
-                                }
-
-                                if(compiledObjects.none { it.kClass == member }){
-                                        compiledObjects.add(KQLType.Object(member.defaultKQLTypeName(), member))
-                                }
+                                validateUnionMember(union, member, compiledObjects)
                         }
                 }
 
                 return SchemaModel(compiledObjects, queries, scalars, mutations, enums, unions, directives)
+        }
+
+        private fun validateUnionMember(union: KQLType.Union,
+                                        member: KClass<*>,
+                                        compiledObjects: ArrayList<KQLType.Object<*>>) {
+                if (scalars.any { it.kClass == member } || enums.any { it.kClass == member }) {
+                        throw SchemaException(
+                                "The member types of a Union type must all be Object base types; " +
+                                        "Scalar, Interface and Union types may not be member types of a Union")
+                }
+
+                if (member.isSubclassOf(Collection::class)) {
+                        throw SchemaException("Collection may not be member type of a Union '${union.name}'")
+                }
+
+                if (member.isSubclassOf(Map::class)) {
+                        throw SchemaException("Map may not be member type of a Union '${union.name}'")
+                }
+
+                if (compiledObjects.none { it.kClass == member }) {
+                        compiledObjects.add(KQLType.Object(member.defaultKQLTypeName(), member))
+                }
         }
 
         fun addQuery(query : KQLQuery<*>){

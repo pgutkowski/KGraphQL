@@ -4,21 +4,19 @@ import com.github.pgutkowski.kgraphql.Actor
 import com.github.pgutkowski.kgraphql.Specification
 import com.github.pgutkowski.kgraphql.defaultSchema
 import com.github.pgutkowski.kgraphql.executeEqualQueries
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
+import junit.framework.Assert.fail
+import org.junit.Ignore
+import org.junit.Test
 
 @Specification("2.3 Operations")
 class OperationsSpecificationTest {
 
     val schema = defaultSchema {
-        query {
-            name = "fizz"
+        query("fizz") {
             resolver{ -> "buzz"}
         }
 
-        mutation {
-            name = "createActor"
+        mutation("createActor") {
             resolver { name : String -> Actor(name, 11) }
         }
     }
@@ -44,8 +42,8 @@ class OperationsSpecificationTest {
     }
 
     @Test
-    @Disabled("Feature not supported yet")
+    @Ignore("Feature not supported yet")
     fun `handle subscription`(){
-        Assertions.fail("Feature not supported yet")
+        fail("Feature not supported yet")
     }
 }

@@ -9,7 +9,7 @@ import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.jupiter.api.Test
+import org.junit.Test
 import java.util.*
 import kotlin.reflect.full.starProjectedType
 
@@ -39,8 +39,7 @@ class SchemaBuilderTest {
     @Test
     fun `ignored property DSL`() {
         val testedSchema = defaultSchema {
-            query {
-                name = "scenario"
+            query("scenario") {
                 resolver { -> Scenario(Id("GKalus", 234234), "Gamil Kalus", "TOO LONG") }
             }
             type<Scenario>{
@@ -57,8 +56,7 @@ class SchemaBuilderTest {
     @Test
     fun `transformation DSL`() {
         val testedSchema = defaultSchema {
-            query {
-                name = "scenario"
+            query("scenario") {
                 resolver { -> Scenario(Id("GKalus", 234234),"Gamil Kalus", "TOO LONG") }
             }
             type<Scenario> {
@@ -79,14 +77,12 @@ class SchemaBuilderTest {
     fun `extension property DSL`(){
         val testedSchema = defaultSchema {
 
-            query {
-                name = "scenario"
+            query("scenario") {
                 resolver { -> Scenario(Id("GKalus", 234234),"Gamil Kalus", "TOO LONG") }
             }
 
             type<Scenario> {
-                property<String> {
-                    name = "pdf"
+                property<String>("pdf") {
                     description = "link to pdf representation of scenario"
                     resolver { scenario : Scenario -> "http://scenarios/${scenario.id}" }
                 }
@@ -106,21 +102,18 @@ class SchemaBuilderTest {
     fun `union type DSL`(){
         val tested = defaultSchema {
 
-            query {
-                name = "scenario"
+            query("scenario") {
                 resolver { -> Scenario(Id("GKalus", 234234),"Gamil Kalus", "TOO LONG") }
             }
 
-            unionType {
-                name = "Linked"
+            val linked = unionType("Linked") {
                 type<Actor>()
                 type<Scenario>()
             }
 
             type<Scenario> {
-                unionProperty {
-                    name = "pdf"
-                    returnType = "Linked"
+                unionProperty("pdf") {
+                    returnType = linked
                     description = "link to pdf representation of scenario"
                     resolver { scenario : Scenario ->
                         if(scenario.author.startsWith("Gamil")){
@@ -143,15 +136,13 @@ class SchemaBuilderTest {
     @Test
     fun `circular dependency extension property`(){
         val tested = defaultSchema {
-            query {
-                name = "actor"
+            query("actor") {
                 resolver { -> Actor("Little John", 44) }
             }
 
             type<Actor> {
-                property<Actor> {
-                    name = "linked"
-                    resolver { actor -> Actor("BIG John", 3234) }
+                property<Actor>("linked") {
+                    resolver { _ -> Actor("BIG John", 3234) }
                 }
             }
         }
@@ -167,14 +158,12 @@ class SchemaBuilderTest {
     @Test
     fun ` _ is allowed as receiver argument name`(){
         val schema = defaultSchema {
-            query {
-                name = "actor"
+            query("actor") {
                 resolver { -> Actor("Boguś Linda", 4343) }
             }
 
             type<Actor>{
-                property<List<String>> {
-                    name = "favDishes"
+                property<List<String>>("favDishes") {
                     resolver { _: Actor, size: Int->
                         listOf("steak", "burger", "soup", "salad", "bread", "bird").take(size)
                     }

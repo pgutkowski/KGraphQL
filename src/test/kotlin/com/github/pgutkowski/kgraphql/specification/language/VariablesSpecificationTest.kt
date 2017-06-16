@@ -9,7 +9,7 @@ import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 @Specification("2.10 Variables")
 class VariablesSpecificationTest : BaseSchemaTest() {

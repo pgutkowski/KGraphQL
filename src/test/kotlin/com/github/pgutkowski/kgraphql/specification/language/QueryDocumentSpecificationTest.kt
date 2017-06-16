@@ -3,19 +3,17 @@ package com.github.pgutkowski.kgraphql.specification.language
 import com.github.pgutkowski.kgraphql.*
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 @Specification("2.2 Query Document")
 class QueryDocumentSpecificationTest {
 
     val schema = defaultSchema {
-        query {
-            name = "fizz"
+        query("fizz") {
             resolver{ -> "buzz"}
         }
 
-        mutation {
-            name = "createActor"
+        mutation("createActor") {
             resolver { name : String -> Actor(name, 11) }
         }
     }

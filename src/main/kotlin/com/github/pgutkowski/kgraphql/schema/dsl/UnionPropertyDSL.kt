@@ -10,7 +10,7 @@ class UnionPropertyDSL<T>(block: UnionPropertyDSL<T>.() -> Unit) : ItemDSL() {
 
     internal lateinit var functionWrapper : FunctionWrapper<Any?>
 
-    lateinit var returnType : String
+    lateinit var returnType : TypeID
 
     fun resolver(function: (T) -> Any?){
         functionWrapper = FunctionWrapper.on(function, true)

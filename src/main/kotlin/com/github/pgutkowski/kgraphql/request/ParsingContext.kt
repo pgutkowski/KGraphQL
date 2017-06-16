@@ -1,7 +1,7 @@
 package com.github.pgutkowski.kgraphql.request
 
 import com.github.pgutkowski.kgraphql.SyntaxException
-import com.github.pgutkowski.kgraphql.graph.Fragment
+import com.github.pgutkowski.kgraphql.request.graph.Fragment
 
 data class ParsingContext(
         val fullString : String,

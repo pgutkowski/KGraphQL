@@ -4,21 +4,19 @@ import com.github.pgutkowski.kgraphql.*
 import com.github.pgutkowski.kgraphql.schema.dsl.type
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 @Specification("2.6 Arguments")
 class ArgumentsSpecificationTest {
     val age = 432
 
     val schema = defaultSchema {
-        query {
-            name = "actor"
+        query("actor") {
             resolver { -> Actor("Boguś Linda", age) }
         }
 
         type<Actor>{
-            property<List<String>> {
-                name = "favDishes"
+            property<List<String>>("favDishes") {
                 resolver { _: Actor, size: Int, prefix: String? ->
                     listOf("steak", "burger", "soup", "salad", "bread", "bird").let { dishes ->
                         if(prefix != null){

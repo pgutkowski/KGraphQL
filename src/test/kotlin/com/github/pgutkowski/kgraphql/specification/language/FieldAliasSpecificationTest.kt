@@ -4,7 +4,7 @@ import com.github.pgutkowski.kgraphql.*
 import com.github.pgutkowski.kgraphql.schema.dsl.type
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 @Specification("2.7 Field Alias")
 class FieldAliasSpecificationTest {
@@ -14,8 +14,7 @@ class FieldAliasSpecificationTest {
     val actorName = "Boguś Linda"
 
     val schema = defaultSchema {
-        query {
-            name = "actor"
+        query("actor") {
             resolver { -> Actor(actorName, age) }
         }
 

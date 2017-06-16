@@ -7,4 +7,4 @@ jdk:
   - openjdk8
 
 after_success:
-- ./gradlew junitPlatformJacocoReport coveralls
+- ./gradlew jacocoTestReport coveralls

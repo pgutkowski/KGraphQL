@@ -8,14 +8,18 @@ import kotlinx.coroutines.experimental.CommonPool
 
 class SchemaConfigurationDSL {
     var useDefaultPrettyPrinter: Boolean = false
+    var useCachingDocumentParser: Boolean = true
+    var documentParserCacheMaximumSize : Long = 1000L
     var objectMapper: ObjectMapper = jacksonObjectMapper()
     var coroutineDispatcher = CommonPool
 
     internal fun update(block : SchemaConfigurationDSL.() -> Unit) = block()
 
-    internal fun build() : SchemaConfiguration {
-        return SchemaConfiguration(
-                useDefaultPrettyPrinter, objectMapper, coroutineDispatcher
-        )
-    }
+    internal fun build() : SchemaConfiguration = SchemaConfiguration(
+            useDefaultPrettyPrinter,
+            useCachingDocumentParser,
+            documentParserCacheMaximumSize,
+            objectMapper,
+            coroutineDispatcher
+    )
 }

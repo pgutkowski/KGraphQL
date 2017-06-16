@@ -3,7 +3,7 @@ package com.github.pgutkowski.kgraphql.specification.language
 import com.github.pgutkowski.kgraphql.*
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 @Specification("2.4 Selection Sets")
 class SelectionSetsSpecificationTest {
@@ -11,8 +11,7 @@ class SelectionSetsSpecificationTest {
     val age = 432
 
     val schema = defaultSchema {
-        query {
-            name = "actor"
+        query("actor") {
             resolver { -> Actor("Boguś Linda", age) }
         }
     }

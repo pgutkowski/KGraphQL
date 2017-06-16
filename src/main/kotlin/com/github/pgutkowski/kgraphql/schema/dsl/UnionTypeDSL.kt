@@ -5,7 +5,7 @@ import kotlin.reflect.KClass
 
 class UnionTypeDSL(block : UnionTypeDSL.() -> Unit) : ItemDSL() {
 
-    internal val possibleTypes = mutableListOf<KClass<*>>()
+    internal val possibleTypes = mutableSetOf<KClass<*>>()
 
     init {
         block()

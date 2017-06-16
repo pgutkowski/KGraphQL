@@ -2,6 +2,7 @@ package com.github.pgutkowski.kgraphql.schema
 
 import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.configuration.SchemaConfiguration
+import com.github.pgutkowski.kgraphql.request.CachingDocumentParser
 import com.github.pgutkowski.kgraphql.request.DocumentParser
 import com.github.pgutkowski.kgraphql.request.VariablesJson
 import com.github.pgutkowski.kgraphql.schema.execution.ParallelRequestExecutor
@@ -27,7 +28,11 @@ class DefaultSchema(internal val model : SchemaModel, internal val configuration
     /**
      * objects for request handling
      */
-    private val documentParser = DocumentParser()
+    private val documentParser = if(configuration.useCachingDocumentParser){
+        CachingDocumentParser(configuration.documentParserCacheMaximumSize)
+    } else {
+        DocumentParser()
+    }
 
     override fun execute(request: String, variables: String?): String {
         val parsedVariables = variables

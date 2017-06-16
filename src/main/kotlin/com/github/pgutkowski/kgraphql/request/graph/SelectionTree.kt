@@ -1,4 +1,4 @@
-package com.github.pgutkowski.kgraphql.graph
+package com.github.pgutkowski.kgraphql.request.graph
 
 import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.request.Arguments

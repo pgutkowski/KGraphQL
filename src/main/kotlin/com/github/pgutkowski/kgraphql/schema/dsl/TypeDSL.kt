@@ -12,7 +12,7 @@ import kotlin.reflect.KProperty1
 
 open class TypeDSL<T : Any>(private val supportedUnions: Collection<KQLType.Union>, val kClass: KClass<T>, block: TypeDSL<T>.() -> Unit) : ItemDSL() {
 
-    override var name = kClass.defaultKQLTypeName()
+    var name = kClass.defaultKQLTypeName()
 
     internal val ignoredProperties = mutableSetOf<KProperty1<T, *>>()
 
@@ -38,16 +38,16 @@ open class TypeDSL<T : Any>(private val supportedUnions: Collection<KQLType.Unio
         transformationProperties.add(Transformation(kProperty, FunctionWrapper.on(function, true)))
     }
 
-    fun <R> property(block : PropertyDSL<T, R>.() -> Unit){
+    fun <R> property(name : String, block : PropertyDSL<T, R>.() -> Unit){
         val it = PropertyDSL(block)
-        extensionProperties.add(KQLProperty.Function(it.name, it.functionWrapper))
+        extensionProperties.add(KQLProperty.Function(name, it.functionWrapper))
     }
 
-    fun unionProperty(block : UnionPropertyDSL<T>.() -> Unit){
+    fun unionProperty(name : String, block : UnionPropertyDSL<T>.() -> Unit){
         val unionProperty = UnionPropertyDSL(block)
-        val union = supportedUnions.find { unionProperty.returnType.equals(it.name, true) }
-                ?: throw SchemaException("Union Type: ${unionProperty.name} does not exist")
-        unionProperties.add(KQLProperty.Union(unionProperty.name, unionProperty.functionWrapper, union))
+        val union = supportedUnions.find { unionProperty.returnType.typeID.equals(it.name, true) }
+                ?: throw SchemaException("Union Type: ${unionProperty.returnType.typeID} does not exist")
+        unionProperties.add(KQLProperty.Union(name, unionProperty.functionWrapper, union))
     }
 
     init {

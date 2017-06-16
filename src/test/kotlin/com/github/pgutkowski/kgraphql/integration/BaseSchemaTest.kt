@@ -6,7 +6,7 @@ import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.dsl.enum
 import com.github.pgutkowski.kgraphql.schema.dsl.supportedScalar
 import com.github.pgutkowski.kgraphql.schema.dsl.type
-import org.junit.jupiter.api.AfterEach
+import org.junit.After
 
 
 abstract class BaseSchemaTest {
@@ -28,24 +28,20 @@ abstract class BaseSchemaTest {
     val createdActors = mutableListOf<Actor>()
 
     val testedSchema = SchemaBuilder {
-        query {
-            name = "number"
+        query("number") {
             description = "returns little of big number"
             resolver { big : Boolean -> if(big) 10000 else 0 }
         }
-        query {
-            name = "film"
+        query("film") {
             description = "mock film"
             resolver { -> prestige }
         }
-        query {
-            name = "actors"
+        query("actors") {
             description = "all actors"
             resolver { ->
                 listOf(bradPitt, morganFreeman, kevinSpacey, tomHardy, christianBale) }
         }
-        query {
-            name = "filmByRank"
+        query("filmByRank") {
             description = "ranked films"
             resolver { rank: Int -> when(rank){
                 1 -> prestige
@@ -53,23 +49,19 @@ abstract class BaseSchemaTest {
                 else -> null
             }}
         }
-        query {
-            name = "filmsByType"
+        query("filmsByType") {
             description = "film categorized by type"
             resolver {type: FilmType -> listOf(prestige, se7en) }
         }
-        query {
-            name = "people"
+        query("people") {
             description = "List of all people"
             resolver { -> listOf(davidFincher, bradPitt, morganFreeman, christianBale, christopherNolan) }
         }
-        query {
-            name = "randomPerson"
+        query("randomPerson") {
             description = "not really random person"
             resolver { -> davidFincher as Person /*not really random*/}
         }
-        mutation {
-            name = "createActor"
+        mutation("createActor") {
             description = "create new actor"
             resolver { name : String, age : Int ->
                 val actor = Actor(name, age)
@@ -92,8 +84,7 @@ abstract class BaseSchemaTest {
                 if(uppercase == true) content.toUpperCase() else content
             }
         }
-        unionType {
-            name = "Favourite"
+        val favouriteID = unionType("Favourite") {
             type<Actor>()
             type<Scenario>()
             type<Director>()
@@ -101,12 +92,10 @@ abstract class BaseSchemaTest {
 
         type<Actor>{
             description = "An actor is a person who portrays a character in a performance"
-            property<Boolean?> {
-                name = "isOld"
+            property<Boolean?>("isOld") {
                 resolver { actor -> (actor.age > 500) as Boolean? }
             }
-            property<String> {
-                name = "picture"
+            property<String>("picture") {
                 resolver { actor, big : Boolean? ->
                     val actorName = actor.name.replace(' ', '_')
                     if(big == true){
@@ -116,9 +105,8 @@ abstract class BaseSchemaTest {
                     }
                 }
             }
-            unionProperty {
-                name = "favourite"
-                returnType = "Favourite"
+            unionProperty("favourite") {
+                returnType = favouriteID
                 resolver { actor -> when(actor){
                     bradPitt -> tomHardy
                     tomHardy -> christopherNolan
@@ -129,7 +117,7 @@ abstract class BaseSchemaTest {
         }
     }.build() as DefaultSchema
 
-    @AfterEach
+    @After
     fun cleanup() = createdActors.clear()
 
     fun execute(query: String, variables : String? = null) = deserialize(testedSchema.execute(query, variables))

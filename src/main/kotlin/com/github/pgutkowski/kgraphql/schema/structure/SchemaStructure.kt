@@ -2,9 +2,9 @@ package com.github.pgutkowski.kgraphql.schema.structure
 
 import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.SyntaxException
-import com.github.pgutkowski.kgraphql.graph.DirectiveInvocation
-import com.github.pgutkowski.kgraphql.graph.Fragment
-import com.github.pgutkowski.kgraphql.graph.SelectionNode
+import com.github.pgutkowski.kgraphql.request.graph.DirectiveInvocation
+import com.github.pgutkowski.kgraphql.request.graph.Fragment
+import com.github.pgutkowski.kgraphql.request.graph.SelectionNode
 import com.github.pgutkowski.kgraphql.request.Operation
 import com.github.pgutkowski.kgraphql.request.OperationVariable
 import com.github.pgutkowski.kgraphql.schema.SchemaException

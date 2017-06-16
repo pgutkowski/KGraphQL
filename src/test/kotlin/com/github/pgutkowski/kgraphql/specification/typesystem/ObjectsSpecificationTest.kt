@@ -1,15 +1,17 @@
 package com.github.pgutkowski.kgraphql.specification.typesystem
 
+import com.github.pgutkowski.kgraphql.Actor
 import com.github.pgutkowski.kgraphql.KGraphQL
+import com.github.pgutkowski.kgraphql.Specification
 import com.github.pgutkowski.kgraphql.expect
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.dsl.type
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.greaterThan
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
-
+@Specification("3.1.2 Objects")
 class ObjectsSpecificationTest {
     data class Underscore(val __field : Int)
 
@@ -33,8 +35,7 @@ class ObjectsSpecificationTest {
         val schema = KGraphQL.schema {
             query("many") { resolver { -> ManyFields() } }
             type<ManyFields>{
-                property<String> {
-                    name = "name"
+                property<String>("name") {
                     resolver { _ -> "Boguś" }
                 }
             }
@@ -140,4 +141,60 @@ class ObjectsSpecificationTest {
         }
     }
 
+    @Test
+    fun `field resolution order does not affect response field order`(){
+        val schema = KGraphQL.schema {
+            type<Actor> {
+                property<String>("long"){
+                    resolver {
+                        Thread.sleep(100)
+                        "FINISHED LONG"
+                    }
+                }
+
+                property<String>("short"){
+                    resolver {
+                        "FINISHED SHORT"
+                    }
+                }
+            }
+
+            query("actor"){
+                resolver<Actor> { Actor("Harden", 22) }
+            }
+        }
+
+        val responseShortAfterLong = (schema.execute("{actor{long, short}}"))
+        with(responseShortAfterLong) {
+            assertThat(indexOf("short"), greaterThan(indexOf("long")))
+        }
+
+        val responseLongAfterShort = (schema.execute("{actor{short, long}}"))
+        with(responseLongAfterShort) {
+            assertThat(indexOf("long"), greaterThan(indexOf("short")))
+        }
+    }
+
+    @Test
+    fun `operation resolution order does not affect response field order`(){
+        val schema = KGraphQL.schema {
+            query("long"){
+                resolver<String> {
+                    Thread.sleep(100)
+                    "FINISHED LONG"
+                }
+            }
+
+            query("short"){
+                resolver<String> {
+                    "FINISHED SHORT"
+                }
+            }
+        }
+
+        val responseShortAfterLong = schema.execute("{long, short}")
+        with(responseShortAfterLong) {
+            assertThat(indexOf("short"), greaterThan(indexOf("long")))
+        }
+    }
 }

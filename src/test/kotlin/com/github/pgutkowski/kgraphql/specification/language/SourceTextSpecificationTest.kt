@@ -3,19 +3,17 @@ package com.github.pgutkowski.kgraphql.specification.language
 import com.github.pgutkowski.kgraphql.*
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 @Specification("2.1. Source Text")
 class SourceTextSpecificationTest {
 
     val schema = defaultSchema {
-        query {
-            name = "fizz"
+        query("fizz") {
             resolver{ -> "buzz"}
         }
 
-        query {
-            name = "actor"
+        query("actor") {
             resolver { -> Actor("Bogusław Linda", 65) }
         }
     }

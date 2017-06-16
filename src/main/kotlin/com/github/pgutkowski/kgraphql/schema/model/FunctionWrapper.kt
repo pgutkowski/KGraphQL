@@ -74,8 +74,7 @@ interface FunctionWrapper <T>{
     }
 
     class ArityZero<T>(val implementation : ()-> T, override val hasReceiver: Boolean = false ) : FunctionWrapper<T> {
-        override val kFunction: KFunction<T>
-            get() = implementation.reflect()!!
+        override val kFunction: KFunction<T> by lazy { implementation.reflect()!! }
 
         override fun arity(): Int = 0
 
@@ -89,8 +88,7 @@ interface FunctionWrapper <T>{
     }
 
     class ArityOne<T, R>(val implementation : (R)-> T, override val hasReceiver: Boolean) : FunctionWrapper<T> {
-        override val kFunction: KFunction<T>
-            get() = implementation.reflect()!!
+        override val kFunction: KFunction<T> by lazy { implementation.reflect()!! }
 
         override fun arity(): Int = 1
 
@@ -104,8 +102,7 @@ interface FunctionWrapper <T>{
     }
 
     class ArityTwo<T, R, E>(val implementation : (R, E)-> T, override val hasReceiver: Boolean ) : FunctionWrapper<T> {
-        override val kFunction: KFunction<T>
-            get() = implementation.reflect()!!
+        override val kFunction: KFunction<T> by lazy { implementation.reflect()!! }
 
         override fun arity(): Int = 2
 
@@ -119,8 +116,7 @@ interface FunctionWrapper <T>{
     }
 
     class ArityThree<T, R, E, W>(val implementation : (R, E, W)-> T, override val hasReceiver: Boolean ) : FunctionWrapper<T> {
-        override val kFunction: KFunction<T>
-            get() = implementation.reflect()!!
+        override val kFunction: KFunction<T> by lazy { implementation.reflect()!! }
 
         override fun arity(): Int = 3
 
@@ -134,8 +130,7 @@ interface FunctionWrapper <T>{
     }
 
     class ArityFour<T, R, E, W, Q>(val implementation : (R, E, W, Q)-> T, override val hasReceiver: Boolean ) : FunctionWrapper<T> {
-        override val kFunction: KFunction<T>
-            get() = implementation.reflect()!!
+        override val kFunction: KFunction<T> by lazy { implementation.reflect()!! }
 
         override fun arity(): Int = 4
 

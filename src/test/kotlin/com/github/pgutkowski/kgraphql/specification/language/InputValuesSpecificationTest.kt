@@ -5,8 +5,8 @@ import com.github.pgutkowski.kgraphql.schema.dsl.enum
 import com.github.pgutkowski.kgraphql.schema.dsl.type
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
+import org.junit.Ignore
+import org.junit.Test
 
 @Specification("2.9 Input Values")
 class InputValuesSpecificationTest {
@@ -111,7 +111,7 @@ class InputValuesSpecificationTest {
     }
 
     @Test
-    @Disabled("literal object input values are not implemented yet")
+    @Ignore("literal object input values are not implemented yet")
     @Specification("2.9.8 Object Value")
     fun `Literal object input value`(){
         val response = deserialize(schema.execute("{Object(value: {number: 232, description: \"little number\"}){number, description}}"))
@@ -122,7 +122,7 @@ class InputValuesSpecificationTest {
     }
 
     @Test
-    @Disabled("literal object input values are not implemented yet")
+    @Ignore("literal object input values are not implemented yet")
     @Specification("2.9.8 Object Value")
     fun `Literal object input value with list field`(){
         val response = deserialize(schema.execute(

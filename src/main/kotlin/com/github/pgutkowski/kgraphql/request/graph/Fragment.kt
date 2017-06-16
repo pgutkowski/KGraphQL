@@ -1,4 +1,4 @@
-package com.github.pgutkowski.kgraphql.graph
+package com.github.pgutkowski.kgraphql.request.graph
 
 /**
  * fragment key needs to start with "..."

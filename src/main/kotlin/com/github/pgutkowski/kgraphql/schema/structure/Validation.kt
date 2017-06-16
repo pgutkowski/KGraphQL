@@ -2,8 +2,8 @@ package com.github.pgutkowski.kgraphql.schema.structure
 
 import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.ValidationException
-import com.github.pgutkowski.kgraphql.graph.Fragment
-import com.github.pgutkowski.kgraphql.graph.SelectionNode
+import com.github.pgutkowski.kgraphql.request.graph.Fragment
+import com.github.pgutkowski.kgraphql.request.graph.SelectionNode
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLType

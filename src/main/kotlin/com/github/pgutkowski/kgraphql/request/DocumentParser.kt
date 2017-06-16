@@ -1,19 +1,19 @@
 package com.github.pgutkowski.kgraphql.request
 
 import com.github.pgutkowski.kgraphql.SyntaxException
-import com.github.pgutkowski.kgraphql.graph.*
+import com.github.pgutkowski.kgraphql.request.graph.*
 
 /**
  * Utility for parsing query document and its structures.
  * TODO: too complex, has to refactor this
  */
-class DocumentParser {
+open class DocumentParser {
 
     /**
      * Performs validation and parsing of query document, returning all declared operations.
      * Fragments declared in document are parsed as well, but only used to create operations and not persisted.
      */
-    fun parseDocument(input: String) : List<Operation> {
+    open fun parseDocument(input: String) : List<Operation> {
         val request = validateAndFilterRequest(input)
         val documentTokens = createDocumentTokens(tokenizeRequest(request))
         val fragments = mutableMapOf<String, Fragment.External>()

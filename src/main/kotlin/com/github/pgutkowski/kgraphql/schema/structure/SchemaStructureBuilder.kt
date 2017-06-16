@@ -66,9 +66,10 @@ class SchemaStructureBuilder(model : SchemaModel) {
 
     private fun handleReturnType(kType: KType) : SchemaNode.ReturnType {
         val kClass = kType.jvmErasure
-        val isCollection: Boolean = kClass.isSubclassOf(Collection::class)
-        if(isCollection){
-            return handleCollectionReturnType(collectionKType = kType, entryKType = kType.arguments.first().type!!)
+        if(kClass.isCollection()){
+            val elementType = kType.arguments.getOrNull(0)?.type
+                    ?: throw SchemaException("Cannot infer collection element type for type $kType")
+            return handleCollectionReturnType(collectionKType = kType, entryKType = elementType)
         } else {
             val isNullable: Boolean = kType.isMarkedNullable
             val type = getType(kClass, kType)
@@ -81,8 +82,7 @@ class SchemaStructureBuilder(model : SchemaModel) {
         val areEntriesNullable : Boolean = entryKType.isMarkedNullable
 
         val entryKClass = entryKType.jvmErasure
-        val isCollection: Boolean = entryKClass.isSubclassOf(Collection::class)
-        if(isCollection){
+        if(entryKClass.isCollection()){
             throw IllegalArgumentException("Nested Collections are not supported")
         } else {
             val type = getType(entryKClass, entryKType)
@@ -174,4 +174,6 @@ class SchemaStructureBuilder(model : SchemaModel) {
     private fun <T> handleKotlinProperty(property: KProperty1<T, *>, transformation: Transformation<out Any, out Any?>?) : SchemaNode.Property {
         return SchemaNode.Property(KQLProperty.Kotlin(property), handleReturnType(property.returnType), transformation)
     }
+
+    private fun KClass<*>.isCollection() = isSubclassOf(Collection::class)
 }

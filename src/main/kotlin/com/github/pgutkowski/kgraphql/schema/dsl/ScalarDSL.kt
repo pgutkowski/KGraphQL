@@ -6,7 +6,7 @@ import kotlin.reflect.KClass
 
 class ScalarDSL<T : Any>(kClass: KClass<T>, block: ScalarDSL<T>.() -> Unit) : ItemDSL() {
 
-    override var name = kClass.defaultKQLTypeName()
+    var name = kClass.defaultKQLTypeName()
 
     init {
         block()

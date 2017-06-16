@@ -2,7 +2,7 @@ package com.github.pgutkowski.kgraphql.request
 
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 /**
  * Not lots of tests, as tokenization is mostly covered by Query and Mutation tests

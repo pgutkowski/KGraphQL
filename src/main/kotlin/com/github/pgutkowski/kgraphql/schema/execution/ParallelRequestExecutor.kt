@@ -42,33 +42,43 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
     }
 
     override fun execute(plan : ExecutionPlan, variables: VariablesJson) : String = runBlocking {
-        val root = jsonNodeFactory.objectNode().apply {
-            val data = this.putObject("data")
-            val channel = Channel<Pair<String, JsonNode>>()
-            val jobs = plan
-                    .map {
-                        launch(dispatcher + CoroutineName(it.aliasOrKey)) {
-                            try {
-                                val writeOperation = writeOperation(Context(Variables(schema, variables, it.variables)), it, it.operationNode)
-                                channel.send(it.aliasOrKey to writeOperation)
-                            } catch (e: Exception) {
-                                channel.close(e)
-                            }
+        val root = jsonNodeFactory.objectNode()
+        val data = root.putObject("data")
+        val channel = Channel<Pair<Execution, JsonNode>>()
+        val jobs = plan
+                .map { execution ->
+                    launch(dispatcher) {
+                        try {
+                            val writeOperation = writeOperation(
+                                    ctx = Context(Variables(schema, variables, execution.variables)),
+                                    node = execution,
+                                    operation = execution.operationNode
+                            )
+                            channel.send(execution to writeOperation)
+                        } catch (e: Exception) {
+                            channel.close(e)
                         }
                     }
-                    .toMutableList()
-
-            repeat(plan.size) {
-                try {
-                    val (key, node) = channel.receive()
-                    data.set(key, node)
-                } catch(e : Exception){
-                    jobs.forEach{ it.cancel() }
-                    throw e
                 }
+                .toList()
+
+        //intermediate data structure necessary to preserve ordering
+        val resultMap = mutableMapOf<Execution, JsonNode>()
+        repeat(plan.size) {
+            try {
+                val (execution, jsonNode) = channel.receive()
+                resultMap.put(execution, jsonNode)
+            } catch(e : Exception){
+                jobs.forEach{ it.cancel() }
+                throw e
             }
-            channel.close()
         }
+        channel.close()
+
+        for(operation in plan){
+            data.set(operation.aliasOrKey, resultMap[operation])
+        }
+
         objectWriter.writeValueAsString(root)
     }
 

@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kgraphql.request
 
-import com.github.pgutkowski.kgraphql.graph.SelectionTree
+import com.github.pgutkowski.kgraphql.request.graph.SelectionTree
 
 
 data class Operation(val selectionTree: SelectionTree, val variables: List<OperationVariable>?, val name : String?, val action : Action?) {

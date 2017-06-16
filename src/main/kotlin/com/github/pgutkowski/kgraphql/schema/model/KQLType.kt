@@ -41,7 +41,7 @@ interface KQLType {
     //To avoid circular dependencies etc. union type members are resolved in runtime
     class Union (
             name : String,
-            val members: List<KClass<*>>,
+            val members: Set<KClass<*>>,
             description : String?
     ) : BaseKQLType(name, description)
 

@@ -3,7 +3,7 @@ package com.github.pgutkowski.kgraphql
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.pgutkowski.kgraphql.schema.Schema
-import org.junit.jupiter.api.Test
+import org.junit.Test
 import org.openjdk.jmh.annotations.*
 import java.util.concurrent.TimeUnit
 

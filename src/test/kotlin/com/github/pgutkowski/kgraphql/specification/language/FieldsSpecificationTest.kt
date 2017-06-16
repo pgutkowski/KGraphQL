@@ -3,7 +3,7 @@ package com.github.pgutkowski.kgraphql.specification.language
 import com.github.pgutkowski.kgraphql.*
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 @Specification("2.5 Fields")
 class FieldsSpecificationTest {
@@ -13,8 +13,7 @@ class FieldsSpecificationTest {
     val age = 432
 
     val schema = defaultSchema {
-        query {
-            name = "actor"
+        query("actor") {
             resolver { -> ActorWrapper("BLinda", Actor("Boguś Linda", age)) }
         }
     }

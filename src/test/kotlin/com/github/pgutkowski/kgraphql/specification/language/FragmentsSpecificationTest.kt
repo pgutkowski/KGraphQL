@@ -7,8 +7,7 @@ import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.MatcherAssert
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 @Specification("2.8 Fragments")
 class FragmentsSpecificationTest {
@@ -22,8 +21,7 @@ class FragmentsSpecificationTest {
     data class ActorWrapper(val id : String, val actualActor: Actor)
 
     val schema = defaultSchema {
-        query {
-            name = "actor"
+        query("actor") {
             resolver { -> ActorWrapper(id, Actor(actorName, age)) }
         }
     }

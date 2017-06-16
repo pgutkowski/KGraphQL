@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema
 
-import com.github.pgutkowski.kgraphql.SyntaxException
+import com.github.pgutkowski.kgraphql.RequestException
 import com.github.pgutkowski.kgraphql.configuration.SchemaConfiguration
 import com.github.pgutkowski.kgraphql.request.CachingDocumentParser
 import com.github.pgutkowski.kgraphql.request.DocumentParser
@@ -42,20 +42,20 @@ class DefaultSchema(internal val model : SchemaModel, internal val configuration
 
         when(operations.size){
             0 -> {
-                throw SyntaxException("Must provide any operation")
+                throw RequestException("Must provide any operation")
             }
             1 -> {
                 return requestExecutor.execute(structure.createExecutionPlan(operations.first()), parsedVariables)
             }
             else -> {
                 if(operations.any { it.name == null }){
-                    throw SyntaxException("anonymous operation must be the only defined operation")
+                    throw RequestException("anonymous operation must be the only defined operation")
                 } else {
                     val executionPlans = operations.associate { it.name to structure.createExecutionPlan(it) }
                     val operationName = parsedVariables.get(String::class, OPERATION_NAME_PARAM)
-                            ?: throw SyntaxException("Must provide an operation name from: ${executionPlans.keys}")
+                            ?: throw RequestException("Must provide an operation name from: ${executionPlans.keys}")
                     val executionPlan = executionPlans[operationName]
-                            ?: throw SyntaxException("Must provide an operation name from: ${executionPlans.keys}, found $operationName")
+                            ?: throw RequestException("Must provide an operation name from: ${executionPlans.keys}, found $operationName")
                     return requestExecutor.execute(executionPlan, parsedVariables)
                 }
             }

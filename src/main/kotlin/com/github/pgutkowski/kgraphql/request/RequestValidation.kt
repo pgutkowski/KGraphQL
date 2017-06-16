@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kgraphql.request
 
-import com.github.pgutkowski.kgraphql.SyntaxException
+import com.github.pgutkowski.kgraphql.RequestException
 
 fun validateAndFilterRequest(request : String) : String{
     return request
@@ -25,7 +25,7 @@ private fun String.validateCharacters(): String {
         when (char) {
             '\u0009', '\u000A', '\u000D', in '\u0020'..'\uFFFF' -> {
             }
-            else -> throw SyntaxException("Illegal character: ${String.format("\\u%04x", char.toInt())}")
+            else -> throw RequestException("Illegal character: ${String.format("\\u%04x", char.toInt())}")
         }
     }
     return this

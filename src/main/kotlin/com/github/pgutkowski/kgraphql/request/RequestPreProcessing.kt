@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kgraphql.request
 
-import com.github.pgutkowski.kgraphql.SyntaxException
+import com.github.pgutkowski.kgraphql.RequestException
 
 val OPERANDS = "{}():[]"
 
@@ -79,15 +79,15 @@ fun createFragmentTokens(tokens : List<String>, startIndex: Int) : Pair<Int, Doc
             }
             "{" -> {
                 val indexOfClosingBracket = indexOfClosingBracket(tokens, index)
-                if(name == null) throw SyntaxException("Invalid anonymous external fragment")
-                if(typeCondition == null) throw SyntaxException("Invalid external fragment without type condition")
+                if(name == null) throw RequestException("Invalid anonymous external fragment")
+                if(typeCondition == null) throw RequestException("Invalid external fragment without type condition")
                 return indexOfClosingBracket to Document.FragmentTokens(name, typeCondition, tokens.subList(index, indexOfClosingBracket))
             }
-            else -> throw SyntaxException("Unexpected token: $token")
+            else -> throw RequestException("Unexpected token: $token")
         }
         index++
     }
-    throw SyntaxException("Invalid fragment $name declaration without selection set")
+    throw RequestException("Invalid fragment $name declaration without selection set")
 }
 
 fun createOperationTokens(tokens : List<String>, startIndex: Int) : Pair<Int, Document.OperationTokens>{
@@ -111,15 +111,15 @@ fun createOperationTokens(tokens : List<String>, startIndex: Int) : Pair<Int, Do
                 if(token.equals("query", true) || token.equals("mutation", true)){
                     type = token
                 } else {
-                    throw SyntaxException("Unexpected operation type $token")
+                    throw RequestException("Unexpected operation type $token")
                 }
             }
             name == null -> name = token
-            else -> throw SyntaxException("Unexpected token: $token")
+            else -> throw RequestException("Unexpected token: $token")
         }
         index++
     }
-    throw SyntaxException("Invalid operation $name without selection set")
+    throw RequestException("Invalid operation $name without selection set")
 }
 
 private fun parseOperationVariables(variablesTokens: List<String>): MutableList<OperationVariable> {
@@ -131,11 +131,11 @@ private fun parseOperationVariables(variablesTokens: List<String>): MutableList<
     for(variableToken in variablesTokens) {
         when {
             variableToken == ":" -> {
-                if(variableName == null) throw SyntaxException("Unexpected token ':', before variable name")
+                if(variableName == null) throw RequestException("Unexpected token ':', before variable name")
             }
             variableToken == "=" -> {
                 if (variableName == null || variableType == null) {
-                    throw SyntaxException("Unexpected token '=', before variable name and type declaration")
+                    throw RequestException("Unexpected token '=', before variable name and type declaration")
                 } else {
                     defaultTypeStarted = true
                 }
@@ -170,7 +170,7 @@ fun indexOfClosingBracket(tokens: List<String>, startIndex: Int) : Int {
         if(nestedBrackets == 0) return index + startIndex + 1
     }
     val indexOfTokenInString = getIndexOfTokenInString(tokens.subList(0, startIndex))
-    throw SyntaxException("Missing closing bracket for opening bracket at $indexOfTokenInString")
+    throw RequestException("Missing closing bracket for opening bracket at $indexOfTokenInString")
 }
 
 private fun getIndexOfTokenInString(tokens: List<String>): Int {

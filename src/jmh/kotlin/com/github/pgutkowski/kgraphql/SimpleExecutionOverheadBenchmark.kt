@@ -2,6 +2,9 @@ package com.github.pgutkowski.kgraphql
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.github.pgutkowski.kgraphql.BenchmarkSchema.oneResolver
+import com.github.pgutkowski.kgraphql.BenchmarkSchema.threeResolver
+import com.github.pgutkowski.kgraphql.BenchmarkSchema.twoResolver
 import com.github.pgutkowski.kgraphql.schema.Schema
 import org.junit.Test
 import org.openjdk.jmh.annotations.*
@@ -24,7 +27,7 @@ open class SimpleExecutionOverheadBenchmark {
     @Setup
     fun setup(){
         if(withKGraphQL){
-            schema = Benchmark.benchmarkSchema{}
+            schema = BenchmarkSchema.create {}
         } else {
             objectMapper = jacksonObjectMapper()
         }

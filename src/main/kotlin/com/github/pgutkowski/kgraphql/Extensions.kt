@@ -9,7 +9,9 @@ fun <T : Any> KClass<T>.defaultKQLTypeName() = this.simpleName!!
 
 fun KType.defaultKQLTypeName() = this.jvmErasure.defaultKQLTypeName()
 
-fun String.dropQuotes() : String = if(startsWith('\"') && endsWith('\"')) drop(1).dropLast(1) else this
+fun String.dropQuotes() : String = if(isLiteral()) drop(1).dropLast(1) else this
+
+fun String.isLiteral() : Boolean = startsWith('\"') && endsWith('\"')
 
 fun KParameter.isNullable() = type.isMarkedNullable
 

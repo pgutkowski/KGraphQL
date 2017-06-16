@@ -20,7 +20,7 @@ class SourceTextSpecificationTest {
 
     @Test
     fun `invalid unicode character`() {
-        expect<SyntaxException>("Illegal character: \\u0003"){
+        expect<RequestException>("Illegal character: \\u0003"){
             deserialize(schema.execute("\u0003"))
         }
     }
@@ -83,11 +83,11 @@ class SourceTextSpecificationTest {
     @Test
     @Specification("2.1.9 Names")
     fun `names are case sensitive`(){
-        expect<SyntaxException>("FIZZ is not supported by this schema"){
+        expect<RequestException>("FIZZ is not supported by this schema"){
             deserialize(schema.execute("{FIZZ}"))
         }
 
-        expect<SyntaxException>("Fizz is not supported by this schema"){
+        expect<RequestException>("Fizz is not supported by this schema"){
             deserialize(schema.execute("{Fizz}"))
         }
 

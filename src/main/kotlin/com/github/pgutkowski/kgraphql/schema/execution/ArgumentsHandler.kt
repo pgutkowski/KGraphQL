@@ -3,17 +3,8 @@ package com.github.pgutkowski.kgraphql.schema.execution
 import com.github.pgutkowski.kgraphql.*
 import com.github.pgutkowski.kgraphql.request.Arguments
 import com.github.pgutkowski.kgraphql.request.Variables
-import com.github.pgutkowski.kgraphql.request.VariablesJson
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
-import com.github.pgutkowski.kgraphql.schema.model.SchemaModel
-import com.github.pgutkowski.kgraphql.schema.model.KQLType
-import kotlin.reflect.KClass
-import kotlin.reflect.KParameter
-import kotlin.reflect.KType
-import kotlin.reflect.full.createType
-import kotlin.reflect.full.starProjectedType
-import kotlin.reflect.full.withNullability
 import kotlin.reflect.jvm.jvmErasure
 
 
@@ -29,7 +20,7 @@ internal class ArgumentsHandler(schema : DefaultSchema) : ArgumentTransformer(sc
         val unsupportedArguments = args?.filter { arg -> parameters.none { parameter -> parameter.name == arg.key }}
 
         if(unsupportedArguments?.isNotEmpty() ?: false){
-            throw SyntaxException("$funName does support arguments ${parameters.map { it.name }}. found arguments ${args?.keys}")
+            throw RequestException("$funName does support arguments ${parameters.map { it.name }}. found arguments ${args?.keys}")
         }
 
         return parameters.map { parameter ->
@@ -57,9 +48,9 @@ internal class ArgumentsHandler(schema : DefaultSchema) : ArgumentTransformer(sc
                     }
                 }
                 value is List<*> && parameter.type.jvmErasure != List::class -> {
-                    throw SyntaxException("Invalid list value passed to non-list argument")
+                    throw RequestException("Invalid list value passed to non-list argument")
                 }
-                else -> throw SyntaxException("Non string arguments are not supported yet")
+                else -> throw RequestException("Non string arguments are not supported yet")
             }
         }
     }

@@ -33,21 +33,21 @@ class MutationTest : BaseSchemaTest() {
 
     @Test
     fun `invalid mutation name`(){
-        expect<SyntaxException>("createBanana is not supported by this schema"){
+        expect<RequestException>("createBanana is not supported by this schema"){
             execute("mutation {createBanana(name: \"${testActor.name}\", age: ${testActor.age}){age}}")
         }
     }
 
     @Test
     fun `invalid argument type`(){
-        expect<SyntaxException>("argument 'fwfwf' is not valid value of type Int"){
+        expect<RequestException>("argument 'fwfwf' is not valid value of type Int"){
             execute("mutation {createActor(name: \"${testActor.name}\", age: \"fwfwf\"){age}}")
         }
     }
 
     @Test
     fun `invalid arguments number`(){
-        expect<SyntaxException>("createActor does support arguments [name, age]. found arguments [name, bananan, age]"){
+        expect<RequestException>("createActor does support arguments [name, age]. found arguments [name, bananan, age]"){
             execute("mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}, bananan: \"fwfwf\"){age}}")
         }
     }

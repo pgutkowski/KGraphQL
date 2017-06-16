@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kgraphql.request
 
-import com.github.pgutkowski.kgraphql.SyntaxException
+import com.github.pgutkowski.kgraphql.RequestException
 import com.github.pgutkowski.kgraphql.request.graph.Fragment
 
 data class ParsingContext(
@@ -45,7 +45,7 @@ data class ParsingContext(
             }
             if (nestedLevel == 0) return tokens.subList(1, index)
         }
-        throw SyntaxException("Couldn't find matching closing token")
+        throw RequestException("Couldn't find matching closing token")
     }
 
     fun getFullStringIndex(tokenIndex : Int = index) : Int {

@@ -1,7 +1,7 @@
 package com.github.pgutkowski.kgraphql.request
 
 import com.github.pgutkowski.kgraphql.ExecutionException
-import com.github.pgutkowski.kgraphql.SyntaxException
+import com.github.pgutkowski.kgraphql.RequestException
 import com.github.pgutkowski.kgraphql.schema.structure.TypeDefinitionProvider
 import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import java.util.*
@@ -25,7 +25,7 @@ data class Variables(private val typeNameProvider: TypeDefinitionProvider,
                     ?: throw IllegalArgumentException("Variable '$key' was not declared for this operation")
             //remove "!", it only denotes non-nullability
             val kqlType = typeNameProvider.typeByKClass(kClass)
-                    ?: throw SyntaxException("Unknown type ${variable.type}. Maybe it was not registered in schema?")
+                    ?: throw RequestException("Unknown type ${variable.type}. Maybe it was not registered in schema?")
             if (kqlType.name != variable.type.removeSuffix("!")) {
                 throw IllegalArgumentException("Invalid variable argument type ${variable.type}, expected ${kClass.defaultKQLTypeName()}")
             }

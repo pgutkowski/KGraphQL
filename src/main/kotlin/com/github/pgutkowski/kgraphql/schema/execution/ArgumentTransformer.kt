@@ -1,8 +1,9 @@
 package com.github.pgutkowski.kgraphql.schema.execution
 
 import com.github.pgutkowski.kgraphql.ExecutionException
-import com.github.pgutkowski.kgraphql.SyntaxException
+import com.github.pgutkowski.kgraphql.RequestException
 import com.github.pgutkowski.kgraphql.dropQuotes
+import com.github.pgutkowski.kgraphql.isLiteral
 import com.github.pgutkowski.kgraphql.request.Variables
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
@@ -29,22 +30,41 @@ open class ArgumentTransformer(val schema : DefaultSchema) {
             }
             value == "null" && type.isMarkedNullable -> null
             value == "null" && !type.isMarkedNullable -> {
-                throw SyntaxException("argument '$value' is not valid value of type ${schema.typeByKType(type)?.name}")
+                throw RequestException("argument '$value' is not valid value of type ${schema.typeByKType(type)?.name}")
             }
             else -> {
-                val literalValue = value.dropQuotes()
-                //drop nullability on lookup type
-                val kType = type.withNullability(false)
-                return when (kType) {
-                    String::class.starProjectedType -> literalValue
-                    in enumsByType.keys -> enumsByType[kType]?.values?.find { it.name == literalValue }
-                    in scalarsByType.keys -> {
-                        transformScalar(scalarsByType[kType]!!, literalValue)
-                    }
-                    else -> {
-                        throw UnsupportedOperationException("Not supported yet")
-                    }
+                val lookupType = type.withNullability(false)
+                if(value.isLiteral()){
+                    return transformStringLiteral(value, lookupType)
+                } else {
+                    return transformStringConstant(lookupType, value)
                 }
+            }
+        }
+    }
+
+    private fun transformStringConstant(lookupType: KType, value: String): Enum<*> {
+        val enumType = enumsByType.getOrElse(lookupType) {
+            throw RequestException("Invalid argument value '$value' for type ${schema.typeByKType(lookupType)?.name}")
+        }
+
+        return enumType.values.find { it.name == value }
+                ?: throw RequestException("Invalid enum ${schema.typeByKType(lookupType)?.name} value. " +
+                "Expected one of ${enumType.values}")
+    }
+
+    private fun transformStringLiteral(value: String, lookupType: KType): Any {
+        val literalValue = value.dropQuotes()
+        return when (lookupType) {
+            String::class.starProjectedType -> literalValue
+            in scalarsByType.keys -> {
+                transformScalar(scalarsByType[lookupType]!!, literalValue)
+            }
+            in enumsByType.keys -> {
+                throw RequestException("Invalid string literal value '$value' for enum ${schema.typeByKType(lookupType)?.name}. ")
+            }
+            else -> {
+                throw RequestException("Invalid string literal value '$value' for type ${schema.typeByKType(lookupType)?.name}")
             }
         }
     }
@@ -65,7 +85,7 @@ open class ArgumentTransformer(val schema : DefaultSchema) {
         try {
             return support.scalarSupport.serialize(value)
         } catch (e: Exception){
-            throw SyntaxException("argument '$value' is not valid value of type ${support.name}", e)
+            throw RequestException("argument '$value' is not valid value of type ${support.name}", e)
         }
     }
 }

@@ -84,7 +84,7 @@ class InputValuesSpecificationTest {
     @Test
     @Specification("2.9.3 Boolean Value")
     fun `Invalid Boolean input value`(){
-        expect<SyntaxException>("argument 'null' is not valid value of type Boolean"){
+        expect<RequestException>("argument 'null' is not valid value of type Boolean"){
             deserialize(schema.execute("{Boolean(value : null)}"))
         }
     }

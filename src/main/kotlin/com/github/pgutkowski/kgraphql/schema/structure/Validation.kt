@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.structure
 
-import com.github.pgutkowski.kgraphql.SyntaxException
+import com.github.pgutkowski.kgraphql.RequestException
 import com.github.pgutkowski.kgraphql.ValidationException
 import com.github.pgutkowski.kgraphql.request.graph.Fragment
 import com.github.pgutkowski.kgraphql.request.graph.SelectionNode
@@ -47,7 +47,7 @@ fun validateUnionRequest(requestNode: SelectionNode, property: SchemaNode.UnionP
     }
 
     if (illegalChildren?.any() ?: false) {
-        throw SyntaxException(
+        throw RequestException(
                 "Invalid selection set with properties: $illegalChildren " +
                         "on union type property ${property.kqlProperty.name} : ${property.returnTypes.map { it.kqlType.name }}"
         )

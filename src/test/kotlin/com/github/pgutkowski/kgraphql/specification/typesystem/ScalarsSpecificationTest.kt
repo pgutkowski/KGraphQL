@@ -48,7 +48,7 @@ class ScalarsSpecificationTest {
             }
         }
 
-        expect<SyntaxException>("is not valid value of type Int"){
+        expect<RequestException>("is not valid value of type Int"){
             schema.execute("{Int(int: ${Integer.MAX_VALUE.toLong()+2L})}")
         }
     }

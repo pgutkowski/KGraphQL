@@ -1,6 +1,5 @@
 package com.github.pgutkowski.kgraphql.schema.model
 
-import com.github.pgutkowski.kgraphql.SyntaxException
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.builtin.BuiltInType
 import com.github.pgutkowski.kgraphql.schema.directive.Directive

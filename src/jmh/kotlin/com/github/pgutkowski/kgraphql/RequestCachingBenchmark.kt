@@ -19,7 +19,7 @@ open class RequestCachingBenchmark {
 
     @Setup
     fun setup(){
-        schema = Benchmark.benchmarkSchema{
+        schema = BenchmarkSchema.create {
             configure {
                 useCachingDocumentParser = caching
             }

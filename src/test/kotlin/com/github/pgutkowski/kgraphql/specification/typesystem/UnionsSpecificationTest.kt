@@ -44,7 +44,7 @@ class UnionsSpecificationTest : BaseSchemaTest() {
 
     @Test
     fun `query union property with invalid selection set`(){
-        expect<SyntaxException>("Invalid selection set with properties: [name] on union type property favourite : [Actor, Scenario, Director]"){
+        expect<RequestException>("Invalid selection set with properties: [name] on union type property favourite : [Actor, Scenario, Director]"){
             execute("{actors{name, favourite{ name }}}")
         }
     }

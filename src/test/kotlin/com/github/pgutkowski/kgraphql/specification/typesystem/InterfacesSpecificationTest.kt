@@ -27,7 +27,7 @@ class InterfacesSpecificationTest {
 
     @Test
     fun `When querying for fields on an interface type, only those fields declared on the interface may be queried`(){
-        expect<SyntaxException>("property stuff on SimpleInterface does not exist"){
+        expect<RequestException>("property stuff on SimpleInterface does not exist"){
             schema.execute("{simple{exe, stuff}}")
         }
     }

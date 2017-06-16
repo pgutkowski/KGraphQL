@@ -1,7 +1,7 @@
 package com.github.pgutkowski.kgraphql.schema.structure
 
 import com.github.pgutkowski.kgraphql.ExecutionException
-import com.github.pgutkowski.kgraphql.SyntaxException
+import com.github.pgutkowski.kgraphql.RequestException
 import com.github.pgutkowski.kgraphql.request.graph.DirectiveInvocation
 import com.github.pgutkowski.kgraphql.request.graph.Fragment
 import com.github.pgutkowski.kgraphql.request.graph.SelectionNode
@@ -33,7 +33,7 @@ class SchemaStructure (
 
         for(requestNode in request.selectionTree){
             val operation = root[requestNode.key]
-                    ?: throw SyntaxException("${requestNode.key} is not supported by this schema")
+                    ?: throw RequestException("${requestNode.key} is not supported by this schema")
             children.add(handleOperation(requestNode, operation, request.variables))
         }
 
@@ -51,7 +51,7 @@ class SchemaStructure (
                     keys.all { mutations.containsKey(it) } -> mutations
                     else -> {
                         handleUnsupportedOperations(keys)
-                        throw SyntaxException("Cannot infer operation from fields")
+                        throw RequestException("Cannot infer operation from fields")
                     }
                 }
             }
@@ -61,7 +61,7 @@ class SchemaStructure (
     private fun handleUnsupportedOperations(keys: List<String>) {
         keys.forEach { key ->
             if (queries.none { it.key == key } && mutations.none { it.key == key }) {
-                throw SyntaxException("$key is not supported by this schema")
+                throw RequestException("$key is not supported by this schema")
             }
         }
     }
@@ -99,7 +99,7 @@ class SchemaStructure (
         val unionMembersChildren = property.returnTypes.associate { returnType ->
             val fragmentRequestNode = requestNode.children?.get("on ${returnType.kqlType.name}")
                     ?: requestNode.children?.filterIsInstance<Fragment.External>()?.find {returnType.kqlType.name == it.typeCondition }
-                    ?: throw SyntaxException("Missing type argument for type ${returnType.kqlType.name}")
+                    ?: throw RequestException("Missing type argument for type ${returnType.kqlType.name}")
 
             returnType to handleReturnType(returnType, fragmentRequestNode)
         }
@@ -123,7 +123,7 @@ class SchemaStructure (
             val childrenRequestNodes = requestNode.children
             childrenRequestNodes.mapTo(children) { handleReturnTypeChildOrFragment(it, returnType) }
         } else if(returnType.properties.isNotEmpty()){
-            throw SyntaxException("Missing selection set on property ${requestNode.aliasOrKey} of type ${returnType.kqlType.name}")
+            throw RequestException("Missing selection set on property ${requestNode.aliasOrKey} of type ${returnType.kqlType.name}")
         }
         return children
     }
@@ -158,8 +158,8 @@ class SchemaStructure (
         }
     }
 
-    private fun createUnknownFragmentType(fragment: Fragment) : SyntaxException {
-        return SyntaxException("Unknown type ${fragment.typeCondition} in type condition on fragment ${fragment.fragmentKey}")
+    private fun createUnknownFragmentType(fragment: Fragment) : RequestException {
+        return RequestException("Unknown type ${fragment.typeCondition} in type condition on fragment ${fragment.fragmentKey}")
     }
 
     private fun handleTypeChild(childRequestNode: SelectionNode, returnType: SchemaNode.Type): Execution.Node {
@@ -168,7 +168,7 @@ class SchemaStructure (
 
         when {
             property == null && unionProperty == null -> {
-                throw SyntaxException("property ${childRequestNode.key} on ${returnType.kqlType.name} does not exist")
+                throw RequestException("property ${childRequestNode.key} on ${returnType.kqlType.name} does not exist")
             }
             property != null && unionProperty == null -> {
                 validatePropertyArguments(property, returnType.kqlType, childRequestNode)
@@ -182,7 +182,7 @@ class SchemaStructure (
     }
 
     fun findDirective(invocation : DirectiveInvocation) : Directive {
-        return directives[invocation.key.removePrefix("@")] ?: throw SyntaxException("Directive ${invocation.key} does not exist")
+        return directives[invocation.key.removePrefix("@")] ?: throw RequestException("Directive ${invocation.key} does not exist")
     }
 
     fun findNodeByTypeName(typeName: String?) : SchemaNode.Type? {

@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kgraphql.request
 
-import com.github.pgutkowski.kgraphql.SyntaxException
+import com.github.pgutkowski.kgraphql.RequestException
 import com.github.pgutkowski.kgraphql.request.graph.*
 
 /**
@@ -54,8 +54,8 @@ open class DocumentParser {
         }
 
         when {
-            ctx.nestedBrackets != 0 -> throw SyntaxException("Missing closing bracket")
-            ctx.nestedParenthesis != 0 -> throw SyntaxException("Missing closing parenthesis")
+            ctx.nestedBrackets != 0 -> throw RequestException("Missing closing bracket")
+            ctx.nestedParenthesis != 0 -> throw RequestException("Missing closing parenthesis")
         }
 
         return graph.build()
@@ -72,7 +72,7 @@ open class DocumentParser {
                     if (key == "...") {
                         graph.add(parseInlineFragment(ctx, directives))
                     } else {
-                        graph.add(ctx.fragments[key] ?: throw SyntaxException("Fragment $key} does not exist"))
+                        graph.add(ctx.fragments[key] ?: throw RequestException("Fragment $key} does not exist"))
                     }
                 } else {
                     graph.add(SelectionNode(key = key, alias = alias, directives = directives))
@@ -137,7 +137,7 @@ open class DocumentParser {
                 val subGraphTokens = ctx.traverseObject()
                 return Fragment.Inline(parseSelectionTree(ctx.fullString, subGraphTokens, ctx.fragments), null, directives)
             }
-            else -> throw SyntaxException("expected type condition or directive after '...' in inline fragment")
+            else -> throw RequestException("expected type condition or directive after '...' in inline fragment")
         }
     }
 
@@ -164,7 +164,7 @@ open class DocumentParser {
                     val argumentName = argTokens[i]
                     i += 2 // effectively 'i' is index of '['
                     val deltaOfClosingBracket = argTokens.subList(i, argTokens.size).indexOfFirst { it == "]" }
-                    if(deltaOfClosingBracket == -1) throw SyntaxException("Missing closing ']' in arguments ${argTokens.joinToString(" ")}")
+                    if(deltaOfClosingBracket == -1) throw RequestException("Missing closing ']' in arguments ${argTokens.joinToString(" ")}")
                     val indexOfClosingBracket = i + deltaOfClosingBracket
                     //exclude '[' and ']'
                     arguments.put(argumentName, argTokens.subList(i + 1, indexOfClosingBracket))
@@ -178,7 +178,7 @@ open class DocumentParser {
                     i += 3
                 }
                 else -> {
-                    throw SyntaxException("Invalid arguments: ${argTokens.joinToString(" ")}")
+                    throw RequestException("Invalid arguments: ${argTokens.joinToString(" ")}")
                 }
             }
         }
@@ -197,13 +197,13 @@ open class DocumentParser {
             "}" -> ctx.nestedBrackets--
             "(" -> ctx.nestedParenthesis++
             ")" -> ctx.nestedParenthesis--
-            "[","]" -> throw SyntaxException("Unexpected token : $token at ${ctx.getFullStringIndex()}")
+            "[","]" -> throw RequestException("Unexpected token : $token at ${ctx.getFullStringIndex()}")
         }
         if (ctx.nestedBrackets < 0) {
-            throw SyntaxException("No matching opening bracket for closing bracket at ${ctx.getFullStringIndex()}")
+            throw RequestException("No matching opening bracket for closing bracket at ${ctx.getFullStringIndex()}")
         }
         if (ctx.nestedParenthesis < 0) {
-            throw SyntaxException("No matching opening parenthesis for closing parenthesis at ${ctx.getFullStringIndex()}")
+            throw RequestException("No matching opening parenthesis for closing parenthesis at ${ctx.getFullStringIndex()}")
         }
     }
 }

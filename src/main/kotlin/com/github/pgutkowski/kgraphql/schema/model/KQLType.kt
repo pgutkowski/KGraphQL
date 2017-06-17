@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.model
 
-import com.github.pgutkowski.kgraphql.schema.ScalarSupport
+import com.github.pgutkowski.kgraphql.schema.scalar.ScalarCoercion
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -34,7 +34,7 @@ interface KQLType {
     class Scalar<T : Any> (
             name : String,
             override val kClass: KClass<T>,
-            val scalarSupport : ScalarSupport<T>,
+            val coercion: ScalarCoercion<T, *>,
             description : String?
     ) : BaseKQLType(name, description), Kotlin<T>
 

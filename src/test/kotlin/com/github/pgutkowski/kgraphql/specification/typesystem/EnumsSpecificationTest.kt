@@ -1,7 +1,6 @@
 package com.github.pgutkowski.kgraphql.specification.typesystem
 
 import com.github.pgutkowski.kgraphql.*
-import com.github.pgutkowski.kgraphql.schema.dsl.enum
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
@@ -23,7 +22,7 @@ class EnumsSpecificationTest {
 
     @Test
     fun `string literals must not be accepted as an enum input`(){
-        expect<RequestException>("Invalid string literal value '\"COOL\"' for enum Coolness"){
+        expect<RequestException>("String literal '\"COOL\"' is invalid value for enum type Coolness"){
             schema.execute("{cool(cool : \"COOL\")}")
         }
     }

@@ -1,7 +1,5 @@
 package com.github.pgutkowski.kgraphql.integration
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.github.pgutkowski.kgraphql.assertNoErrors
 import com.github.pgutkowski.kgraphql.extract
 import org.hamcrest.CoreMatchers

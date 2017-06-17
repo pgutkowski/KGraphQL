@@ -1,10 +1,8 @@
 package com.github.pgutkowski.kgraphql.schema
 
 import com.github.pgutkowski.kgraphql.*
-import com.github.pgutkowski.kgraphql.schema.dsl.enum
-import com.github.pgutkowski.kgraphql.schema.dsl.scalar
-import com.github.pgutkowski.kgraphql.schema.dsl.type
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
+import com.github.pgutkowski.kgraphql.schema.scalar.StringScalarCoercion
 import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert
@@ -21,19 +19,17 @@ class SchemaBuilderTest {
     fun `DSL created UUID scalar support`(){
 
         val testedSchema = defaultSchema {
-            scalar<UUID> {
+            stringScalar<UUID> {
                 description = "unique identifier of object"
-                serialize = { uuid : String -> UUID.fromString(uuid) }
-                deserialize = UUID::toString
-                validate = String::isNotBlank
+                deserialize = { uuid : String -> UUID.fromString(uuid) }
+                serialize = UUID::toString
             }
         }
 
-        val uuidScalar = testedSchema.model.scalars.find { it.name == "UUID" }!!.scalarSupport as ScalarSupport<UUID>
+        val uuidScalar = testedSchema.model.scalars.find { it.name == "UUID" }!!.coercion as StringScalarCoercion<UUID>
         val testUuid = UUID.randomUUID()
-        MatcherAssert.assertThat(uuidScalar.deserialize(testUuid), CoreMatchers.equalTo(testUuid.toString()))
-        MatcherAssert.assertThat(uuidScalar.serialize(testUuid.toString()), CoreMatchers.equalTo(testUuid))
-        MatcherAssert.assertThat(uuidScalar.validate(testUuid.toString()), CoreMatchers.equalTo(true))
+        MatcherAssert.assertThat(uuidScalar.serialize(testUuid), CoreMatchers.equalTo(testUuid.toString()))
+        MatcherAssert.assertThat(uuidScalar.deserialize(testUuid.toString()), CoreMatchers.equalTo(testUuid))
     }
 
     @Test

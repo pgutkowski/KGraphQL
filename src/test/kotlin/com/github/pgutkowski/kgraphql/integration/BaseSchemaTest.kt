@@ -1,11 +1,8 @@
 package com.github.pgutkowski.kgraphql.integration
 
 import com.github.pgutkowski.kgraphql.*
-import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilder
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
-import com.github.pgutkowski.kgraphql.schema.dsl.enum
-import com.github.pgutkowski.kgraphql.schema.dsl.supportedScalar
-import com.github.pgutkowski.kgraphql.schema.dsl.type
+import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilder
 import org.junit.After
 
 
@@ -72,7 +69,7 @@ abstract class BaseSchemaTest {
         query("scenario") {
             resolver { -> Scenario(Id("GKalus", 234234), "Gamil Kalus", "Very long scenario") }
         }
-        supportedScalar<Id> {
+        stringScalar<Id> {
             description = "unique, concise representation of film"
             support = IdScalarSupport()
         }

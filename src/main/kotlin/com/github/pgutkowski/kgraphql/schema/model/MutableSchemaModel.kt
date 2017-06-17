@@ -1,7 +1,7 @@
 package com.github.pgutkowski.kgraphql.schema.model
 
 import com.github.pgutkowski.kgraphql.schema.SchemaException
-import com.github.pgutkowski.kgraphql.schema.builtin.BuiltInType
+import com.github.pgutkowski.kgraphql.schema.builtin.BUILT_IN_TYPE
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
 import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import kotlin.reflect.KClass
@@ -15,11 +15,11 @@ data class MutableSchemaModel (
         private val objects: ArrayList<KQLType.Object<*>> = arrayListOf<KQLType.Object<*>>(),
         private val queries: ArrayList<KQLQuery<*>> = arrayListOf<KQLQuery<*>>(),
         private val scalars: ArrayList<KQLType.Scalar<*>> = arrayListOf<KQLType.Scalar<*>>(
-                BuiltInType.STRING,
-                BuiltInType.BOOLEAN,
-                BuiltInType.DOUBLE,
-                BuiltInType.FLOAT,
-                BuiltInType.INT
+                BUILT_IN_TYPE.STRING,
+                BUILT_IN_TYPE.BOOLEAN,
+                BUILT_IN_TYPE.DOUBLE,
+                BUILT_IN_TYPE.FLOAT,
+                BUILT_IN_TYPE.INT
         ),
         private val mutations: ArrayList<KQLMutation<*>> = arrayListOf<KQLMutation<*>>(),
         private val enums: ArrayList<KQLType.Enumeration<*>> = arrayListOf<KQLType.Enumeration<*>>(),

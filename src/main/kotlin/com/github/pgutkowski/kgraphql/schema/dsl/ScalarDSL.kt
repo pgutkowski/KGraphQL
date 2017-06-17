@@ -1,10 +1,16 @@
 package com.github.pgutkowski.kgraphql.schema.dsl
 
 import com.github.pgutkowski.kgraphql.defaultKQLTypeName
+import com.github.pgutkowski.kgraphql.schema.scalar.ScalarCoercion
 import kotlin.reflect.KClass
 
 
-class ScalarDSL<T : Any>(kClass: KClass<T>, block: ScalarDSL<T>.() -> Unit) : ItemDSL() {
+abstract class ScalarDSL<T : Any, Raw : Any>(kClass: KClass<T>, block: ScalarDSL<T, Raw>.() -> Unit) : ItemDSL() {
+
+    companion object {
+        const val PLEASE_SPECIFY_COERCION =
+                "Please specify scalar coercion object or coercion functions 'serialize' and 'deserialize'"
+    }
 
     var name = kClass.defaultKQLTypeName()
 
@@ -12,9 +18,15 @@ class ScalarDSL<T : Any>(kClass: KClass<T>, block: ScalarDSL<T>.() -> Unit) : It
         block()
     }
 
-    var serialize : ((String) -> T)? = null
+    var deserialize : ((Raw) -> T)? = null
 
-    var deserialize : ((T) -> String)? = null
+    var serialize : ((T) -> Raw)? = null
 
-    var validate : ((String)-> Boolean)? = null
+    var support : ScalarCoercion<T, Raw>? = null
+
+    fun getCoercion() : ScalarCoercion<T, Raw> {
+        return support ?: createCoercionFromFunctions()
+    }
+
+    abstract protected fun createCoercionFromFunctions() : ScalarCoercion<T, Raw>
 }

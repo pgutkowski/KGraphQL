@@ -40,7 +40,7 @@ class MutationTest : BaseSchemaTest() {
 
     @Test
     fun `invalid argument type`(){
-        expect<RequestException>("argument 'fwfwf' is not valid value of type Int"){
+        expect<RequestException>("argument '\"fwfwf\"' is not valid value of type Int"){
             execute("mutation {createActor(name: \"${testActor.name}\", age: \"fwfwf\"){age}}")
         }
     }

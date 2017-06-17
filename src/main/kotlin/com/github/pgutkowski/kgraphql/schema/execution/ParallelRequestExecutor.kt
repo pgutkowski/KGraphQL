@@ -10,10 +10,10 @@ import com.github.pgutkowski.kgraphql.request.Arguments
 import com.github.pgutkowski.kgraphql.request.Variables
 import com.github.pgutkowski.kgraphql.request.VariablesJson
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
-import com.github.pgutkowski.kgraphql.schema.ScalarSupport
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
+import com.github.pgutkowski.kgraphql.schema.scalar.*
 import com.github.pgutkowski.kgraphql.schema.structure.SchemaNode
 import kotlinx.coroutines.experimental.*
 import kotlinx.coroutines.experimental.channels.Channel
@@ -141,11 +141,11 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         }
     }
 
-    private fun <T> createSimpleValueNode(returnType: SchemaNode.ReturnType, value: T) : TextNode {
+    private fun <T> createSimpleValueNode(returnType: SchemaNode.ReturnType, value: T) : JsonNode {
         val kqlType = returnType.kqlType
         return when (kqlType) {
             is KQLType.Scalar<*> -> {
-                jsonNodeFactory.textNode((kqlType.scalarSupport as ScalarSupport<T>).deserialize(value))
+                serializeScalar(jsonNodeFactory, kqlType, value)
             }
             is KQLType.Enumeration<*> -> {
                 jsonNodeFactory.textNode(value.toString())

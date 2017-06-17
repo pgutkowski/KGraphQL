@@ -5,9 +5,7 @@ import com.github.pgutkowski.kgraphql.assertNoErrors
 import com.github.pgutkowski.kgraphql.expect
 import com.github.pgutkowski.kgraphql.extract
 import com.github.pgutkowski.kgraphql.integration.BaseSchemaTest
-import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.MatcherAssert
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 

@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kgraphql
 
-import com.github.pgutkowski.kgraphql.schema.ScalarSupport
+import com.github.pgutkowski.kgraphql.schema.scalar.StringScalarCoercion
 
 
 class Film(val id : Id, val year: Int, val title: String, val director: Director, val type: FilmType = FilmType.FULL_LENGTH)
@@ -13,10 +13,10 @@ class Actor(name : String, age: Int) : Person(name, age)
 
 class Id(val literal: String, val numeric: Int)
 
-class IdScalarSupport : ScalarSupport<Id> {
-    override fun serialize(input: String): Id = Id(input.split(':')[0], input.split(':')[1].toInt())
-    override fun deserialize(input: Id): String = "${input.literal}:${input.numeric}"
-    override fun validate(input: String) : Boolean = input.isNotEmpty() && input.contains(':')
+class IdScalarSupport : StringScalarCoercion<Id> {
+    override fun serialize(instance: Id): String = "${instance.literal}:${instance.numeric}"
+
+    override fun deserialize(raw: String): Id = Id(raw.split(':')[0], raw.split(':')[1].toInt())
 }
 
 enum class FilmType { FULL_LENGTH, SHORT_LENGTH }

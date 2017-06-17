@@ -1,7 +1,6 @@
 package com.github.pgutkowski.kgraphql.specification.typesystem
 
 import com.github.pgutkowski.kgraphql.*
-import com.github.pgutkowski.kgraphql.schema.dsl.scalar
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
@@ -16,11 +15,10 @@ class ScalarsSpecificationTest {
     fun `type systems can add additional scalars with semantic meaning`(){
         val uuid = UUID.randomUUID()
         val testedSchema = KGraphQL.schema {
-            scalar<UUID> {
+            stringScalar<UUID> {
                 description = "unique identifier of object"
-                serialize = { uuid : String -> UUID.fromString(uuid) }
-                deserialize = UUID::toString
-                validate = String::isNotBlank
+                deserialize = { uuid : String -> UUID.fromString(uuid) }
+                serialize = UUID::toString
             }
             query("person"){
                 resolver{ -> Person(uuid, "John Smith")}
@@ -34,7 +32,7 @@ class ScalarsSpecificationTest {
         assertThat(extract<String>(queryResponse, "data/person/uuid"), equalTo(uuid.toString()))
 
         val mutationResponse = deserialize(testedSchema.execute(
-                        "{createPerson(uuid: $uuid, name: \"John\"){uuid name}}"
+                        "{createPerson(uuid: \"$uuid\", name: \"John\"){uuid name}}"
         ))
         assertThat(extract<String>(mutationResponse, "data/createPerson/uuid"), equalTo(uuid.toString()))
         assertThat(extract<String>(mutationResponse, "data/createPerson/name"), equalTo("John"))
@@ -67,12 +65,11 @@ class ScalarsSpecificationTest {
     @Test
     fun `server can declare custom ID type`(){
         val testedSchema = KGraphQL.schema {
-            scalar<UUID> {
+            stringScalar<UUID> {
                 name = "ID"
                 description = "unique identifier of object"
-                serialize = { uuid : String -> UUID.fromString(uuid) }
-                deserialize = UUID::toString
-                validate = String::isNotBlank
+                deserialize = { uuid : String -> UUID.fromString(uuid) }
+                serialize = UUID::toString
             }
             query("personById"){
                 resolver{ id: UUID -> Person(id, "John Smith")}
@@ -80,7 +77,84 @@ class ScalarsSpecificationTest {
         }
 
         val randomUUID = UUID.randomUUID()
-        val map = deserialize(testedSchema.execute("query(\$id: ID = $randomUUID){personById(id: \$id){uuid, name}}"))
+        val map = deserialize(testedSchema.execute("query(\$id: ID = \"$randomUUID\"){personById(id: \$id){uuid, name}}"))
         assertThat(extract<String>(map, "data/personById/uuid"), equalTo(randomUUID.toString()))
+    }
+
+
+    @Test
+    fun `For numeric scalars, input string with numeric content must raise a query error indicating an incorrect type`(){
+        val schema = KGraphQL.schema {
+            mutation("Int") {
+                resolver { int : Int -> int }
+            }
+        }
+
+        expect<RequestException>(""){
+            schema.execute("{Int(int: \"223\")}")
+        }
+    }
+
+    data class Number(val int : Int)
+
+    @Test
+    fun `Schema may declare custom int scalar type`(){
+
+        val schema = KGraphQL.schema {
+            intScalar<Number> {
+                deserialize = { int -> Number(int) }
+                serialize = { (int) -> int }
+            }
+
+            query("number"){
+                resolver { number : Number -> number }
+            }
+        }
+
+        val value = 3434
+        val response = deserialize(schema.execute("{number(number: $value)}"))
+        assertThat(extract<Int>(response, "data/number"), equalTo(value))
+    }
+
+    data class Bool(val boolean: Boolean)
+
+    @Test
+    fun `Schema may declare custom boolean scalar type`(){
+
+        val schema = KGraphQL.schema {
+            booleanScalar<Bool> {
+                deserialize = { boolean -> Bool(boolean) }
+                serialize = { (boolean) -> boolean }
+            }
+
+            query("boolean"){
+                resolver { boolean : Boolean -> boolean }
+            }
+        }
+
+        val value = true
+        val response = deserialize(schema.execute("{boolean(boolean: $value)}"))
+        assertThat(extract<Boolean>(response, "data/boolean"), equalTo(value))
+    }
+
+    data class Dob(val double : Double)
+
+    @Test
+    fun `Schema may declare custom double scalar type`(){
+
+        val schema = KGraphQL.schema {
+            floatScalar<Dob> {
+                deserialize = { double -> Dob(double) }
+                serialize = { (double) -> double }
+            }
+
+            query("double"){
+                resolver { double : Dob -> double }
+            }
+        }
+
+        val value = 232.33
+        val response = deserialize(schema.execute("{double(double: $value)}"))
+        assertThat(extract<Double>(response, "data/double"), equalTo(value))
     }
 }

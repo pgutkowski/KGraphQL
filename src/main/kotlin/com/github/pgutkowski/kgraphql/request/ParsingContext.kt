@@ -50,6 +50,6 @@ data class ParsingContext(
 
     fun getFullStringIndex(tokenIndex : Int = index) : Int {
         //TODO: Provide reliable index
-        return 0
+        return tokenIndex
     }
 }

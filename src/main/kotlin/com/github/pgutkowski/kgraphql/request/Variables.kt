@@ -7,7 +7,7 @@ import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import java.util.*
 import kotlin.reflect.KClass
 
-
+@Suppress("UNCHECKED_CAST")
 data class Variables(private val typeNameProvider: TypeDefinitionProvider,
                      private val variablesJson: VariablesJson,
                      private val variables: List<OperationVariable>?) {

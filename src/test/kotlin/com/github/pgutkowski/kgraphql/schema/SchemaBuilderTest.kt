@@ -1,10 +1,21 @@
 package com.github.pgutkowski.kgraphql.schema
 
-import com.github.pgutkowski.kgraphql.*
+import com.github.pgutkowski.kgraphql.Actor
+import com.github.pgutkowski.kgraphql.FilmType
+import com.github.pgutkowski.kgraphql.Id
+import com.github.pgutkowski.kgraphql.KGraphQL
+import com.github.pgutkowski.kgraphql.Scenario
+import com.github.pgutkowski.kgraphql.defaultSchema
+import com.github.pgutkowski.kgraphql.deserialize
+import com.github.pgutkowski.kgraphql.expect
+import com.github.pgutkowski.kgraphql.extract
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import com.github.pgutkowski.kgraphql.schema.scalar.StringScalarCoercion
 import org.hamcrest.CoreMatchers
-import org.hamcrest.CoreMatchers.*
+import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.hasItem
+import org.hamcrest.CoreMatchers.notNullValue
+import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.MatcherAssert
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test

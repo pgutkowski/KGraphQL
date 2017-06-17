@@ -1,9 +1,9 @@
 package com.github.pgutkowski.kgraphql.schema.model
 
+import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.builtin.BUILT_IN_TYPE
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
-import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 

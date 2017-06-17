@@ -2,17 +2,17 @@ package com.github.pgutkowski.kgraphql.schema.structure
 
 import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.RequestException
+import com.github.pgutkowski.kgraphql.request.Operation
+import com.github.pgutkowski.kgraphql.request.OperationVariable
 import com.github.pgutkowski.kgraphql.request.graph.DirectiveInvocation
 import com.github.pgutkowski.kgraphql.request.graph.Fragment
 import com.github.pgutkowski.kgraphql.request.graph.SelectionNode
-import com.github.pgutkowski.kgraphql.request.Operation
-import com.github.pgutkowski.kgraphql.request.OperationVariable
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
 import com.github.pgutkowski.kgraphql.schema.execution.Execution
 import com.github.pgutkowski.kgraphql.schema.execution.ExecutionPlan
 import com.github.pgutkowski.kgraphql.schema.execution.TypeCondition
-import com.github.pgutkowski.kgraphql.schema.model.*
+import com.github.pgutkowski.kgraphql.schema.model.SchemaModel
 import kotlin.reflect.KType
 
 

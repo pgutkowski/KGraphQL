@@ -1,6 +1,14 @@
 package com.github.pgutkowski.kgraphql.integration
 
-import com.github.pgutkowski.kgraphql.*
+import com.github.pgutkowski.kgraphql.Actor
+import com.github.pgutkowski.kgraphql.Director
+import com.github.pgutkowski.kgraphql.Film
+import com.github.pgutkowski.kgraphql.FilmType
+import com.github.pgutkowski.kgraphql.Id
+import com.github.pgutkowski.kgraphql.IdScalarSupport
+import com.github.pgutkowski.kgraphql.Person
+import com.github.pgutkowski.kgraphql.Scenario
+import com.github.pgutkowski.kgraphql.deserialize
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilder
 import org.junit.After

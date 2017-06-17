@@ -5,7 +5,17 @@ import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import com.github.pgutkowski.kgraphql.schema.structure.SchemaNode
-import kotlinx.html.*
+import kotlinx.html.FlowContent
+import kotlinx.html.a
+import kotlinx.html.body
+import kotlinx.html.h1
+import kotlinx.html.h4
+import kotlinx.html.head
+import kotlinx.html.hr
+import kotlinx.html.html
+import kotlinx.html.p
+import kotlinx.html.style
+import kotlinx.html.title
 import kotlin.reflect.KType
 import kotlin.reflect.full.starProjectedType
 

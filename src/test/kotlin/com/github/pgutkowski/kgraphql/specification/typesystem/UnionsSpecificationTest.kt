@@ -1,6 +1,10 @@
 package com.github.pgutkowski.kgraphql.specification.typesystem
 
-import com.github.pgutkowski.kgraphql.*
+import com.github.pgutkowski.kgraphql.KGraphQL
+import com.github.pgutkowski.kgraphql.RequestException
+import com.github.pgutkowski.kgraphql.Specification
+import com.github.pgutkowski.kgraphql.expect
+import com.github.pgutkowski.kgraphql.extract
 import com.github.pgutkowski.kgraphql.integration.BaseSchemaTest
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import org.hamcrest.CoreMatchers

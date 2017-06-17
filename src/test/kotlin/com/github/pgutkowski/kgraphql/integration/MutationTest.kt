@@ -1,6 +1,10 @@
 package com.github.pgutkowski.kgraphql.integration
 
-import com.github.pgutkowski.kgraphql.*
+import com.github.pgutkowski.kgraphql.Actor
+import com.github.pgutkowski.kgraphql.RequestException
+import com.github.pgutkowski.kgraphql.assertNoErrors
+import com.github.pgutkowski.kgraphql.expect
+import com.github.pgutkowski.kgraphql.extract
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test

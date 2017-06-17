@@ -1,7 +1,11 @@
 package com.github.pgutkowski.kgraphql.request
 
 import com.github.pgutkowski.kgraphql.RequestException
-import com.github.pgutkowski.kgraphql.request.graph.*
+import com.github.pgutkowski.kgraphql.request.graph.DirectiveInvocation
+import com.github.pgutkowski.kgraphql.request.graph.Fragment
+import com.github.pgutkowski.kgraphql.request.graph.SelectionNode
+import com.github.pgutkowski.kgraphql.request.graph.SelectionSetBuilder
+import com.github.pgutkowski.kgraphql.request.graph.SelectionTree
 
 /**
  * Utility for parsing query document and its structures.

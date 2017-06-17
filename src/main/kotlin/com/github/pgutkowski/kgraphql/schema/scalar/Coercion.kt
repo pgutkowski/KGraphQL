@@ -4,7 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.RequestException
-import com.github.pgutkowski.kgraphql.schema.builtin.*
+import com.github.pgutkowski.kgraphql.schema.builtin.BOOLEAN_COERCION
+import com.github.pgutkowski.kgraphql.schema.builtin.DOUBLE_COERCION
+import com.github.pgutkowski.kgraphql.schema.builtin.FLOAT_COERCION
+import com.github.pgutkowski.kgraphql.schema.builtin.INT_COERCION
+import com.github.pgutkowski.kgraphql.schema.builtin.STRING_COERCION
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 
 @Suppress("UNCHECKED_CAST")

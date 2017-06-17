@@ -6,7 +6,7 @@ import com.github.pgutkowski.kgraphql.isLiteral
 import com.github.pgutkowski.kgraphql.request.Variables
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
-import com.github.pgutkowski.kgraphql.schema.scalar.*
+import com.github.pgutkowski.kgraphql.schema.scalar.deserializeScalar
 import kotlin.reflect.KParameter
 import kotlin.reflect.KType
 import kotlin.reflect.full.createType

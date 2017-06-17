@@ -2,8 +2,8 @@ package com.github.pgutkowski.kgraphql.request
 
 import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.RequestException
-import com.github.pgutkowski.kgraphql.schema.structure.TypeDefinitionProvider
 import com.github.pgutkowski.kgraphql.defaultKQLTypeName
+import com.github.pgutkowski.kgraphql.schema.structure.TypeDefinitionProvider
 import java.util.*
 import kotlin.reflect.KClass
 

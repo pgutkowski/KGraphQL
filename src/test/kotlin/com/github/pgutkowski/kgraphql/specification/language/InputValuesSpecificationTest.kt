@@ -1,6 +1,11 @@
 package com.github.pgutkowski.kgraphql.specification.language
 
-import com.github.pgutkowski.kgraphql.*
+import com.github.pgutkowski.kgraphql.RequestException
+import com.github.pgutkowski.kgraphql.Specification
+import com.github.pgutkowski.kgraphql.defaultSchema
+import com.github.pgutkowski.kgraphql.deserialize
+import com.github.pgutkowski.kgraphql.expect
+import com.github.pgutkowski.kgraphql.extract
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Ignore

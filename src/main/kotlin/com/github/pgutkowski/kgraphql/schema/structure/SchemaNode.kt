@@ -1,6 +1,12 @@
 package com.github.pgutkowski.kgraphql.schema.structure
 
-import com.github.pgutkowski.kgraphql.schema.model.*
+import com.github.pgutkowski.kgraphql.schema.model.KQLMutation
+import com.github.pgutkowski.kgraphql.schema.model.KQLObject
+import com.github.pgutkowski.kgraphql.schema.model.KQLOperation
+import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
+import com.github.pgutkowski.kgraphql.schema.model.KQLQuery
+import com.github.pgutkowski.kgraphql.schema.model.KQLType
+import com.github.pgutkowski.kgraphql.schema.model.Transformation
 
 /**
  * [SchemaNode] is component of [SchemaStructure] and wrapper for corresponding [KQLObject].

@@ -1,9 +1,15 @@
 package com.github.pgutkowski.kgraphql.schema.structure
 
+import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
-import com.github.pgutkowski.kgraphql.schema.model.*
-import com.github.pgutkowski.kgraphql.defaultKQLTypeName
+import com.github.pgutkowski.kgraphql.schema.model.BaseKQLOperation
+import com.github.pgutkowski.kgraphql.schema.model.KQLMutation
+import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
+import com.github.pgutkowski.kgraphql.schema.model.KQLQuery
+import com.github.pgutkowski.kgraphql.schema.model.KQLType
+import com.github.pgutkowski.kgraphql.schema.model.SchemaModel
+import com.github.pgutkowski.kgraphql.schema.model.Transformation
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.KType

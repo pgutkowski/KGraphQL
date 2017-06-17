@@ -1,6 +1,8 @@
 package com.github.pgutkowski.kgraphql.schema.directive
 
-import com.github.pgutkowski.kgraphql.schema.directive.DirectiveLocation.*
+import com.github.pgutkowski.kgraphql.schema.directive.DirectiveLocation.FIELD
+import com.github.pgutkowski.kgraphql.schema.directive.DirectiveLocation.FRAGMENT_SPREAD
+import com.github.pgutkowski.kgraphql.schema.directive.DirectiveLocation.INLINE_FRAGMENT
 import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
 
 /**

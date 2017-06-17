@@ -1,6 +1,14 @@
 package com.github.pgutkowski.kgraphql.request
 
-import com.github.pgutkowski.kgraphql.request.graph.*
+import com.github.pgutkowski.kgraphql.request.graph.SelectionTree
+import com.github.pgutkowski.kgraphql.request.graph.argBranch
+import com.github.pgutkowski.kgraphql.request.graph.argLeaf
+import com.github.pgutkowski.kgraphql.request.graph.args
+import com.github.pgutkowski.kgraphql.request.graph.branch
+import com.github.pgutkowski.kgraphql.request.graph.extFragment
+import com.github.pgutkowski.kgraphql.request.graph.inlineFragment
+import com.github.pgutkowski.kgraphql.request.graph.leaf
+import com.github.pgutkowski.kgraphql.request.graph.leafs
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test

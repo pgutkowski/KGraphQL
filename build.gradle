@@ -68,7 +68,7 @@ jacoco {
 
 jacocoTestReport {
     reports {
-        xml.destination = "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"
+        xml.destination file("${buildDir}/reports/jacoco/test/jacocoTestReport.xml")
         xml.enabled = true // coveralls plugin depends on xml format report
         html.enabled = true
     }

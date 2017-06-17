@@ -43,14 +43,17 @@ open class ArgumentTransformer(val schema : DefaultSchema) {
         }
     }
 
-    private fun transformStringConstant(lookupType: KType, value: String): Enum<*> {
-        val enumType = enumsByType.getOrElse(lookupType) {
-            throw RequestException("Invalid argument value '$value' for type ${schema.typeByKType(lookupType)?.name}")
+    private fun transformStringConstant(lookupType: KType, value: String): Any {
+
+        fun throwInvalidEnumValue(enumType : KQLType.Enumeration<*>){
+            throw RequestException("Invalid enum ${schema.typeByKType(lookupType)?.name} value. Expected one of ${enumType.values}")
         }
 
-        return enumType.values.find { it.name == value }
-                ?: throw RequestException("Invalid enum ${schema.typeByKType(lookupType)?.name} value. " +
-                "Expected one of ${enumType.values}")
+        enumsByType[lookupType]?.let { enumType ->
+            return enumType.values.find { it.name == value } ?: throwInvalidEnumValue(enumType)
+        } ?: scalarsByType[lookupType]?.let { scalarType ->
+            return transformScalar(scalarType, value)
+        } ?: throw RequestException("Invalid argument value '$value' for type ${schema.typeByKType(lookupType)?.name}")
     }
 
     private fun transformStringLiteral(value: String, lookupType: KType): Any {

@@ -10,4 +10,8 @@ interface TypeDefinitionProvider {
     fun <T : Any> typeByKClass(kClass: KClass<T>) : KQLType?
 
     fun typeByKType(kType: KType) : KQLType?
+
+    fun <T : Any> inputTypeByKClass(kClass: KClass<T>) : KQLType?
+
+    fun inputTypeByKType(kType: KType) : KQLType?
 }

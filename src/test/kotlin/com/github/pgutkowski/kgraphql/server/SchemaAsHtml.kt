@@ -54,7 +54,7 @@ private fun writeOperationsHTML(title: String, operations: Collection<SchemaNode
 }
 
 private fun DefaultSchema.writeTypeDescriptor(typeName : String) : String {
-    val typeByName = structure.nodes.values.find { it.kqlType.name == typeName }
+    val typeByName = structure.queryTypes.values.find { it.kqlType.name == typeName }
     val kqlType = typeByName?.kqlType
     return when(kqlType){
         null -> throw IllegalArgumentException("Type $typeName does not exist")

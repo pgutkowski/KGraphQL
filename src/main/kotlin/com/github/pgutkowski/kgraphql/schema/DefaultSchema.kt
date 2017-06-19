@@ -8,20 +8,23 @@ import com.github.pgutkowski.kgraphql.request.VariablesJson
 import com.github.pgutkowski.kgraphql.schema.execution.ParallelRequestExecutor
 import com.github.pgutkowski.kgraphql.schema.execution.RequestExecutor
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
-import com.github.pgutkowski.kgraphql.schema.model.SchemaModel
+import com.github.pgutkowski.kgraphql.schema.model.SchemaDefinition
 import com.github.pgutkowski.kgraphql.schema.structure.SchemaStructure
 import com.github.pgutkowski.kgraphql.schema.structure.TypeDefinitionProvider
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
-import kotlin.reflect.jvm.jvmErasure
+import kotlin.reflect.full.starProjectedType
 
-class DefaultSchema(internal val model : SchemaModel, internal val configuration: SchemaConfiguration) : Schema, TypeDefinitionProvider {
+class DefaultSchema(
+        internal val definition: SchemaDefinition,
+        internal val configuration: SchemaConfiguration
+) : Schema, TypeDefinitionProvider {
 
     companion object {
         const val OPERATION_NAME_PARAM = "operationName"
     }
 
-    val structure = SchemaStructure.of(model)
+    val structure = SchemaStructure.of(definition)
 
     val requestExecutor : RequestExecutor = ParallelRequestExecutor(this)
 
@@ -62,7 +65,11 @@ class DefaultSchema(internal val model : SchemaModel, internal val configuration
         }
     }
 
-    override fun <T : Any> typeByKClass(kClass: KClass<T>): KQLType? = model.allTypesByKClass[kClass]
+    override fun <T : Any> typeByKClass(kClass: KClass<T>): KQLType? = typeByKType(kClass.starProjectedType)
 
-    override fun typeByKType(kType: KType): KQLType? = typeByKClass(kType.jvmErasure)
+    override fun typeByKType(kType: KType): KQLType? = structure.queryTypes[kType]?.kqlType
+
+    override fun <T : Any> inputTypeByKClass(kClass: KClass<T>): KQLType? = inputTypeByKType(kClass.starProjectedType)
+
+    override fun inputTypeByKType(kType: KType): KQLType? = structure.inputTypes[kType]?.kqlType
 }

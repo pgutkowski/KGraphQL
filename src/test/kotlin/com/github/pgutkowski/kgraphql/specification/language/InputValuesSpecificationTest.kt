@@ -22,7 +22,7 @@ class InputValuesSpecificationTest {
 
     val schema = defaultSchema {
         enum<FakeEnum>()
-        type<FakeData>()
+        inputType<FakeData>()
 
         query("Int") { resolver { value: Int -> value } }
         query("Float") {resolver {value: Float -> value } }
@@ -32,7 +32,8 @@ class InputValuesSpecificationTest {
         query("Null") {resolver {value: Int? -> value } }
         query("Enum") {resolver {value: FakeEnum -> value } }
         query("List") {resolver {value: List<Int> -> value } }
-        query("Object") {resolver {value: FakeData -> value } }
+        query("Object") {resolver {value: FakeData -> value.number } }
+        query("ObjectList") {resolver {value: FakeData -> value.list } }
     }
 
     @Test
@@ -145,24 +146,21 @@ class InputValuesSpecificationTest {
     @Specification("2.9.8 Object Value")
     fun `Object input value`(){
         val response = deserialize(schema.execute(
-                "query(\$object: FakeData){Object(value: \$object){number, description}}",
+                "query(\$object: FakeData){Object(value: \$object)}",
                 "{ \"object\" : {\"number\":232, \"description\":\"little number\"}}"
         ))
-        assertThat(
-                extract<Map<String, Any>>(response, "data/Object"),
-                equalTo(mapOf("number" to 232, "description" to "little number"))
-        )
+        assertThat(extract<Int>(response, "data/Object"), equalTo(232))
     }
 
     @Test
     @Specification("2.9.8 Object Value")
     fun `Object input value with list field`(){
         val response = deserialize(schema.execute(
-                "query(\$object: FakeData){Object(value: \$object){list}}",
+                "query(\$object: FakeData){ObjectList(value: \$object)}",
                 "{ \"object\" : {\"number\":232, \"description\":\"little number\", \"list\" : [\"number\",\"description\",\"little number\"]}}"
         ))
         assertThat(
-                extract<List<String>>(response, "data/Object/list"),
+                extract<List<String>>(response, "data/ObjectList"),
                 equalTo(listOf("number", "description", "little number"))
         )
     }
@@ -171,7 +169,7 @@ class InputValuesSpecificationTest {
     @Specification("2.9.8 Object Value")
     fun `Unknown object input value type`(){
         expect<IllegalArgumentException>("Invalid variable argument type FakeDate, expected FakeData"){
-            schema.execute("query(\$object: FakeDate){Object(value: \$object){list}}")
+            schema.execute("query(\$object: FakeDate){Object(value: \$object)}")
         }
     }
 }

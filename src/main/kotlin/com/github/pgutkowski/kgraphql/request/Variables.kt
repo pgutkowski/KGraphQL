@@ -24,8 +24,8 @@ data class Variables(private val typeNameProvider: TypeDefinitionProvider,
             val variable = variables?.find { key == it.name }
                     ?: throw IllegalArgumentException("Variable '$key' was not declared for this operation")
             //remove "!", it only denotes non-nullability
-            val kqlType = typeNameProvider.typeByKClass(kClass)
-                    ?: throw RequestException("Unknown type ${variable.type}. Maybe it was not registered in schema?")
+            val kqlType = typeNameProvider.inputTypeByKClass(kClass)
+                    ?: throw RequestException("Unknown input type ${variable.type}. Maybe it was not registered in schema?")
             if (kqlType.name != variable.type.removeSuffix("!")) {
                 throw IllegalArgumentException("Invalid variable argument type ${variable.type}, expected ${kClass.defaultKQLTypeName()}")
             }

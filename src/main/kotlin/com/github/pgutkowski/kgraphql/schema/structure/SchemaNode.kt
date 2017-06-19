@@ -14,7 +14,7 @@ import com.github.pgutkowski.kgraphql.schema.model.Transformation
  */
 sealed class SchemaNode {
 
-    open class Type (
+    open class Type(
             val kqlType: KQLType,
             val properties : Map<String, SchemaNode.Property> = emptyMap(),
             val unionProperties: Map<String, SchemaNode.UnionProperty> = emptyMap()

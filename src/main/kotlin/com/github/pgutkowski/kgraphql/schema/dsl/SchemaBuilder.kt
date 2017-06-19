@@ -6,7 +6,7 @@ import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.model.KQLMutation
 import com.github.pgutkowski.kgraphql.schema.model.KQLQuery
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
-import com.github.pgutkowski.kgraphql.schema.model.MutableSchemaModel
+import com.github.pgutkowski.kgraphql.schema.model.MutableSchemaDefinition
 import kotlin.reflect.KClass
 
 /**
@@ -14,7 +14,7 @@ import kotlin.reflect.KClass
  */
 class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
 
-    private val model = MutableSchemaModel()
+    private val model = MutableSchemaDefinition()
 
     private var configuration = SchemaConfigurationDSL()
 
@@ -124,5 +124,18 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
         val union = UnionTypeDSL(block)
         model.addUnion(KQLType.Union(name, union.possibleTypes, union.description))
         return TypeID(name)
+    }
+
+    //================================================================================
+    // INPUT
+    //================================================================================
+
+    fun <T : Any>inputType(kClass: KClass<T>, block : (InputTypeDSL<T>.() -> Unit)? = null) {
+        val input = InputTypeDSL(kClass, block)
+        model.addInputObject(KQLType.Input(input.name, kClass, input.description))
+    }
+
+    inline fun <reified T : Any> inputType() {
+        inputType(T::class)
     }
 }

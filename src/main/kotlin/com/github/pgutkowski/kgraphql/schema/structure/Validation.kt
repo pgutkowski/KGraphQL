@@ -61,3 +61,9 @@ fun validateName(name : String) {
         )
     }
 }
+
+fun validateSchemaNodeType(type: SchemaNode.Type){
+    if(type.properties.isEmpty() && type.unionProperties.isEmpty()){
+        throw SchemaException("An Object type must define one or more fields. Found none on type ${type.kqlType.name}")
+    }
+}

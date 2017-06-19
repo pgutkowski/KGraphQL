@@ -8,32 +8,33 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 
 /**
- * Intermediate, mutable data structure used to prepare [SchemaModel]
+ * Intermediate, mutable data structure used to prepare [SchemaDefinition]
  * Performs basic validation (names duplication etc.) when methods for adding schema components are invoked
  */
-data class MutableSchemaModel (
-        private val objects: ArrayList<KQLType.Object<*>> = arrayListOf<KQLType.Object<*>>(),
-        private val queries: ArrayList<KQLQuery<*>> = arrayListOf<KQLQuery<*>>(),
-        private val scalars: ArrayList<KQLType.Scalar<*>> = arrayListOf<KQLType.Scalar<*>>(
+data class MutableSchemaDefinition(
+        private val objects: ArrayList<KQLType.Object<*>> = arrayListOf(),
+        private val queries: ArrayList<KQLQuery<*>> = arrayListOf(),
+        private val scalars: ArrayList<KQLType.Scalar<*>> = arrayListOf(
                 BUILT_IN_TYPE.STRING,
                 BUILT_IN_TYPE.BOOLEAN,
                 BUILT_IN_TYPE.DOUBLE,
                 BUILT_IN_TYPE.FLOAT,
                 BUILT_IN_TYPE.INT
         ),
-        private val mutations: ArrayList<KQLMutation<*>> = arrayListOf<KQLMutation<*>>(),
-        private val enums: ArrayList<KQLType.Enumeration<*>> = arrayListOf<KQLType.Enumeration<*>>(),
-        private val unions: ArrayList<KQLType.Union> = arrayListOf<KQLType.Union>(),
+        private val mutations: ArrayList<KQLMutation<*>> = arrayListOf(),
+        private val enums: ArrayList<KQLType.Enumeration<*>> = arrayListOf(),
+        private val unions: ArrayList<KQLType.Union> = arrayListOf(),
         private val directives: ArrayList<Directive> = arrayListOf(
                 Directive.SKIP,
                 Directive.INCLUDE
-        )
+        ),
+        private val inputObjects: ArrayList<KQLType.Input<*>> = arrayListOf()
 ) {
 
         val unionsMonitor : List<KQLType.Union>
                 get() = unions
 
-        fun toSchemaModel() : SchemaModel {
+        fun toSchemaModel() : SchemaDefinition {
                 val compiledObjects = ArrayList(this.objects)
 
                 unions.forEach { union ->
@@ -45,7 +46,7 @@ data class MutableSchemaModel (
                         }
                 }
 
-                return SchemaModel(compiledObjects, queries, scalars, mutations, enums, unions, directives)
+                return SchemaDefinition(compiledObjects, queries, scalars, mutations, enums, unions, directives, inputObjects)
         }
 
         private fun validateUnionMember(union: KQLType.Union,
@@ -92,11 +93,13 @@ data class MutableSchemaModel (
 
         fun addUnion(union: KQLType.Union) = addType(union, unions, "Union")
 
-        fun <T : KQLObject>addType(type: T, target: ArrayList<T>, typeCategory: String, alternativeObjects: List<KQLType.Object<*>>? = null){
+        fun addInputObject(input : KQLType.Input<*>) = addType(input, inputObjects, "Input")
+
+        fun <T : KQLObject>addType(type: T, target: ArrayList<T>, typeCategory: String){
                 if(type.name.startsWith("__")){
                         throw SchemaException("Type name starting with \"__\" are excluded for introspection system")
                 }
-                if(type.checkEqualName(alternativeObjects ?: objects, scalars, unions, enums)){
+                if(type.checkEqualName(objects, scalars, unions, enums)){
                         throw SchemaException("Cannot add $typeCategory type with duplicated name ${type.name}")
                 }
                 target.add(type)

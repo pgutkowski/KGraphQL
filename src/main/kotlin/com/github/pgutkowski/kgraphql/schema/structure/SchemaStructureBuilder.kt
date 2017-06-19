@@ -1,36 +1,16 @@
 package com.github.pgutkowski.kgraphql.schema.structure
 
-import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
 import com.github.pgutkowski.kgraphql.schema.model.BaseKQLOperation
 import com.github.pgutkowski.kgraphql.schema.model.KQLMutation
-import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLQuery
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
-import com.github.pgutkowski.kgraphql.schema.model.SchemaModel
-import com.github.pgutkowski.kgraphql.schema.model.Transformation
-import kotlin.reflect.KClass
-import kotlin.reflect.KProperty1
-import kotlin.reflect.KType
-import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.full.memberProperties
+import com.github.pgutkowski.kgraphql.schema.model.SchemaDefinition
 import kotlin.reflect.full.starProjectedType
-import kotlin.reflect.jvm.jvmErasure
 
 
-class SchemaStructureBuilder(model : SchemaModel) {
-
-    /**
-     * MutableType allows to avoid circular reference issues when building schema.
-     * @see getType
-     * @see mutableTypesCache
-     */
-    private class MutableType(
-            val kqlObjectType: KQLType.Object<*>,
-            val mutableProperties: MutableMap<String, SchemaNode.Property> = mutableMapOf(),
-            val mutableUnionProperties: MutableMap<String, SchemaNode.UnionProperty> = mutableMapOf()
-    ) : SchemaNode.Type(kqlObjectType, mutableProperties, mutableUnionProperties)
+class SchemaStructureBuilder(model : SchemaDefinition) {
 
     val queries: List<KQLQuery<*>> = model.queries
     val mutations: List<KQLMutation<*>> = model.mutations
@@ -39,147 +19,59 @@ class SchemaStructureBuilder(model : SchemaModel) {
     val enums: List<KQLType.Enumeration<*>> = model.enums
     val unions: List<KQLType.Union> = model.unions
     val directives: List<Directive> = model.directives
+    val inputObjects: List<KQLType.Input<*>> = model.inputObjects
 
-    private val mutableTypesCache = mutableMapOf<KType, MutableType>()
+    private val enumNodes = enums.associate { it.kClass.starProjectedType to transformEnum(it) }
 
-    private val typesCache = mutableMapOf<KType, SchemaNode.Type>()
+    private val scalarNodes = scalars.associate { it.kClass.starProjectedType to transformScalar(it) }
+
+    private val enumAndScalarNodes = enumNodes + scalarNodes
 
     fun build() : SchemaStructure {
-        val queryNodes = mutableMapOf<String, SchemaNode.Query<*>>()
-        val mutationNodes = mutableMapOf<String, SchemaNode.Mutation<*>>()
 
-        queries.map { SchemaNode.Query(it, handleOperation(it)) }
-                .associateTo(queryNodes) {it.kqlQuery.name to it}
+        val queryTypesLinker = QueryStructureLinker(enumNodes, scalarNodes, objects)
 
-        mutations.map { SchemaNode.Mutation(it, handleOperation(it))}
-                .associateTo(mutationNodes) {it.kqlMutation.name to it}
+        val inputTypesLinker = InputStructureLinker(enumNodes, scalarNodes, inputObjects)
 
-        objects.map { it.kClass.starProjectedType }
-                .filter {  typesCache[it] ?: mutableTypesCache[it] == null }
-                .associateTo(typesCache) { it to handleReturnType(it) }
+        val queryNodes = queries
+                .map { query -> SchemaNode.Query(query, queryTypesLinker.handleOperation(query)) }
+                .associate { query -> query.kqlQuery.name to query }
+
+        val mutationNodes = mutations
+                .map { mutation -> SchemaNode.Mutation(mutation, queryTypesLinker.handleOperation(mutation))}
+                .associate { mutation -> mutation.kqlMutation.name to mutation }
+
+        objects.forEach { queryTypesLinker.linkType(it.kClass.starProjectedType) }
+
+        val queryObjectTypes = queryTypesLinker.linkedTypes
+
+        (inputObjects.map { it.kClass.starProjectedType } + queryTypesLinker.foundInputTypes).forEach { type ->
+            inputTypesLinker.linkType(type)
+        }
+
+        queryTypesLinker.foundInputTypes.forEach {  }
+
+        val inputObjectTypes = inputTypesLinker.linkedTypes
+
+        val intersectedTypes = queryObjectTypes.keys.intersect(inputObjectTypes.keys)
+        if(intersectedTypes.isNotEmpty()){
+            throw SchemaException("Input object must be separate type in system. found common types $intersectedTypes")
+        }
 
         return SchemaStructure (
                 queryNodes,
                 mutationNodes,
-                mutableTypesCache.toMap() + typesCache.toMap(),
+                queryObjectTypes.toMap() + enumAndScalarNodes.toMap(),
+                inputObjectTypes.toMap() + enumAndScalarNodes.toMap(),
                 directives.associate { it.name to it }
         )
     }
 
-    private fun <R> handleOperation(operation : BaseKQLOperation<R>) : SchemaNode.ReturnType {
-        return handleReturnType(operation.kFunction.returnType)
+    fun transformEnum(enum : KQLType.Enumeration<*>) : SchemaNode.Type {
+        return SchemaNode.Type(enum)
     }
 
-    private fun handleReturnType(kType: KType) : SchemaNode.ReturnType {
-        val kClass = kType.jvmErasure
-        if(kClass.isCollection()){
-            val elementType = kType.arguments.getOrNull(0)?.type
-                    ?: throw SchemaException("Cannot infer collection element type for type $kType")
-            return handleCollectionReturnType(collectionKType = kType, entryKType = elementType)
-        } else {
-            val isNullable: Boolean = kType.isMarkedNullable
-            val type = getType(kClass, kType)
-            return SchemaNode.ReturnType(type, false, isNullable, false)
-        }
+    fun <T : Any>transformScalar(scalar : KQLType.Scalar<T>) : SchemaNode.Type {
+        return SchemaNode.Type(scalar)
     }
-
-    private fun handleCollectionReturnType(collectionKType: KType, entryKType: KType) : SchemaNode.ReturnType {
-        val isNullable: Boolean = collectionKType.isMarkedNullable
-        val areEntriesNullable : Boolean = entryKType.isMarkedNullable
-
-        val entryKClass = entryKType.jvmErasure
-        if(entryKClass.isCollection()){
-            throw IllegalArgumentException("Nested Collections are not supported")
-        } else {
-            val type = getType(entryKClass, entryKType)
-            return SchemaNode.ReturnType(type, true, isNullable, areEntriesNullable)
-        }
-    }
-
-    private fun getType(kClass: KClass<*>, kType: KType): SchemaNode.Type {
-
-        fun createMutableType(kType: KType): MutableType {
-            val kqlObject = objects.find { it.kClass == kClass } ?: KQLType.Object(kType.defaultKQLTypeName(), kClass)
-            val type = MutableType(kqlObject)
-            mutableTypesCache.put(kType, type)
-            return type
-        }
-
-        fun <T : Any>handleObjectType(type : MutableType, kClass: KClass<T>) : MutableType {
-            when {
-                kClass.isSubclassOf(Enum::class) ->
-                    throw SchemaException("Cannot handle enum class $kClass as Object type")
-                kClass.isSubclassOf(Function::class) ->
-                    throw SchemaException("Cannot handle function $kClass as Object type")
-
-            }
-            val kqlObject = type.kqlObjectType
-
-            kClass.memberProperties
-                    .filterNot { kqlObject.isIgnored(it) }
-                    .associateTo(type.mutableProperties) { property ->
-                        validateName(property.name)
-                        property.name to handleKotlinProperty (
-                                property, kqlObject.transformations.find { it.kProperty == property }
-                        )
-                    }
-
-            kqlObject.extensionProperties.associateTo(type.mutableProperties) { property ->
-                property.name to handleFunctionProperty(property)
-            }
-
-            kqlObject.unionProperties.associateTo(type.mutableUnionProperties) { property ->
-                property.name to handleUnionProperty(property)
-            }
-
-            if(type.mutableProperties.isEmpty() && type.mutableUnionProperties.isEmpty()){
-                throw SchemaException("An Object type must define one or more fields. Found none on type ${kqlObject.name}")
-            }
-
-            return type
-        }
-
-        return mutableTypesCache[kType]
-                ?: handleScalarType(kType, kClass)
-                ?: handleEnumType(kType, kClass)
-                ?: handleObjectType(createMutableType(kType), kClass)
-    }
-
-    private fun <T : Any>handleScalarType(kType: KType, kClass: KClass<T>) : SchemaNode.Type? {
-        return createSchemaNodeType(kType, scalars.find { it.kClass == kClass })
-    }
-
-    private fun <T : Any>handleEnumType(kType: KType, kClass: KClass<T>) : SchemaNode.Type? {
-        if(kClass.isSubclassOf(Enum::class)){
-            val kqlType = enums.find { it.kClass == kClass }
-                    ?: throw SchemaException("Failed to build schema. Please explicitly declare enum $kClass in schema")
-            return createSchemaNodeType(kType, kqlType)
-        } else return null
-    }
-
-    private fun createSchemaNodeType(kType: KType, kqlType: KQLType?): SchemaNode.Type? {
-        return if (kqlType != null) {
-            val type = SchemaNode.Type(kqlType)
-            typesCache.put(kType, type)
-            type
-        } else null
-    }
-
-    private fun handleFunctionProperty(property: KQLProperty.Function<*>): SchemaNode.Property {
-        if(property is KQLProperty.Union){
-            throw IllegalArgumentException("Cannot handle union function property")
-        } else {
-            return SchemaNode.Property(property, handleReturnType(property.kFunction.returnType))
-        }
-    }
-
-    private fun handleUnionProperty(property: KQLProperty.Union) : SchemaNode.UnionProperty {
-        return SchemaNode.UnionProperty(property, property.union.members.map { handleReturnType(it.starProjectedType) })
-    }
-
-    private fun <T> handleKotlinProperty(property: KProperty1<T, *>, transformation: Transformation<out Any, out Any?>?) : SchemaNode.Property {
-        return SchemaNode.Property(KQLProperty.Kotlin(property), handleReturnType(property.returnType), transformation)
-    }
-
-    private fun KClass<*>.isCollection() = isSubclassOf(Collection::class)
 }

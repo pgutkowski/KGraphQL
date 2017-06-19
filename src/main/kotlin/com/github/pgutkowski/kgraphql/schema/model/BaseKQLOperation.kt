@@ -12,14 +12,12 @@ abstract class BaseKQLOperation<T>(
     override val argumentsDescriptor = createArgumentsDescriptor()
 
     private fun createArgumentsDescriptor(): Map<String, KType> {
-        val arguments : MutableMap<String, KType> = mutableMapOf()
-        valueParameters().associateTo(arguments) { parameter ->
+        return valueParameters().associate { parameter ->
             val parameterName = parameter.name
                     ?: throw SchemaException("Cannot handle nameless argument on function: ${operationWrapper.kFunction}")
 
             validateName(parameterName)
             parameterName to parameter.type
         }
-        return arguments
     }
 }

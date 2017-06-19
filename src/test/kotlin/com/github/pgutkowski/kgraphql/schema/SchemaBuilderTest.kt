@@ -37,7 +37,7 @@ class SchemaBuilderTest {
             }
         }
 
-        val uuidScalar = testedSchema.model.scalars.find { it.name == "UUID" }!!.coercion as StringScalarCoercion<UUID>
+        val uuidScalar = testedSchema.definition.scalars.find { it.name == "UUID" }!!.coercion as StringScalarCoercion<UUID>
         val testUuid = UUID.randomUUID()
         MatcherAssert.assertThat(uuidScalar.serialize(testUuid), CoreMatchers.equalTo(testUuid.toString()))
         MatcherAssert.assertThat(uuidScalar.deserialize(testUuid.toString()), CoreMatchers.equalTo(testUuid))
@@ -54,7 +54,7 @@ class SchemaBuilderTest {
             }
         }
 
-        val scenarioType = testedSchema.structure.nodes[Scenario::class.starProjectedType]
+        val scenarioType = testedSchema.structure.queryTypes[Scenario::class.starProjectedType]
                 ?: throw Exception("Scenario type should be present in schema")
         assertThat(scenarioType.properties["author"], nullValue())
         assertThat(scenarioType.properties["content"], notNullValue())
@@ -73,7 +73,7 @@ class SchemaBuilderTest {
                 })
             }
         }
-        val scenarioType = testedSchema.structure.nodes[Scenario::class.starProjectedType]
+        val scenarioType = testedSchema.structure.queryTypes[Scenario::class.starProjectedType]
                 ?: throw Exception("Scenario type should be present in schema")
         assert(scenarioType.kqlType is KQLType.Object<*>)
         val kqlType = scenarioType.kqlType as KQLType.Object<*>
@@ -96,7 +96,7 @@ class SchemaBuilderTest {
             }
         }
 
-        val scenarioType = testedSchema.structure.nodes[Scenario::class.starProjectedType]
+        val scenarioType = testedSchema.structure.queryTypes[Scenario::class.starProjectedType]
                 ?: throw Exception("Scenario type should be present in schema")
         assert(scenarioType.kqlType is KQLType.Object<*>)
         val kqlType = scenarioType.kqlType as KQLType.Object<*>
@@ -133,7 +133,7 @@ class SchemaBuilderTest {
             }
         }
 
-        val scenarioType = tested.structure.nodes[Scenario::class.starProjectedType]
+        val scenarioType = tested.structure.queryTypes[Scenario::class.starProjectedType]
                 ?: throw Exception("Scenario type should be present in schema")
         assert(scenarioType.kqlType is KQLType.Object<*>)
         val unionProperty = scenarioType.unionProperties["pdf"] ?: throw Exception("Scenario should have union property 'pdf'")
@@ -154,7 +154,7 @@ class SchemaBuilderTest {
             }
         }
 
-        val actorType = tested.structure.nodes[Actor::class.starProjectedType]
+        val actorType = tested.structure.queryTypes[Actor::class.starProjectedType]
                 ?: throw Exception("Scenario type should be present in schema")
         assert(actorType.kqlType is KQLType.Object<*>)
         val property = actorType.properties["linked"] ?: throw Exception("Actor should have ext property 'linked'")
@@ -208,5 +208,31 @@ class SchemaBuilderTest {
                 }
             }
         }
+    }
+
+    class InputOne(val string:  String)
+
+    class InputTwo(val one : InputOne)
+
+    @Test
+    fun `Schema should map input types`(){
+        val schema = defaultSchema {
+            inputType<InputTwo>()
+        }
+
+        assertThat(schema.inputTypeByKClass(InputOne::class), notNullValue())
+        assertThat(schema.inputTypeByKClass(InputTwo::class), notNullValue())
+    }
+
+    @Test
+    fun `Schema should infer input types from resolver functions`(){
+        val schema = defaultSchema {
+            query("sample") {
+                resolver { i: InputTwo -> "SUCCESS" }
+            }
+        }
+
+        assertThat(schema.inputTypeByKClass(InputOne::class), notNullValue())
+        assertThat(schema.inputTypeByKClass(InputTwo::class), notNullValue())
     }
 }

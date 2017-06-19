@@ -31,6 +31,12 @@ interface KQLType {
         fun isIgnored(property: KProperty1<*, *>): Boolean = ignoredProperties.any { it == property }
     }
 
+    class Input<T : Any>(
+            name : String,
+            override val kClass: KClass<T>,
+            description: String?
+    ) : BaseKQLType(name, description), Kotlin<T>
+
     class Scalar<T : Any> (
             name : String,
             override val kClass: KClass<T>,

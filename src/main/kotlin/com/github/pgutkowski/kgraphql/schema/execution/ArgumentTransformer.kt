@@ -17,9 +17,9 @@ import kotlin.reflect.jvm.jvmErasure
 
 open class ArgumentTransformer(val schema : DefaultSchema) {
 
-    private val enumsByType = schema.model.enums.associate { it.kClass.createType() to it }
+    private val enumsByType = schema.definition.enums.associate { it.kClass.createType() to it }
 
-    private val scalarsByType = schema.model.scalars.associate { it.kClass.createType() to it }
+    private val scalarsByType = schema.definition.scalars.associate { it.kClass.createType() to it }
 
     fun transformValue(type: KType, value: String, variables: Variables) : Any? {
         return when {
@@ -30,7 +30,7 @@ open class ArgumentTransformer(val schema : DefaultSchema) {
             }
             value == "null" && type.isMarkedNullable -> null
             value == "null" && !type.isMarkedNullable -> {
-                throw RequestException("argument '$value' is not valid value of type ${schema.typeByKType(type)?.name}")
+                throw RequestException("argument '$value' is not valid value of type ${schema.inputTypeByKType(type)?.name}")
             }
             else -> {
                 return transformString(value, type.withNullability(false))
@@ -42,7 +42,7 @@ open class ArgumentTransformer(val schema : DefaultSchema) {
 
         fun throwInvalidEnumValue(enumType : KQLType.Enumeration<*>){
             throw RequestException(
-                    "Invalid enum ${schema.typeByKType(lookupType)?.name} value. Expected one of ${enumType.values}"
+                    "Invalid enum ${schema.inputTypeByKType(lookupType)?.name} value. Expected one of ${enumType.values}"
             )
         }
 
@@ -53,7 +53,7 @@ open class ArgumentTransformer(val schema : DefaultSchema) {
             return enumType.values.find { it.name == value } ?: throwInvalidEnumValue(enumType)
         } ?: scalarsByType[lookupType]?.let { scalarType ->
             return deserializeScalar(scalarType, value)
-        } ?: throw RequestException("Invalid argument value '$value' for type ${schema.typeByKType(lookupType)?.name}")
+        } ?: throw RequestException("Invalid argument value '$value' for type ${schema.inputTypeByKType(lookupType)?.name}")
     }
 
     fun transformCollectionElementValue(collectionParameter: KParameter, value: String, variables: Variables): Any? {

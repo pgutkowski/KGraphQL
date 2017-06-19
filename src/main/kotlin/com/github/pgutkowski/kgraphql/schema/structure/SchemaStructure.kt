@@ -12,19 +12,20 @@ import com.github.pgutkowski.kgraphql.schema.directive.Directive
 import com.github.pgutkowski.kgraphql.schema.execution.Execution
 import com.github.pgutkowski.kgraphql.schema.execution.ExecutionPlan
 import com.github.pgutkowski.kgraphql.schema.execution.TypeCondition
-import com.github.pgutkowski.kgraphql.schema.model.SchemaModel
+import com.github.pgutkowski.kgraphql.schema.model.SchemaDefinition
 import kotlin.reflect.KType
 
 
 class SchemaStructure (
         val queries : Map<String, SchemaNode.Query<*>>,
         val mutations : Map<String, SchemaNode.Mutation<*>>,
-        val nodes : Map<KType, SchemaNode.Type>,
+        val queryTypes: Map<KType, SchemaNode.Type>,
+        val inputTypes: Map<KType, SchemaNode.Type>,
         val directives: Map<String, Directive>
 ) {
 
     companion object {
-        fun of(schema: SchemaModel) : SchemaStructure = SchemaStructureBuilder(schema).build()
+        fun of(schema: SchemaDefinition) : SchemaStructure = SchemaStructureBuilder(schema).build()
     }
 
     fun createExecutionPlan(request: Operation) : ExecutionPlan {
@@ -145,20 +146,20 @@ class SchemaStructure (
     private fun findFragmentType(fragment: Fragment, enclosingType: SchemaNode.ReturnType) : SchemaNode.Type {
         when(fragment){
             is Fragment.External -> {
-                return findNodeByTypeName(fragment.typeCondition) ?: throw createUnknownFragmentType(fragment)
+                return findNodeByTypeName(fragment.typeCondition) ?: throw throwUnknownFragmentTypeEx(fragment)
             }
             is Fragment.Inline -> {
                 if(fragment.typeCondition == null && fragment.directives?.isNotEmpty() ?: false){
                     return enclosingType.type
                 } else {
-                    return findNodeByTypeName(fragment.typeCondition) ?: throw createUnknownFragmentType(fragment)
+                    return findNodeByTypeName(fragment.typeCondition) ?: throw throwUnknownFragmentTypeEx(fragment)
                 }
             }
             else -> throw ExecutionException("Unexpected fragment type: ${fragment.javaClass}")
         }
     }
 
-    private fun createUnknownFragmentType(fragment: Fragment) : RequestException {
+    private fun throwUnknownFragmentTypeEx(fragment: Fragment) : RequestException {
         return RequestException("Unknown type ${fragment.typeCondition} in type condition on fragment ${fragment.fragmentKey}")
     }
 
@@ -186,6 +187,6 @@ class SchemaStructure (
     }
 
     fun findNodeByTypeName(typeName: String?) : SchemaNode.Type? {
-        return nodes.values.find { it.kqlType.name == typeName }
+        return queryTypes.values.find { it.kqlType.name == typeName }
     }
 }

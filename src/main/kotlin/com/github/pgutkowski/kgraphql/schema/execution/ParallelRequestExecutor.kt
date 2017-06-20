@@ -112,15 +112,18 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         return createNode(ctx, operationResult, node, returnType)
     }
 
-    private fun <T> createNode(ctx: Context, value : T?, node: Execution.Node, returnType: SchemaNode.ReturnType) : JsonNode {
+    private fun <T> createNode(ctx: Context, value : T?,
+                               node: Execution.Node,
+                               returnType: SchemaNode.ReturnType,
+                               isCollectionElement : Boolean = false) : JsonNode {
         return when {
-            value == null -> createNullNode(node, returnType)
+            value == null -> createNullNode(node, returnType, isCollectionElement)
 
             //check value, not returnType, because this method can be invoked with element value
             value is Collection<*> -> {
                 if(returnType.isCollection){
                     val arrayNode = jsonNodeFactory.arrayNode(value.size)
-                    value.forEach { element -> arrayNode.add(createNode(ctx, element, node, returnType)) }
+                    value.forEach { element -> arrayNode.add(createNode(ctx, element, node, returnType, true)) }
                     arrayNode
                 } else {
                     throw ExecutionException("Invalid collection value for non collection property")
@@ -155,8 +158,9 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         }
     }
 
-    private fun createNullNode(node: Execution.Node, returnType: SchemaNode.ReturnType): NullNode {
-        if (returnType.isNullable) {
+    private fun createNullNode(node: Execution.Node, returnType: SchemaNode.ReturnType, collectionElement: Boolean): NullNode {
+        val isNullable = if(collectionElement) returnType.areEntriesNullable else returnType.isNullable
+        if (isNullable) {
             return jsonNodeFactory.nullNode()
         } else {
             throw ExecutionException("null result for non-nullable operation ${node.schemaNode}")

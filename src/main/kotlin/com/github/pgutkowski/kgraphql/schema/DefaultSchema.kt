@@ -55,21 +55,24 @@ class DefaultSchema(
                     throw RequestException("anonymous operation must be the only defined operation")
                 } else {
                     val executionPlans = operations.associate { it.name to structure.createExecutionPlan(it) }
-                    val operationName = parsedVariables.get(String::class, OPERATION_NAME_PARAM)
+
+                    val operationName = parsedVariables.get(String::class, String::class.starProjectedType, OPERATION_NAME_PARAM)
                             ?: throw RequestException("Must provide an operation name from: ${executionPlans.keys}")
+
                     val executionPlan = executionPlans[operationName]
                             ?: throw RequestException("Must provide an operation name from: ${executionPlans.keys}, found $operationName")
+
                     return requestExecutor.execute(executionPlan, parsedVariables)
                 }
             }
         }
     }
 
-    override fun <T : Any> typeByKClass(kClass: KClass<T>): KQLType? = typeByKType(kClass.starProjectedType)
+    override fun typeByKClass(kClass: KClass<*>): KQLType? = typeByKType(kClass.starProjectedType)
 
     override fun typeByKType(kType: KType): KQLType? = structure.queryTypes[kType]?.kqlType
 
-    override fun <T : Any> inputTypeByKClass(kClass: KClass<T>): KQLType? = inputTypeByKType(kClass.starProjectedType)
+    override fun inputTypeByKClass(kClass: KClass<*>): KQLType? = inputTypeByKType(kClass.starProjectedType)
 
     override fun inputTypeByKType(kType: KType): KQLType? = structure.inputTypes[kType]?.kqlType
 }

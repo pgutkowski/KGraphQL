@@ -7,11 +7,11 @@ import kotlin.reflect.KType
 
 interface TypeDefinitionProvider {
 
-    fun <T : Any> typeByKClass(kClass: KClass<T>) : KQLType?
+    fun typeByKClass(kClass: KClass<*>) : KQLType?
 
     fun typeByKType(kType: KType) : KQLType?
 
-    fun <T : Any> inputTypeByKClass(kClass: KClass<T>) : KQLType?
+    fun inputTypeByKClass(kClass: KClass<*>) : KQLType?
 
     fun inputTypeByKType(kType: KType) : KQLType?
 }

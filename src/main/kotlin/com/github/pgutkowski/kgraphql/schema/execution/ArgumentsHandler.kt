@@ -23,7 +23,9 @@ internal class ArgumentsHandler(schema : DefaultSchema) : ArgumentTransformer(sc
         val unsupportedArguments = args?.filter { arg -> parameters.none { parameter -> parameter.name == arg.key }}
 
         if(unsupportedArguments?.isNotEmpty() ?: false){
-            throw RequestException("$funName does support arguments ${parameters.map { it.name }}. found arguments ${args?.keys}")
+            throw RequestException("$funName does support arguments ${parameters.map { it.name }}. " +
+                            "found arguments ${args?.keys}"
+            )
         }
 
         return parameters.map { parameter ->
@@ -32,12 +34,15 @@ internal class ArgumentsHandler(schema : DefaultSchema) : ArgumentTransformer(sc
             when {
                 value == null && parameter.isNullable() -> null
                 value == null && parameter.isNotNullable() -> {
-                    throw IllegalArgumentException("argument ${parameter.name} is not optional, value cannot be null")
+                    throw RequestException (
+                            "argument ${parameter.name} of type ${schema.typeByKType(parameter.type)} " +
+                            "is no nullable, value cannot be null"
+                    )
                 }
                 value is String -> {
                     val transformedValue = transformPropertyValue(parameter, value, variables)
                     if(transformedValue == null && parameter.isNotNullable()){
-                        throw IllegalArgumentException("argument ${parameter.name} is not optional, value cannot be null")
+                        throw RequestException("argument ${parameter.name} is not optional, value cannot be null")
                     }
                     transformedValue
                 }

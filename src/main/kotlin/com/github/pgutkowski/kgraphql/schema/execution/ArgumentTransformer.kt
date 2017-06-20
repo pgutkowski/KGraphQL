@@ -25,7 +25,7 @@ open class ArgumentTransformer(val schema : DefaultSchema) {
         return when {
             value.startsWith("$") -> {
                 variables.get (
-                        type.jvmErasure, value, {value, type -> transformValue(type.starProjectedType, value, variables) }
+                        type.jvmErasure, type, value, {value, type -> transformValue(type.starProjectedType, value, variables) }
                 )
             }
             value == "null" && type.isMarkedNullable -> null

@@ -1,5 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.structure
 
+import com.github.pgutkowski.kgraphql.isCollection
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.model.BaseKQLOperation
 import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
@@ -90,6 +91,4 @@ abstract class AbstractStructureLinker (
 
         }
     }
-
-    private fun KClass<*>.isCollection() = isSubclassOf(Collection::class)
 }

@@ -142,6 +142,8 @@ private fun parseOperationVariables(variablesTokens: List<String>): MutableList<
             }
             variableName == null -> variableName = variableToken
             variableType == null -> variableType = variableToken
+            variableType.startsWith("[") && variableType == "]" -> variableType += variableToken
+            variableType.startsWith("[")  -> variableType += variableToken
             defaultTypeStarted && variableDefaultValue == null -> variableDefaultValue = variableToken
             else -> {
                 //if variableName of variableType would be null, it would already be matched

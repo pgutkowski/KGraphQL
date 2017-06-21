@@ -34,8 +34,8 @@ class InputObjectsSpecificationTest {
             val two = InputTwo(InputOne(MockEnum.M1, "M1"), 3434, listOf("23", "34", "21", "434"))
         }
         val variables = objectMapper.writeValueAsString(two)
-        val response = deserialize(schema.execute("query(\$two: InputTwo){test(input: \$two)}", variables))
-        assertThat(extract<String>(response, "data/test"), startsWith("success"))
+        val response = deserialize(schema.execute("query(\$two: InputTwo!){test(input: \$two)}", variables))
+        assertThat(response.extract<String>("data/test"), startsWith("success"))
     }
 
     @Test
@@ -52,12 +52,12 @@ class InputObjectsSpecificationTest {
             val cirSuccess = Circular(Circular(null, "SUCCESS"))
         }
         val response = deserialize(schema.execute(
-                "query(\$cirNull: Circular, \$cirSuccess: Circular){" +
+                "query(\$cirNull: Circular!, \$cirSuccess: Circular!){" +
                         "null: circular(cir: \$cirNull)" +
                         "success: circular(cir: \$cirSuccess)}",
                 objectMapper.writeValueAsString(variables)
         ))
-        assertThat(extract(response, "data/success"), equalTo("SUCCESS"))
-        assertThat(extract(response, "data/null"), nullValue())
+        assertThat(response.extract("data/success"), equalTo("SUCCESS"))
+        assertThat(response.extract("data/null"), nullValue())
     }
 }

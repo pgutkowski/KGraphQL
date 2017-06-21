@@ -16,7 +16,7 @@ data class Directive(val name: String, val locations: Set<DirectiveLocation>, va
          */
         val SKIP = Directive( "skip",
                 setOf(FIELD, FRAGMENT_SPREAD, INLINE_FRAGMENT),
-                DirectiveExecution(FunctionWrapper.on({ `if` : Boolean -> DirectiveResult(!`if`) }))
+                DirectiveExecution(FunctionWrapper.on({ `if` : Boolean? -> DirectiveResult(!(`if` ?: false)) }))
         )
 
         /**
@@ -25,7 +25,7 @@ data class Directive(val name: String, val locations: Set<DirectiveLocation>, va
          */
         val INCLUDE = Directive( "include",
                 setOf(FIELD, FRAGMENT_SPREAD, INLINE_FRAGMENT),
-                DirectiveExecution(FunctionWrapper.on({ `if` : Boolean -> DirectiveResult(`if`) }))
+                DirectiveExecution(FunctionWrapper.on({ `if` : Boolean? -> DirectiveResult(`if` ?: false) }))
         )
     }
 }

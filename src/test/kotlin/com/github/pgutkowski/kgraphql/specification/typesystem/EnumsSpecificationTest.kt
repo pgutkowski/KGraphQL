@@ -35,7 +35,7 @@ class EnumsSpecificationTest {
     @Test
     fun `string constants are accepted as an enum input`(){
         val response = deserialize(schema.execute("{cool(cool : COOL)}"))
-        assertThat(extract<String>(response, "data/cool"), equalTo("COOL"))
+        assertThat(response.extract<String>("data/cool"), equalTo("COOL"))
     }
 
 }

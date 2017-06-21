@@ -28,6 +28,10 @@ class SchemaStructure (
         fun of(schema: SchemaDefinition) : SchemaStructure = SchemaStructureBuilder(schema).build()
     }
 
+    val queryTypeByName = queryTypes.values.associate { it.kqlType.name to it }
+
+    val inputTypeByName = inputTypes.values.associate { it.kqlType.name to it }
+
     fun createExecutionPlan(request: Operation) : ExecutionPlan {
         val children = mutableListOf<Execution.Operation<*>>()
         val root = getRoot(request)

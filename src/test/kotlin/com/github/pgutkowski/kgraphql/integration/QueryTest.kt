@@ -14,16 +14,16 @@ class QueryTest : BaseSchemaTest() {
     fun `query nested selection set`(){
         val map = execute("{film{title, director{name, age}}}")
         assertNoErrors(map)
-        assertThat(extract<String>(map, "data/film/title"), equalTo(prestige.title))
-        assertThat(extract<String>(map, "data/film/director/name"), equalTo(prestige.director.name))
-        assertThat(extract<Int>(map, "data/film/director/age"), equalTo(prestige.director.age))
+        assertThat(map.extract<String>("data/film/title"), equalTo(prestige.title))
+        assertThat(map.extract<String>("data/film/director/name"), equalTo(prestige.director.name))
+        assertThat(map.extract<Int>("data/film/director/age"), equalTo(prestige.director.age))
     }
 
     @Test
     fun `query collection field`(){
         val map = execute("{film{title, director{favActors{name, age}}}}")
         assertNoErrors(map)
-        assertThat(extract<Map<String, String>>(map, "data/film/director/favActors[0]"), equalTo(mapOf(
+        assertThat(map.extract<Map<String, String>>("data/film/director/favActors[0]"), equalTo(mapOf(
                 "name" to prestige.director.favActors[0].name,
                 "age" to prestige.director.favActors[0].age)
         ))
@@ -33,21 +33,21 @@ class QueryTest : BaseSchemaTest() {
     fun `query scalar field`(){
         val map = execute("{film{id}}")
         assertNoErrors(map)
-        assertThat(extract<String>(map, "data/film/id"), equalTo("${prestige.id.literal}:${prestige.id.numeric}"))
+        assertThat(map.extract<String>("data/film/id"), equalTo("${prestige.id.literal}:${prestige.id.numeric}"))
     }
 
     @Test
     fun `query with selection set on collection`(){
         val map = execute("{film{title, director{favActors{name}}}}")
         assertNoErrors(map)
-        assertThat(extract<Map<String, String>>(map, "data/film/director/favActors[0]"), equalTo(mapOf("name" to prestige.director.favActors[0].name)))
+        assertThat(map.extract<Map<String, String>>("data/film/director/favActors[0]"), equalTo(mapOf("name" to prestige.director.favActors[0].name)))
     }
 
     @Test
     fun `query with selection set on collection 2`(){
         val map = execute("{film{title, director{favActors{age}}}}")
         assertNoErrors(map)
-        assertThat(extract<Map<String, Int>>(map, "data/film/director/favActors[0]"), equalTo(mapOf("age" to prestige.director.favActors[0].age)))
+        assertThat(map.extract<Map<String, Int>>("data/film/director/favActors[0]"), equalTo(mapOf("age" to prestige.director.favActors[0].age)))
     }
 
     @Test
@@ -61,36 +61,36 @@ class QueryTest : BaseSchemaTest() {
     fun `query with argument`(){
         val map = execute("{filmByRank(rank: 1){title}}")
         assertNoErrors(map)
-        assertThat(extract<String>(map, "data/filmByRank/title"), equalTo("Prestige"))
+        assertThat(map.extract<String>("data/filmByRank/title"), equalTo("Prestige"))
     }
 
     @Test
     fun `query with argument 2`(){
         val map = execute("{filmByRank(rank: 2){title}}")
         assertNoErrors(map)
-        assertThat(extract<String>(map, "data/filmByRank/title"), equalTo("Se7en"))
+        assertThat(map.extract<String>("data/filmByRank/title"), equalTo("Se7en"))
     }
 
     @Test
     fun `query with alias`(){
         val map = execute("{bestFilm: filmByRank(rank: 1){title}}")
         assertNoErrors(map)
-        assertThat(extract<String>(map, "data/bestFilm/title"), equalTo("Prestige"))
+        assertThat(map.extract<String>("data/bestFilm/title"), equalTo("Prestige"))
     }
 
     @Test
     fun `query with field alias`(){
         val map =execute("{filmByRank(rank: 2){fullTitle: title}}")
         assertNoErrors(map)
-        assertThat(extract<String>(map, "data/filmByRank/fullTitle"), equalTo("Se7en"))
+        assertThat(map.extract<String>("data/filmByRank/fullTitle"), equalTo("Se7en"))
     }
 
     @Test
     fun `query with multiple aliases`(){
         val map = execute("{bestFilm: filmByRank(rank: 1){title}, secondBestFilm: filmByRank(rank: 2){title}}")
         assertNoErrors(map)
-        assertThat(extract<String>(map, "data/bestFilm/title"), equalTo("Prestige"))
-        assertThat(extract<String>(map, "data/secondBestFilm/title"), equalTo("Se7en"))
+        assertThat(map.extract<String>("data/bestFilm/title"), equalTo("Prestige"))
+        assertThat(map.extract<String>("data/secondBestFilm/title"), equalTo("Se7en"))
     }
 
     @Test
@@ -103,7 +103,7 @@ class QueryTest : BaseSchemaTest() {
     @Test
     fun `query with interface`(){
         val map = execute("{randomPerson{name \n age}}")
-        assertThat(extract<Map<String, String>>(map, "data/randomPerson"), equalTo(mapOf(
+        assertThat(map.extract<Map<String, String>>("data/randomPerson"), equalTo(mapOf(
                 "name" to davidFincher.name,
                 "age" to davidFincher.age)
         ))
@@ -112,7 +112,7 @@ class QueryTest : BaseSchemaTest() {
     @Test
     fun `query with collection elements interface`(){
         val map = execute("{people{name, age}}")
-        assertThat(extract<Map<String, String>>(map, "data/people[0]"), equalTo(mapOf(
+        assertThat(map.extract<Map<String, String>>("data/people[0]"), equalTo(mapOf(
                 "name" to davidFincher.name,
                 "age" to davidFincher.age)
         ))
@@ -122,8 +122,8 @@ class QueryTest : BaseSchemaTest() {
     fun `query extension property`(){
         val map = execute("{actors{name, age, isOld}}")
         for(i in 0..4){
-            val isOld = extract<Boolean>(map, "data/actors[$i]/isOld")
-            val age = extract<Int>(map, "data/actors[$i]/age")
+            val isOld = map.extract<Boolean>("data/actors[$i]/isOld")
+            val age = map.extract<Int>("data/actors[$i]/age")
             assertThat(isOld, equalTo(age > 500))
         }
     }
@@ -132,8 +132,8 @@ class QueryTest : BaseSchemaTest() {
     fun `query extension property with arguments`(){
         val map = execute("{actors{name, picture(big: true)}}")
         for(i in 0..4){
-            val name = extract<String>(map, "data/actors[$i]/name").replace(' ', '_')
-            assertThat(extract<String>(map, "data/actors[$i]/picture"), equalTo("http://picture.server/pic/$name?big=true"))
+            val name = map.extract<String>("data/actors[$i]/name").replace(' ', '_')
+            assertThat(map.extract<String>("data/actors[$i]/picture"), equalTo("http://picture.server/pic/$name?big=true"))
         }
     }
 
@@ -141,18 +141,18 @@ class QueryTest : BaseSchemaTest() {
     fun `query extension property with optional argument`(){
         val map = execute("{actors{name, picture}}")
         for(i in 0..4){
-            val name = extract<String>(map, "data/actors[$i]/name").replace(' ', '_')
-            assertThat(extract<String>(map, "data/actors[$i]/picture"), equalTo("http://picture.server/pic/$name?big=false"))
+            val name = map.extract<String>("data/actors[$i]/name").replace(' ', '_')
+            assertThat(map.extract<String>("data/actors[$i]/picture"), equalTo("http://picture.server/pic/$name?big=false"))
         }
     }
 
     @Test
     fun `query with transformed property`(){
         val map = execute("{scenario{id, content(uppercase: false)}}")
-        assertThat(extract<String>(map, "data/scenario/content"), equalTo("Very long scenario"))
+        assertThat(map.extract<String>("data/scenario/content"), equalTo("Very long scenario"))
 
         val map2 = execute("{scenario{id, content(uppercase: true)}}")
-        assertThat(extract<String>(map2, "data/scenario/content"), equalTo("VERY LONG SCENARIO"))
+        assertThat(map2.extract<String>("data/scenario/content"), equalTo("VERY LONG SCENARIO"))
     }
 
     @Test
@@ -166,9 +166,9 @@ class QueryTest : BaseSchemaTest() {
     fun `query with external fragment`(){
         val map = execute("{film{title, ...dir }} fragment dir on Film {director{name, age}}")
         assertNoErrors(map)
-        assertThat(extract<String>(map, "data/film/title"), equalTo(prestige.title))
-        assertThat(extract<String>(map, "data/film/director/name"), equalTo(prestige.director.name))
-        assertThat(extract<Int>(map, "data/film/director/age"), equalTo(prestige.director.age))
+        assertThat(map.extract<String>("data/film/title"), equalTo(prestige.title))
+        assertThat(map.extract<String>("data/film/director/name"), equalTo(prestige.director.name))
+        assertThat(map.extract<Int>("data/film/director/age"), equalTo(prestige.director.age))
     }
 
     @Test

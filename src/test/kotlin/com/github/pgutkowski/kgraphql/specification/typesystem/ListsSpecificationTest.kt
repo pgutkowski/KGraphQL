@@ -8,6 +8,7 @@ import com.github.pgutkowski.kgraphql.deserialize
 import com.github.pgutkowski.kgraphql.expect
 import com.github.pgutkowski.kgraphql.extract
 import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
@@ -29,10 +30,10 @@ class ListsSpecificationTest{
             val list = listOf("GAGA", "DADA", "PADA")
         })
 
-        val response = deserialize(schema.execute("query(\$list: [String]){list(list: \$list)}", variables))
-        assertThat(extract<String>(response, "data/list[0]"), equalTo("GAGA"))
-        assertThat(extract<String>(response, "data/list[1]"), equalTo("DADA"))
-        assertThat(extract<String>(response, "data/list[2]"), equalTo("PADA"))
+        val response = deserialize(schema.execute("query(\$list: [String!]!){list(list: \$list)}", variables))
+        assertThat(response.extract<String>("data/list[0]"), equalTo("GAGA"))
+        assertThat(response.extract<String>("data/list[1]"), equalTo("DADA"))
+        assertThat(response.extract<String>("data/list[2]"), equalTo("PADA"))
     }
 
     @Test
@@ -47,8 +48,8 @@ class ListsSpecificationTest{
             val list = listOf("GAGA", null, "DADA", "PADA")
         })
 
-        val response = deserialize(schema.execute("query(\$list: [String]){list(list: \$list)}", variables))
-        assertThat(extract<String>(response, "data/list[1]"), nullValue())
+        val response = deserialize(schema.execute("query(\$list: [String!]!){list(list: \$list)}", variables))
+        assertThat(response.extract<String>("data/list[1]"), nullValue())
     }
 
     @Test
@@ -67,7 +68,7 @@ class ListsSpecificationTest{
                 "Invalid argument value [GAGA, null, DADA, PADA] from variable \$list, " +
                 "expected list with non null arguments"
         expect<RequestException>(expectedMessage){
-            schema.execute("query(\$list: [String]){list(list: \$list)}", variables)
+            schema.execute("query(\$list: [String!]!){list(list: \$list)}", variables)
         }
     }
 
@@ -84,8 +85,8 @@ class ListsSpecificationTest{
             val list = "GAGA"
         })
 
-        val response = deserialize(schema.execute("query(\$list: [String]){list(list: \$list)}", variables))
-        assertThat(extract<String>(response, "data/list[0]"), equalTo("GAGA"))
+        val response = deserialize(schema.execute("query(\$list: [String!]!){list(list: \$list)}", variables))
+        assertThat(response.extract<String>("data/list[0]"), equalTo("GAGA"))
     }
 
     @Test
@@ -101,7 +102,23 @@ class ListsSpecificationTest{
             val list = null
         })
 
-        val response = deserialize(schema.execute("query(\$list: [String]){list(list: \$list)}", variables))
-        assertThat(extract<String>(response, "data/list"), nullValue())
+        val response = deserialize(schema.execute("query(\$list: [String!]!){list(list: \$list)}", variables))
+        assertThat(response.extract<String>("data/list"), nullValue())
+    }
+
+    @Test
+    fun `list argument can be declared non-nullable`(){
+        val schema = KGraphQL.schema {
+            query("list"){
+                resolver{ list: List<String> -> list }
+            }
+        }
+
+        val variables = objectMapper.writeValueAsString(object {
+            val list = listOf("GAGA", "DADA", "PADA")
+        })
+
+        val response = deserialize(schema.execute("query(\$list: [String!]!){list(list: \$list)}", variables))
+        assertThat(response.extract<Any>("data/list"), notNullValue())
     }
 }

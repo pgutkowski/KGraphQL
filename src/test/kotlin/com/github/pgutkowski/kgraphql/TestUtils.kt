@@ -22,10 +22,10 @@ fun getMap(map : Map<*,*>, key : String) : Map<*,*>{
 }
 
 @Suppress("UNCHECKED_CAST")
-fun <T>extract(map: Map<*,*>, path : String) : T {
+fun <T> Map<*, *>.extract(path: String) : T {
     val tokens = path.trim().split('/').filter(String::isNotBlank)
     try {
-        return tokens.fold(map as Any?, { workingMap, token ->
+        return tokens.fold(this as Any?, { workingMap, token ->
             if(token.contains('[')){
                 val list = (workingMap as Map<*,*>)[token.substringBefore('[')]
                 val index = token[token.indexOf('[')+1].toString().toInt()
@@ -35,13 +35,13 @@ fun <T>extract(map: Map<*,*>, path : String) : T {
             }
         }) as T
     } catch (e : Exception){
-        throw IllegalArgumentException("Path: $path does not exist in map: $map", e)
+        throw IllegalArgumentException("Path: $path does not exist in map: ${this}", e)
     }
 }
 
 fun <T>extractOrNull(map: Map<*,*>, path : String) : T? {
     try {
-        return extract(map, path)
+        return map.extract(path)
     } catch (e: IllegalArgumentException){
         return null
     }
@@ -57,7 +57,7 @@ fun assertNoErrors(map : Map<*,*>) {
 }
 
 fun assertError(map : Map<*,*>, vararg messageElements : String) {
-    val errorMessage = extract<String>(map, "errors/message")
+    val errorMessage = map.extract<String>("errors/message")
     MatcherAssert.assertThat(errorMessage, CoreMatchers.notNullValue())
 
     messageElements

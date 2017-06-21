@@ -1,6 +1,7 @@
 package com.github.pgutkowski.kgraphql.request
 
 import com.github.pgutkowski.kgraphql.RequestException
+import com.github.pgutkowski.kgraphql.not
 
 val OPERANDS = "{}():[]"
 
@@ -147,7 +148,7 @@ private fun parseOperationVariables(variablesTokens: List<String>): MutableList<
             defaultTypeStarted && variableDefaultValue == null -> variableDefaultValue = variableToken
             else -> {
                 //if variableName of variableType would be null, it would already be matched
-                operationVariables.add(OperationVariable(variableName, variableType, variableDefaultValue))
+                operationVariables.add(OperationVariable(variableName, variableType.toTypeReference(), variableDefaultValue))
                 variableName = variableToken
                 variableType = null
                 defaultTypeStarted = false
@@ -156,9 +157,19 @@ private fun parseOperationVariables(variablesTokens: List<String>): MutableList<
         }
     }
     if(variableName != null && variableType != null){
-        operationVariables.add(OperationVariable(variableName, variableType, variableDefaultValue))
+        operationVariables.add(OperationVariable(variableName, variableType.toTypeReference(), variableDefaultValue))
     }
     return operationVariables
+}
+
+val TYPE_WRAPPERS = arrayOf('!', '[', ']')
+
+fun String.toTypeReference() : TypeReference {
+    val isNullable = not(endsWith("!"))
+    val isList = startsWith("[") && (endsWith("]") || endsWith("]!"))
+    val isElementNullable = isList && not(endsWith("!]") || endsWith("!]!"))
+    val name = dropWhile { it in TYPE_WRAPPERS }.dropLastWhile { it in TYPE_WRAPPERS }
+    return TypeReference(name, isNullable, isList, isElementNullable)
 }
 
 fun indexOfClosingBracket(tokens: List<String>, startIndex: Int) : Int {

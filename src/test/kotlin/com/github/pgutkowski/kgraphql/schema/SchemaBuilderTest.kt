@@ -194,7 +194,7 @@ class SchemaBuilderTest {
         }
 
         val result = deserialize(schema.execute("query(\$type : TYPE = FULL_LENGTH){actor(type: \$type){name}}"))
-        assertThat(extract<String>(result, "data/actor/name"), equalTo("Boguś Linda FULL_LENGTH"))
+        assertThat(result.extract<String>("data/actor/name"), equalTo("Boguś Linda FULL_LENGTH"))
     }
 
     private data class LambdaWrapper(val lambda : () -> Int)

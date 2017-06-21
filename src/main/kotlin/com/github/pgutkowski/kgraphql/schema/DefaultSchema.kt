@@ -14,6 +14,7 @@ import com.github.pgutkowski.kgraphql.schema.structure.TypeDefinitionProvider
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.full.starProjectedType
+import kotlin.reflect.full.withNullability
 
 class DefaultSchema(
         internal val definition: SchemaDefinition,
@@ -70,9 +71,13 @@ class DefaultSchema(
 
     override fun typeByKClass(kClass: KClass<*>): KQLType? = typeByKType(kClass.starProjectedType)
 
-    override fun typeByKType(kType: KType): KQLType? = structure.queryTypes[kType]?.kqlType
+    override fun typeByKType(kType: KType): KQLType? = structure.queryTypes[kType.withNullability(false)]?.kqlType
 
     override fun inputTypeByKClass(kClass: KClass<*>): KQLType? = inputTypeByKType(kClass.starProjectedType)
 
-    override fun inputTypeByKType(kType: KType): KQLType? = structure.inputTypes[kType]?.kqlType
+    override fun inputTypeByKType(kType: KType): KQLType? = structure.inputTypes[kType.withNullability(false)]?.kqlType
+
+    override fun typeByName(name: String): KQLType? = structure.queryTypeByName[name]?.kqlType
+
+    override fun inputTypeByName(name: String): KQLType? = structure.inputTypeByName[name]?.kqlType
 }

@@ -38,7 +38,7 @@ class SourceTextSpecificationTest {
     fun `ignore unicode BOM character`() {
         val map = deserialize(schema.execute("\uFEFF{fizz}"))
         assertNoErrors(map)
-        assertThat(extract<String>(map, "data/fizz"), equalTo("buzz"))
+        assertThat(map.extract<String>("data/fizz"), equalTo("buzz"))
     }
 
     @Test
@@ -101,6 +101,6 @@ class SourceTextSpecificationTest {
 
         val mapLowerCase = deserialize(schema.execute("{fizz}"))
         assertNoErrors(mapLowerCase)
-        assertThat(extract<String>(mapLowerCase, "data/fizz"), equalTo("buzz"))
+        assertThat(mapLowerCase.extract<String>("data/fizz"), equalTo("buzz"))
     }
 }

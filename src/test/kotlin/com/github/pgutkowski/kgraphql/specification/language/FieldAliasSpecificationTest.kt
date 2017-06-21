@@ -31,13 +31,13 @@ class FieldAliasSpecificationTest {
     @Test
     fun `can define response object field name`(){
         val map = deserialize(schema.execute("{actor{ageMonths: age(inMonths : true) ageYears: age(inMonths : false)}}"))
-        assertThat(extract<Int>(map, "data/actor/ageMonths"), equalTo(age * 12))
-        assertThat(extract<Int>(map, "data/actor/ageYears"), equalTo(age))
+        assertThat(map.extract<Int>("data/actor/ageMonths"), equalTo(age * 12))
+        assertThat(map.extract<Int>("data/actor/ageYears"), equalTo(age))
     }
 
     @Test
     fun `top level of a query can be given alias`(){
         val map = deserialize(schema.execute("{ boguś : actor{name}}"))
-        assertThat(extract<String>(map, "data/boguś/name"), equalTo(actorName))
+        assertThat(map.extract<String>("data/boguś/name"), equalTo(actorName))
     }
 }

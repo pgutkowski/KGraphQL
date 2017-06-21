@@ -25,7 +25,7 @@ class FieldsSpecificationTest {
     @Test
     fun `field may itself contain a selection set`() {
         val response = deserialize(schema.execute("{actor{id, actualActor{name, age}}}"))
-        val map = extract<Map<String, Any>>(response, "data/actor/actualActor")
+        val map = response.extract<Map<String, Any>>("data/actor/actualActor")
         MatcherAssert.assertThat(map, CoreMatchers.equalTo(mapOf("name" to "Boguś Linda", "age" to age)))
     }
 }

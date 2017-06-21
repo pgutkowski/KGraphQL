@@ -41,7 +41,7 @@ class InputValuesSpecificationTest {
     fun `Int input value`(){
         val input = 4356
         val response = deserialize(schema.execute("{Int(value : $input)}"))
-        assertThat(extract<Int>(response, "data/Int"), equalTo(input))
+        assertThat(response.extract<Int>("data/Int"), equalTo(input))
     }
 
     @Test
@@ -49,7 +49,7 @@ class InputValuesSpecificationTest {
     fun `Float input value`(){
         val input : Double = 4356.34
         val response = deserialize(schema.execute("{Float(value : $input)}"))
-        assertThat(extract<Double>(response, "data/Float"), equalTo(input))
+        assertThat(response.extract<Double>("data/Float"), equalTo(input))
     }
 
     @Test
@@ -58,7 +58,7 @@ class InputValuesSpecificationTest {
         //GraphQL Float is Kotlin Double
         val input = 4356.34
         val response = deserialize(schema.execute("{Double(value : $input)}"))
-        assertThat(extract<Double>(response, "data/Double"), equalTo(input))
+        assertThat(response.extract<Double>("data/Double"), equalTo(input))
     }
 
     @Test
@@ -66,7 +66,7 @@ class InputValuesSpecificationTest {
     fun `Double with exponential input value`(){
         val input = 4356.34e2
         val response = deserialize(schema.execute("{Double(value : $input)}"))
-        assertThat(extract<Double>(response, "data/Double"), equalTo(input))
+        assertThat(response.extract<Double>("data/Double"), equalTo(input))
     }
 
     @Test
@@ -74,7 +74,7 @@ class InputValuesSpecificationTest {
     fun `String input value`(){
         val input = "\\Ala ma kota \\\n\\kot ma Alę\\"
         val response = deserialize(schema.execute("{String(value : \"$input\")}"))
-        assertThat(extract<String>(response, "data/String"), equalTo(input))
+        assertThat(response.extract<String>("data/String"), equalTo(input))
     }
 
     @Test
@@ -82,7 +82,7 @@ class InputValuesSpecificationTest {
     fun `Boolean input value`(){
         val input = true
         val response = deserialize(schema.execute("{Boolean(value : $input)}"))
-        assertThat(extract<Boolean>(response, "data/Boolean"), equalTo(input))
+        assertThat(response.extract<Boolean>("data/Boolean"), equalTo(input))
     }
 
     @Test
@@ -97,21 +97,21 @@ class InputValuesSpecificationTest {
     @Specification("2.9.5 Null Value")
     fun `Null input value`(){
         val response = deserialize(schema.execute("{Null(value : null)}"))
-        assertThat(extract<Nothing?>(response, "data/Null"), equalTo(null))
+        assertThat(response.extract<Nothing?>("data/Null"), equalTo(null))
     }
 
     @Test
     @Specification("2.9.6 Enum Value")
     fun `Enum input value`(){
         val response = deserialize(schema.execute("{Enum(value : ENUM1)}"))
-        assertThat(extract<String>(response, "data/Enum"), equalTo(FakeEnum.ENUM1.toString()))
+        assertThat(response.extract<String>("data/Enum"), equalTo(FakeEnum.ENUM1.toString()))
     }
 
     @Test
     @Specification("2.9.7 List Value")
     fun `List input value`(){
         val response = deserialize(schema.execute("{List(value : [23, 3, 23])}"))
-        assertThat(extract<List<Int>>(response, "data/List"), equalTo(listOf(23, 3, 23)))
+        assertThat(response.extract<List<Int>>("data/List"), equalTo(listOf(23, 3, 23)))
     }
 
     @Test
@@ -120,7 +120,7 @@ class InputValuesSpecificationTest {
     fun `Literal object input value`(){
         val response = deserialize(schema.execute("{Object(value: {number: 232, description: \"little number\"}){number, description}}"))
         assertThat(
-                extract<Map<String, Any>>(response, "data/Object"),
+                response.extract<Map<String, Any>>("data/Object"),
                 equalTo(mapOf("number" to 232, "description" to "little number"))
         )
     }
@@ -137,7 +137,7 @@ class InputValuesSpecificationTest {
                 "{number, description}}"
         ))
         assertThat(
-                extract<List<String>>(response, "data/Object/list"),
+                response.extract<List<String>>("data/Object/list"),
                 equalTo(listOf("number", "description", "little number"))
         )
     }
@@ -146,21 +146,21 @@ class InputValuesSpecificationTest {
     @Specification("2.9.8 Object Value")
     fun `Object input value`(){
         val response = deserialize(schema.execute(
-                "query(\$object: FakeData){Object(value: \$object)}",
+                "query(\$object: FakeData!){Object(value: \$object)}",
                 "{ \"object\" : {\"number\":232, \"description\":\"little number\"}}"
         ))
-        assertThat(extract<Int>(response, "data/Object"), equalTo(232))
+        assertThat(response.extract<Int>("data/Object"), equalTo(232))
     }
 
     @Test
     @Specification("2.9.8 Object Value")
     fun `Object input value with list field`(){
         val response = deserialize(schema.execute(
-                "query(\$object: FakeData){ObjectList(value: \$object)}",
+                "query(\$object: FakeData!){ObjectList(value: \$object)}",
                 "{ \"object\" : {\"number\":232, \"description\":\"little number\", \"list\" : [\"number\",\"description\",\"little number\"]}}"
         ))
         assertThat(
-                extract<List<String>>(response, "data/ObjectList"),
+                response.extract<List<String>>("data/ObjectList"),
                 equalTo(listOf("number", "description", "little number"))
         )
     }
@@ -168,7 +168,7 @@ class InputValuesSpecificationTest {
     @Test
     @Specification("2.9.8 Object Value")
     fun `Unknown object input value type`(){
-        expect<IllegalArgumentException>("Invalid variable argument type FakeDate, expected FakeData"){
+        expect<RequestException>("Invalid variable \$object argument type FakeDate, expected FakeData!"){
             schema.execute("query(\$object: FakeDate){Object(value: \$object)}")
         }
     }

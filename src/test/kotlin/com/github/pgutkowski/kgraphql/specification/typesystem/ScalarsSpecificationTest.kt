@@ -34,13 +34,13 @@ class ScalarsSpecificationTest {
         }
 
         val queryResponse = deserialize(testedSchema.execute("{person{uuid}}"))
-        assertThat(extract<String>(queryResponse, "data/person/uuid"), equalTo(uuid.toString()))
+        assertThat(queryResponse.extract<String>("data/person/uuid"), equalTo(uuid.toString()))
 
         val mutationResponse = deserialize(testedSchema.execute(
                         "{createPerson(uuid: \"$uuid\", name: \"John\"){uuid name}}"
         ))
-        assertThat(extract<String>(mutationResponse, "data/createPerson/uuid"), equalTo(uuid.toString()))
-        assertThat(extract<String>(mutationResponse, "data/createPerson/name"), equalTo("John"))
+        assertThat(mutationResponse.extract<String>("data/createPerson/uuid"), equalTo(uuid.toString()))
+        assertThat(mutationResponse.extract<String>("data/createPerson/name"), equalTo("John"))
     }
 
     @Test
@@ -64,7 +64,7 @@ class ScalarsSpecificationTest {
             }
         }
         val map = deserialize(schema.execute("{float(float: 1)}"))
-        assertThat(extract<Double>(map, "data/float"), equalTo(1.0))
+        assertThat(map.extract<Double>("data/float"), equalTo(1.0))
     }
 
     @Test
@@ -83,7 +83,7 @@ class ScalarsSpecificationTest {
 
         val randomUUID = UUID.randomUUID()
         val map = deserialize(testedSchema.execute("query(\$id: ID = \"$randomUUID\"){personById(id: \$id){uuid, name}}"))
-        assertThat(extract<String>(map, "data/personById/uuid"), equalTo(randomUUID.toString()))
+        assertThat(map.extract<String>("data/personById/uuid"), equalTo(randomUUID.toString()))
     }
 
 
@@ -118,7 +118,7 @@ class ScalarsSpecificationTest {
 
         val value = 3434
         val response = deserialize(schema.execute("{number(number: $value)}"))
-        assertThat(extract<Int>(response, "data/number"), equalTo(value))
+        assertThat(response.extract<Int>("data/number"), equalTo(value))
     }
 
     data class Bool(val boolean: Boolean)
@@ -139,7 +139,7 @@ class ScalarsSpecificationTest {
 
         val value = true
         val response = deserialize(schema.execute("{boolean(boolean: $value)}"))
-        assertThat(extract<Boolean>(response, "data/boolean"), equalTo(value))
+        assertThat(response.extract<Boolean>("data/boolean"), equalTo(value))
     }
 
     data class Dob(val double : Double)
@@ -160,6 +160,6 @@ class ScalarsSpecificationTest {
 
         val value = 232.33
         val response = deserialize(schema.execute("{double(double: $value)}"))
-        assertThat(extract<Double>(response, "data/double"), equalTo(value))
+        assertThat(response.extract<Double>("data/double"), equalTo(value))
     }
 }

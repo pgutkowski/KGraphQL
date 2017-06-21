@@ -46,6 +46,6 @@ class QueryDocumentSpecificationTest {
                 "{\"operationName\":\"FIZZ\"}"
         ))
         assertNoErrors(map)
-        assertThat(extract<String>(map, "data/fizz"), equalTo("buzz"))
+        assertThat(map.extract<String>("data/fizz"), equalTo("buzz"))
     }
 }

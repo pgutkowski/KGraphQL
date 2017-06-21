@@ -18,21 +18,21 @@ class MutationTest : BaseSchemaTest() {
     fun `simple mutation multiple fields`(){
         val map = execute("mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}){name, age}}")
         assertNoErrors(map)
-        assertThat(extract<Map<String, Any>>(map, "data/createActor"), equalTo(mapOf("name" to testActor.name, "age" to testActor.age)))
+        assertThat(map.extract<Map<String, Any>>("data/createActor"), equalTo(mapOf("name" to testActor.name, "age" to testActor.age)))
     }
 
     @Test
     fun `simple mutation single field`(){
         val map = execute("mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}){name}}")
         assertNoErrors(map)
-        assertThat(extract<Map<String, Any>>(map, "data/createActor"), equalTo(mapOf<String, Any>("name" to testActor.name)))
+        assertThat(map.extract<Map<String, Any>>("data/createActor"), equalTo(mapOf<String, Any>("name" to testActor.name)))
     }
 
     @Test
     fun `simple mutation single field 2`(){
         val map = execute("mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}){age}}")
         assertNoErrors(map)
-        assertThat(extract<Map<String, Any>>(map, "data/createActor"), equalTo(mapOf<String, Any>("age" to testActor.age)))
+        assertThat(map.extract<Map<String, Any>>("data/createActor"), equalTo(mapOf<String, Any>("age" to testActor.age)))
     }
 
     @Test
@@ -60,13 +60,13 @@ class MutationTest : BaseSchemaTest() {
     fun `mutation with alias`(){
         val map = execute("{caine : createActor(name: \"${testActor.name}\", age: ${testActor.age}){age}}")
         assertNoErrors(map)
-        assertThat(extract<Map<String, Any>>(map, "data/caine"), equalTo(mapOf<String, Any>("age" to testActor.age)))
+        assertThat(map.extract<Map<String, Any>>("data/caine"), equalTo(mapOf<String, Any>("age" to testActor.age)))
     }
 
     @Test
     fun `mutation with field alias`(){
         val map = execute("mutation {createActor(name: \"${testActor.name}\", age: ${testActor.age}){howOld: age}}")
         assertNoErrors(map)
-        assertThat(extract<Map<String, Any>>(map, "data/createActor"), equalTo(mapOf<String, Any>("howOld" to testActor.age)))
+        assertThat(map.extract<Map<String, Any>>("data/createActor"), equalTo(mapOf<String, Any>("howOld" to testActor.age)))
     }
 }

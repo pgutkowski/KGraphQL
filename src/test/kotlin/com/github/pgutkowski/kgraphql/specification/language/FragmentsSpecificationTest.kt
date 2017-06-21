@@ -80,15 +80,15 @@ class FragmentsSpecificationTest {
     fun `query with inline fragment with type condition`(){
         val map = BaseTestSchema.execute("{people{name, age, ... on Actor {isOld} ... on Director {favActors{name}}}}")
         assertNoErrors(map)
-        for(i in extract<List<*>>(map, "data/people").indices){
-            val name = extract<String>(map, "data/people[$i]/name")
+        for(i in map.extract<List<*>>("data/people").indices){
+            val name = map.extract<String>("data/people[$i]/name")
             when(name){
                 "David Fincher" /* director */  ->{
-                    MatcherAssert.assertThat(extract<List<*>>(map, "data/people[$i]/favActors"), CoreMatchers.notNullValue())
+                    MatcherAssert.assertThat(map.extract<List<*>>("data/people[$i]/favActors"), CoreMatchers.notNullValue())
                     MatcherAssert.assertThat(extractOrNull<Boolean>(map, "data/people[$i]/isOld"), CoreMatchers.nullValue())
                 }
                 "Brad Pitt" /* actor */ -> {
-                    MatcherAssert.assertThat(extract<Boolean>(map, "data/people[$i]/isOld"), CoreMatchers.notNullValue())
+                    MatcherAssert.assertThat(map.extract<Boolean>("data/people[$i]/isOld"), CoreMatchers.notNullValue())
                     MatcherAssert.assertThat(extractOrNull<List<*>>(map, "data/people[$i]/favActors"), CoreMatchers.nullValue())
                 }
             }
@@ -99,15 +99,15 @@ class FragmentsSpecificationTest {
     fun `query with external fragment with type condition`(){
         val map = BaseTestSchema.execute("{people{name, age ...act ...dir}} fragment act on Actor {isOld} fragment dir on Director {favActors{name}}")
         assertNoErrors(map)
-        for(i in extract<List<*>>(map, "data/people").indices){
-            val name = extract<String>(map, "data/people[$i]/name")
+        for(i in map.extract<List<*>>("data/people").indices){
+            val name = map.extract<String>("data/people[$i]/name")
             when(name){
                 "David Fincher" /* director */  ->{
-                    MatcherAssert.assertThat(extract<List<*>>(map, "data/people[$i]/favActors"), CoreMatchers.notNullValue())
+                    MatcherAssert.assertThat(map.extract<List<*>>("data/people[$i]/favActors"), CoreMatchers.notNullValue())
                     MatcherAssert.assertThat(extractOrNull<Boolean>(map, "data/people[$i]/isOld"), CoreMatchers.nullValue())
                 }
                 "Brad Pitt" /* actor */ -> {
-                    MatcherAssert.assertThat(extract<Boolean>(map, "data/people[$i]/isOld"), CoreMatchers.notNullValue())
+                    MatcherAssert.assertThat(map.extract<Boolean>("data/people[$i]/isOld"), CoreMatchers.notNullValue())
                     MatcherAssert.assertThat(extractOrNull<List<*>>(map, "data/people[$i]/favActors"), CoreMatchers.nullValue())
                 }
             }

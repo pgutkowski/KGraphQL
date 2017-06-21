@@ -26,7 +26,7 @@ class InterfacesSpecificationTest {
     @Test
     fun `Interfaces represent a list of named fields and their arguments`(){
         val map = deserialize(schema.execute("{simple{exe}}"))
-        assertThat(extract(map, "data/simple/exe"), equalTo("EXE"))
+        assertThat(map.extract("data/simple/exe"), equalTo("EXE"))
     }
 
     @Test
@@ -39,6 +39,6 @@ class InterfacesSpecificationTest {
     @Test
     fun `Query for fields of interface implementation can be done only by fragments`(){
         val map = deserialize(schema.execute("{simple{exe ... on Simple { stuff }}}"))
-        assertThat(extract(map, "data/simple/stuff"), equalTo("CMD"))
+        assertThat(map.extract("data/simple/stuff"), equalTo("CMD"))
     }
 }

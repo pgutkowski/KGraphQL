@@ -2,6 +2,7 @@ package com.github.pgutkowski.kgraphql.schema.execution
 
 import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.RequestException
+import com.github.pgutkowski.kgraphql.isCollection
 import com.github.pgutkowski.kgraphql.isNotNullable
 import com.github.pgutkowski.kgraphql.isNullable
 import com.github.pgutkowski.kgraphql.request.Arguments
@@ -35,8 +36,8 @@ internal class ArgumentsHandler(schema : DefaultSchema) : ArgumentTransformer(sc
                 value == null && parameter.isNullable() -> null
                 value == null && parameter.isNotNullable() -> {
                     throw RequestException (
-                            "argument ${parameter.name} of type ${schema.typeByKType(parameter.type)} " +
-                            "is no nullable, value cannot be null"
+                            "argument '${parameter.name}' of type ${schema.typeReference(parameter.type)} " +
+                            "on field '$funName' is not nullable, value cannot be null"
                     )
                 }
                 value is String -> {
@@ -46,7 +47,7 @@ internal class ArgumentsHandler(schema : DefaultSchema) : ArgumentTransformer(sc
                     }
                     transformedValue
                 }
-                value is List<*> && parameter.type.jvmErasure == List::class -> {
+                value is List<*> && parameter.type.jvmErasure.isCollection() -> {
                     value.map { element ->
                         if(element is String){
                             transformCollectionElementValue(parameter, element, variables)

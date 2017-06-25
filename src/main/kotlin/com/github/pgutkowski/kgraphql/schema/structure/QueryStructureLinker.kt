@@ -4,6 +4,7 @@ import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.memberProperties
 
@@ -23,12 +24,7 @@ class QueryStructureLinker(
 
         kClass.memberProperties
                 .filterNot { kqlObject.isIgnored(it) }
-                .associateTo(type.mutableProperties) { property ->
-                    validateName(property.name)
-                    property.name to handleKotlinProperty (
-                            property, kqlObject.transformations.find { it.kProperty == property }
-                    )
-                }
+                .associateTo(type.mutableProperties) { property -> linkProperty(property, kqlObject) }
 
         kqlObject.extensionProperties.associateTo(type.mutableProperties) { property ->
             property.name to handleFunctionProperty(property)
@@ -43,5 +39,20 @@ class QueryStructureLinker(
         }
 
         return type
+    }
+
+    private fun <T : Any> linkProperty(property: KProperty1<T, *>, kqlObject: KQLType.Object<out Any>): Pair<String, SchemaNode.Property> {
+        validateName(property.name)
+        val propertyDefinition = kqlObject.kotlinProperties[property]
+
+        if (propertyDefinition != null) {
+            return property.name to handleKotlinProperty(
+                    propertyDefinition, kqlObject.transformations.find { it.kProperty == property }
+            )
+        } else {
+            return property.name to handleKotlinProperty(
+                    property, kqlObject.transformations.find { it.kProperty == property }
+            )
+        }
     }
 }

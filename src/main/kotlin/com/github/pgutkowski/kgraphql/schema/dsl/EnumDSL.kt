@@ -8,7 +8,14 @@ class EnumDSL<T : Enum<T>>(kClass: KClass<T>, block : (EnumDSL<T>.() -> Unit)?) 
 
     var name = kClass.defaultKQLTypeName()
 
+    val valueDefinitions = mutableMapOf<T, EnumValueDSL<T>>()
+
     init {
         block?.invoke(this)
     }
+
+    fun value(value : T, block : EnumValueDSL<T>.() -> Unit){
+        valueDefinitions[value] = EnumValueDSL(value, block)
+    }
+
 }

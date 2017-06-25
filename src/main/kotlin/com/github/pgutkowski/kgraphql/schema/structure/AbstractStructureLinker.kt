@@ -82,6 +82,11 @@ abstract class AbstractStructureLinker (
         return SchemaNode.Property(KQLProperty.Kotlin(property), linkType(property.returnType), transformation)
     }
 
+    protected fun <T, R> handleKotlinProperty(property: KQLProperty.Kotlin<T, R>, transformation: Transformation<out Any, out Any?>?) : SchemaNode.Property {
+        return SchemaNode.Property(property, linkType(property.kProperty.returnType), transformation)
+    }
+
+
     fun <T : Any> assertNotEnumNorFunction(kClass: KClass<T>) {
         when {
             kClass.isSubclassOf(Enum::class) ->

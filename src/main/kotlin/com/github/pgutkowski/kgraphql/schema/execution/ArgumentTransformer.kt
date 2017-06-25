@@ -50,7 +50,7 @@ open class ArgumentTransformer(val schema : DefaultSchema) {
             if(value.isLiteral()) {
                 throw RequestException("String literal '$value' is invalid value for enum type ${enumType.name}")
             }
-            return enumType.values.find { it.name == value } ?: throwInvalidEnumValue(enumType)
+            return enumType.values.find { it.name == value }?.value ?: throwInvalidEnumValue(enumType)
         } ?: scalarsByType[lookupType]?.let { scalarType ->
             return deserializeScalar(scalarType, value)
         } ?: throw RequestException("Invalid argument value '$value' for type ${schema.inputTypeByKType(lookupType)?.name}")

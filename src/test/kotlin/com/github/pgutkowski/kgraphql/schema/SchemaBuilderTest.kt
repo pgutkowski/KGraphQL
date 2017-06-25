@@ -50,7 +50,11 @@ class SchemaBuilderTest {
                 resolver { -> Scenario(Id("GKalus", 234234), "Gamil Kalus", "TOO LONG") }
             }
             type<Scenario>{
-                ignore(Scenario::author)
+                Scenario::author.ignore()
+                Scenario::content.describe {
+                    description = "Content is Content"
+                    isDeprecated = false
+                }
             }
         }
 

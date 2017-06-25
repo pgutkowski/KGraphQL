@@ -3,6 +3,7 @@ package com.github.pgutkowski.kgraphql.schema.dsl
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.Schema
 import com.github.pgutkowski.kgraphql.schema.SchemaException
+import com.github.pgutkowski.kgraphql.schema.model.KQLEnumValue
 import com.github.pgutkowski.kgraphql.schema.model.KQLMutation
 import com.github.pgutkowski.kgraphql.schema.model.KQLQuery
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
@@ -104,7 +105,14 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
 
     fun <T : Enum<T>>enum(kClass: KClass<T>, enumValues : Array<T>, block: (EnumDSL<T>.() -> Unit)? = null){
         val type = EnumDSL(kClass, block)
-        model.addEnum(KQLType.Enumeration(type.name, kClass, enumValues, type.description))
+
+        val kqlEnumValues = enumValues.map { value ->
+            type.valueDefinitions[value]?.let { valueDSL ->
+                KQLEnumValue(value, valueDSL.description, valueDSL.isDeprecated, valueDSL.deprecationReason)
+            } ?: KQLEnumValue(value)
+        }
+
+        model.addEnum(KQLType.Enumeration(type.name, kClass, kqlEnumValues, type.description))
     }
 
     inline fun <reified T : Enum<T>> enum(noinline block: (EnumDSL<T>.() -> Unit)? = null) {

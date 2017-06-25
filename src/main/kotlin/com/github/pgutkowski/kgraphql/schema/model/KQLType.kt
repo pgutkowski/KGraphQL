@@ -19,17 +19,41 @@ interface KQLType {
     class Object<T : Any> (
             name : String,
             override val kClass: KClass<T>,
-            val ignoredProperties : List<KProperty1<T, *>>,
+            val kotlinProperties: Map<KProperty1<T, *>, KQLProperty.Kotlin<T, *>>,
             val extensionProperties : List<KQLProperty.Function<*>>,
             val unionProperties : List<KQLProperty.Union>,
             val transformations : List<Transformation<T, *>>,
             description : String?
     ) : BaseKQLType(name, description), Kotlin<T> {
 
-        constructor(name : String, kClass: KClass<T>) : this(name, kClass, emptyList(), emptyList(), emptyList(), emptyList(), null)
+        constructor (
+                name : String, kClass: KClass<T>
+        ) : this(name, kClass, emptyMap(), emptyList(), emptyList(), emptyList(), null)
 
-        fun isIgnored(property: KProperty1<*, *>): Boolean = ignoredProperties.any { it == property }
+        fun isIgnored(property: KProperty1<*, *>): Boolean = kotlinProperties[property]?.isIgnored ?: false
     }
+
+    /**
+     * duplicates object fields, but that's intentional: [Object] and [Interface] should not inherit from each other
+     * to avoid bugs in type checks
+     */
+    class Interface<T : Any> (
+            name : String,
+            override val kClass: KClass<T>,
+            val kotlinProperties: Map<KProperty1<T, *>, KQLProperty.Kotlin<T, *>>,
+            val extensionProperties : List<KQLProperty.Function<*>>,
+            val unionProperties : List<KQLProperty.Union>,
+            val transformations : List<Transformation<T, *>>,
+            description : String?
+    ) : BaseKQLType(name, description), Kotlin<T> {
+
+        constructor (
+                name : String, kClass: KClass<T>
+        ) : this(name, kClass, emptyMap(), emptyList(), emptyList(), emptyList(), null)
+
+        fun isIgnored(property: KProperty1<*, *>): Boolean = kotlinProperties[property]?.isIgnored ?: false
+    }
+
 
     class Input<T : Any>(
             name : String,
@@ -54,7 +78,7 @@ interface KQLType {
     class Enumeration<T : Enum<T>> (
             name: String,
             override val kClass: KClass<T>,
-            val values: Array<T>,
+            val values: List<KQLEnumValue<T>>,
             description : String?
     ) : BaseKQLType(name, description), Kotlin<T>
 }

@@ -1,9 +1,11 @@
 package com.github.pgutkowski.kgraphql.schema.dsl
 
 import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
+import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
+import com.github.pgutkowski.kgraphql.schema.model.KQLType
 
 
-class UnionPropertyDSL<T>(block: UnionPropertyDSL<T>.() -> Unit) : ItemDSL() {
+class UnionPropertyDSL<T>(val name : String, block: UnionPropertyDSL<T>.() -> Unit) : DepreciableItemDSL() {
     init {
         block()
     }
@@ -26,5 +28,16 @@ class UnionPropertyDSL<T>(block: UnionPropertyDSL<T>.() -> Unit) : ItemDSL() {
 
     fun <E, W, Q>resolver(function: (T, E, W, Q) -> Any?){
         functionWrapper = FunctionWrapper.on(function, true)
+    }
+
+    fun toKQL(union : KQLType.Union): KQLProperty.Union {
+        return KQLProperty.Union(
+                name = name,
+                resolver = functionWrapper,
+                union = union,
+                description = description,
+                isDeprecated = isDeprecated,
+                deprecationReason = deprecationReason
+        )
     }
 }

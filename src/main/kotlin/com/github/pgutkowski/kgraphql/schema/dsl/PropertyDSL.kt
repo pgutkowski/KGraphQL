@@ -1,9 +1,10 @@
 package com.github.pgutkowski.kgraphql.schema.dsl
 
 import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
+import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 
 
-class PropertyDSL<T, R>(block : PropertyDSL<T, R>.() -> Unit) : ItemDSL() {
+class PropertyDSL<T, R>(val name : String, block : PropertyDSL<T, R>.() -> Unit) : DepreciableItemDSL() {
 
     init {
         block()
@@ -25,5 +26,15 @@ class PropertyDSL<T, R>(block : PropertyDSL<T, R>.() -> Unit) : ItemDSL() {
 
     fun <E, W, Q>resolver(function: (T, E, W, Q) -> R){
         functionWrapper = FunctionWrapper.on(function, true)
+    }
+
+    fun toKQL(): KQLProperty.Function<R> {
+        return KQLProperty.Function(
+                name,
+                functionWrapper,
+                description,
+                isDeprecated,
+                deprecationReason
+        )
     }
 }

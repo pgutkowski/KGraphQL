@@ -20,7 +20,7 @@ sealed class SchemaNode {
             val unionProperties: Map<String, SchemaNode.UnionProperty> = emptyMap()
     ) : SchemaNode()
 
-    class ReturnType(
+    class ReturnType (
             val type: SchemaNode.Type,
             val isCollection : Boolean = false,
             val isNullable: Boolean = false,

@@ -84,7 +84,9 @@ abstract class BaseSchemaTest {
         enum<FilmType>{ description = "type of film, base on its length" }
         type<Person>{ description = "Common data for any person"}
         type<Scenario>{
-            ignore(Scenario::author)
+            property(Scenario::author){
+                ignore = true
+            }
             transformation(Scenario::content) { content : String, uppercase: Boolean? ->
                 if(uppercase == true) content.toUpperCase() else content
             }

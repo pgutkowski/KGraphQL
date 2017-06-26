@@ -4,6 +4,11 @@ import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.builtin.BUILT_IN_TYPE
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
+import com.github.pgutkowski.kgraphql.schema.directive.DirectiveLocation
+import com.github.pgutkowski.kgraphql.schema.introspection.__List
+import com.github.pgutkowski.kgraphql.schema.introspection.__NonNull
+import com.github.pgutkowski.kgraphql.schema.introspection.__Schema
+import com.github.pgutkowski.kgraphql.schema.introspection.__TypeKind
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 
@@ -11,8 +16,10 @@ import kotlin.reflect.full.isSubclassOf
  * Intermediate, mutable data structure used to prepare [SchemaDefinition]
  * Performs basic validation (names duplication etc.) when methods for adding schema components are invoked
  */
-data class MutableSchemaDefinition(
-        private val objects: ArrayList<KQLType.Object<*>> = arrayListOf(),
+data class MutableSchemaDefinition (
+        private val objects: ArrayList<KQLType.Object<*>> = arrayListOf(
+                KQLType.Object(__Schema::class.defaultKQLTypeName(), __Schema::class)
+        ),
         private val queries: ArrayList<KQLQuery<*>> = arrayListOf(),
         private val scalars: ArrayList<KQLType.Scalar<*>> = arrayListOf(
                 BUILT_IN_TYPE.STRING,
@@ -22,7 +29,18 @@ data class MutableSchemaDefinition(
                 BUILT_IN_TYPE.INT
         ),
         private val mutations: ArrayList<KQLMutation<*>> = arrayListOf(),
-        private val enums: ArrayList<KQLType.Enumeration<*>> = arrayListOf(),
+        private val enums: ArrayList<KQLType.Enumeration<*>> = arrayListOf(
+                KQLType.Enumeration (
+                        __TypeKind::class.defaultKQLTypeName(),
+                        __TypeKind::class,
+                        enumValues<__TypeKind>().map { KQLEnumValue(it) }
+                ),
+                KQLType.Enumeration (
+                        "__DirectiveLocation",
+                        DirectiveLocation::class,
+                        enumValues<DirectiveLocation>().map { KQLEnumValue(it) }
+                )
+        ),
         private val unions: ArrayList<KQLType.Union> = arrayListOf(),
         private val directives: ArrayList<Directive> = arrayListOf(
                 Directive.SKIP,
@@ -34,8 +52,14 @@ data class MutableSchemaDefinition(
         val unionsMonitor : List<KQLType.Union>
                 get() = unions
 
-        fun toSchemaModel() : SchemaDefinition {
+        fun toSchemaModel(introspectionSchema: __Schema) : SchemaDefinition {
                 val compiledObjects = ArrayList(this.objects)
+
+                addQuery(KQLQuery("__schema", FunctionWrapper.on<__Schema> { introspectionSchema }))
+
+                addQuery(KQLQuery("__type", FunctionWrapper.on {
+                        name : String -> introspectionSchema.findTypeByName(name)
+                }))
 
                 unions.forEach { union ->
                         if(union.members.isEmpty()){

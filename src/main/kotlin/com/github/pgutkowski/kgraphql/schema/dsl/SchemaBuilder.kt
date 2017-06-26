@@ -3,6 +3,7 @@ package com.github.pgutkowski.kgraphql.schema.dsl
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.Schema
 import com.github.pgutkowski.kgraphql.schema.SchemaException
+import com.github.pgutkowski.kgraphql.schema.introspection.__SchemaProxy
 import com.github.pgutkowski.kgraphql.schema.model.KQLEnumValue
 import com.github.pgutkowski.kgraphql.schema.model.KQLMutation
 import com.github.pgutkowski.kgraphql.schema.model.KQLQuery
@@ -21,7 +22,10 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
 
     fun build(): Schema {
         init()
-        return DefaultSchema(model.toSchemaModel(), configuration.build())
+        val proxy = __SchemaProxy()
+        val schema = DefaultSchema(model.toSchemaModel(proxy), configuration.build())
+        proxy.proxiedSchema = schema
+        return schema
     }
 
     fun configure(block: SchemaConfigurationDSL.() -> Unit){
@@ -33,13 +37,11 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
     //================================================================================
 
     fun query(name : String, init: QueryOrMutationDSL.() -> Unit){
-        val wrapperDSL = QueryOrMutationDSL(init)
-        model.addQuery(KQLQuery(name, wrapperDSL.functionWrapper, wrapperDSL.description))
+        model.addQuery(QueryOrMutationDSL(name, init).toKQLQuery())
     }
 
     fun mutation(name : String, init: QueryOrMutationDSL.() -> Unit){
-        val wrapperDSL = QueryOrMutationDSL(init)
-        model.addMutation(KQLMutation(name, wrapperDSL.functionWrapper, wrapperDSL.description))
+        model.addMutation(QueryOrMutationDSL(name, init).toKQLMutation())
     }
 
     //================================================================================
@@ -138,12 +140,16 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
     // INPUT
     //================================================================================
 
-    fun <T : Any>inputType(kClass: KClass<T>, block : (InputTypeDSL<T>.() -> Unit)? = null) {
+    fun <T : Any>inputType(kClass: KClass<T>, block : InputTypeDSL<T>.() -> Unit) {
         val input = InputTypeDSL(kClass, block)
         model.addInputObject(KQLType.Input(input.name, kClass, input.description))
     }
 
+    inline fun <reified T : Any> inputType(noinline block : InputTypeDSL<T>.() -> Unit) {
+        inputType(T::class, block)
+    }
+
     inline fun <reified T : Any> inputType() {
-        inputType(T::class)
+        inputType(T::class, {})
     }
 }

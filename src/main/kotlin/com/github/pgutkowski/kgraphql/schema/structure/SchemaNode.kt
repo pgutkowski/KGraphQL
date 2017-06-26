@@ -25,7 +25,12 @@ sealed class SchemaNode {
             val isCollection : Boolean = false,
             val isNullable: Boolean = false,
             val areEntriesNullable : Boolean = false
-    ) : SchemaNode.Type(type.kqlType, type.properties, type.unionProperties)
+    ) : SchemaNode.Type(type.kqlType, type.properties, type.unionProperties) {
+
+        val isNotNullable = !isNullable
+
+        val areEntriesNotNullable = !areEntriesNullable
+    }
 
     interface Branch
 

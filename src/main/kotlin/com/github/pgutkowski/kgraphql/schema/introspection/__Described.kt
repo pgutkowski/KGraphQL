@@ -1,7 +1,7 @@
 package com.github.pgutkowski.kgraphql.schema.introspection
 
 
-interface Describable {
+interface __Described {
     val name : String
 
     val description : String?

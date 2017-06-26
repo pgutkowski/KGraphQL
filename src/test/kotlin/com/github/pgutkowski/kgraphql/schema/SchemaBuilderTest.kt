@@ -51,7 +51,7 @@ class SchemaBuilderTest {
             }
             type<Scenario>{
                 Scenario::author.ignore()
-                Scenario::content.describe {
+                Scenario::content.configure {
                     description = "Content is Content"
                     isDeprecated = false
                 }
@@ -205,7 +205,7 @@ class SchemaBuilderTest {
 
     @Test
     fun `function properties cannot be handled`(){
-        expect<SchemaException>("Cannot handle function class kotlin.Function0 as Object type"){
+        expect<SchemaException>("Cannot handle function () -> kotlin.Int as Object type"){
             KGraphQL.schema {
                 query("lambda"){
                     resolver { -> LambdaWrapper({ 1 }) }
@@ -238,5 +238,16 @@ class SchemaBuilderTest {
 
         assertThat(schema.inputTypeByKClass(InputOne::class), notNullValue())
         assertThat(schema.inputTypeByKClass(InputTwo::class), notNullValue())
+    }
+
+    @Test
+    fun `generic types are not supported`(){
+        expect<SchemaException>("Generic types are not supported by GraphQL, found kotlin.Pair<kotlin.Int, kotlin.String>"){
+            defaultSchema {
+                query("data"){
+                    resolver { int: Int, string: String -> int to string }
+                }
+            }
+        }
     }
 }

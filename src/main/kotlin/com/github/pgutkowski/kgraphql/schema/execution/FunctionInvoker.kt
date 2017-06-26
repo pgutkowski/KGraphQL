@@ -19,7 +19,7 @@ internal class FunctionInvoker(private val argumentsHandler: ArgumentsHandler) {
         val transformedArgs = argumentsHandler.transformArguments(funName, functionWrapper, args, variables)
 
         try {
-            if(receiver != null){
+            if(receiver != null && functionWrapper.hasReceiver){
                 return functionWrapper.invoke(receiver, *transformedArgs.toTypedArray())
             } else {
                 return functionWrapper.invoke(*transformedArgs.toTypedArray())

@@ -9,5 +9,9 @@ interface __Schema {
 
     val mutationType : __Type?
 
-    val subscryptionType : __Type?
+    val subscriptionType: __Type?
+
+    val directives: List<__Directive>
+
+    fun findTypeByName(name : String) : __Type?
 }

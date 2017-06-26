@@ -7,6 +7,10 @@ import com.github.pgutkowski.kgraphql.request.DocumentParser
 import com.github.pgutkowski.kgraphql.request.VariablesJson
 import com.github.pgutkowski.kgraphql.schema.execution.ParallelRequestExecutor
 import com.github.pgutkowski.kgraphql.schema.execution.RequestExecutor
+import com.github.pgutkowski.kgraphql.schema.introspection.SchemaIntrospection
+import com.github.pgutkowski.kgraphql.schema.introspection.__Directive
+import com.github.pgutkowski.kgraphql.schema.introspection.__Schema
+import com.github.pgutkowski.kgraphql.schema.introspection.__Type
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import com.github.pgutkowski.kgraphql.schema.model.SchemaDefinition
 import com.github.pgutkowski.kgraphql.schema.structure.SchemaStructure
@@ -29,7 +33,23 @@ class DefaultSchema(
 
     val requestExecutor : RequestExecutor = ParallelRequestExecutor(this)
 
-    /**
+    val introspection = SchemaIntrospection(this)
+
+    /*
+     * introspection
+     */
+    override val types: List<__Type> = introspection.types
+
+    override val queryType: __Type = introspection.queryType
+
+    override val mutationType: __Type? = introspection.mutationType
+
+    override val subscriptionType: __Type? = introspection.subscriptionType
+
+    override val directives: List<__Directive> = introspection.directives
+
+    override fun findTypeByName(name: String): __Type? = introspection.findTypeByName(name)
+    /*
      * objects for request handling
      */
     private val documentParser = if(configuration.useCachingDocumentParser){

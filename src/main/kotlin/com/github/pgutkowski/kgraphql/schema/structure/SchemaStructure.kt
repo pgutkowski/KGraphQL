@@ -167,20 +167,20 @@ class SchemaStructure (
         return RequestException("Unknown type ${fragment.typeCondition} in type condition on fragment ${fragment.fragmentKey}")
     }
 
-    private fun handleTypeChild(childRequestNode: SelectionNode, returnType: SchemaNode.Type): Execution.Node {
-        val property = returnType.properties[childRequestNode.key]
-        val unionProperty = returnType.unionProperties[childRequestNode.key]
+    private fun handleTypeChild(selectionNode: SelectionNode, returnType: SchemaNode.Type): Execution.Node {
+        val property = returnType.properties[selectionNode.key]
+        val unionProperty = returnType.unionProperties[selectionNode.key]
 
         when {
             property == null && unionProperty == null -> {
-                throw RequestException("property ${childRequestNode.key} on ${returnType.kqlType.name} does not exist")
+                throw RequestException("property ${selectionNode.key} on ${returnType.kqlType.name} does not exist")
             }
             property != null && unionProperty == null -> {
-                validatePropertyArguments(property, returnType.kqlType, childRequestNode)
-                return handleBranch(childRequestNode, property)
+                validatePropertyArguments(property, returnType.kqlType, selectionNode)
+                return handleBranch(selectionNode, property)
             }
             property == null && unionProperty != null -> {
-                return handleUnion(childRequestNode, unionProperty)
+                return handleUnion(selectionNode, unionProperty)
             }
             else -> throw SchemaException("Invalid schema structure - type contains doubling properties")
         }

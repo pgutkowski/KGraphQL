@@ -20,6 +20,8 @@ interface FunctionWrapper <T>{
     companion object {
         fun <T> on (function : () -> T) : FunctionWrapper<T> = FunctionWrapper.ArityZero(function)
 
+        fun <T, R> on (function : (R) -> T) = FunctionWrapper.ArityOne(function, false)
+
         fun <T, R> on (function : (R) -> T, hasReceiver: Boolean = false) = FunctionWrapper.ArityOne(function, hasReceiver)
 
         fun <T, R, E> on (function : (R, E) -> T, hasReceiver: Boolean = false) = FunctionWrapper.ArityTwo(function, hasReceiver)

@@ -9,9 +9,9 @@ interface KQLProperty : Depreciable, DescribedKQLObject {
     open class Function<T> (
             name : String,
             resolver: FunctionWrapper<T>,
-            override val description: String?,
-            override val isDeprecated: Boolean,
-            override val deprecationReason: String?
+            override val description: String? = null,
+            override val isDeprecated: Boolean = false,
+            override val deprecationReason: String? = null
     ) : BaseKQLOperation<T>(name, resolver), KQLProperty
 
     open class Kotlin<T, R> (

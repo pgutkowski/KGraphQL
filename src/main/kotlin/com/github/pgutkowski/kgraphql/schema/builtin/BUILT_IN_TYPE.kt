@@ -4,6 +4,7 @@ import com.github.pgutkowski.kgraphql.RequestException
 import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import com.github.pgutkowski.kgraphql.dropQuotes
 import com.github.pgutkowski.kgraphql.isLiteral
+import com.github.pgutkowski.kgraphql.schema.introspection.__Schema
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import com.github.pgutkowski.kgraphql.schema.scalar.StringScalarCoercion
 

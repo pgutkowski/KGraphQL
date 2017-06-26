@@ -97,7 +97,7 @@ class UnionsSpecificationTest : BaseSchemaTest() {
 
     @Test
     fun `Function type may not be member types of a Union`(){
-        expect<SchemaException>("Cannot handle function class kotlin.Function as Object type"){
+        expect<SchemaException>("Cannot handle function kotlin.Function<*> as Object type"){
             KGraphQL.schema {
                 unionType("invalid") {
                     type<Function<*>>()

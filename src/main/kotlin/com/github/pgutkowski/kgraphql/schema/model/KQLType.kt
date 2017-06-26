@@ -79,6 +79,6 @@ interface KQLType {
             name: String,
             override val kClass: KClass<T>,
             val values: List<KQLEnumValue<T>>,
-            description : String?
+            description : String? = null
     ) : BaseKQLType(name, description), Kotlin<T>
 }

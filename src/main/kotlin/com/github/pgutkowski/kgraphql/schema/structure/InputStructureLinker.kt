@@ -14,7 +14,7 @@ class InputStructureLinker(
 ) : AbstractStructureLinker(enumNodes, scalarNodes) {
 
     override fun <T : Any>handleObjectType(kClass: KClass<T>, kType: KType) : MutableSchemaNodeType {
-        assertNotEnumNorFunction(kClass)
+        assertValidObjectType(kType)
 
         val kqlObject = inputs.find { it.kClass == kClass } ?: KQLType.Input(kType.defaultKQLTypeName(), kClass, null)
         val type = MutableSchemaNodeType(kqlObject)

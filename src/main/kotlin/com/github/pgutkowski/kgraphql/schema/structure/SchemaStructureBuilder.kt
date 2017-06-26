@@ -49,8 +49,6 @@ class SchemaStructureBuilder(model : SchemaDefinition) {
             inputTypesLinker.linkType(type)
         }
 
-        queryTypesLinker.foundInputTypes.forEach {  }
-
         val inputObjectTypes = inputTypesLinker.linkedTypes
 
         val intersectedTypes = queryObjectTypes.keys.intersect(inputObjectTypes.keys)

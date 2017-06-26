@@ -44,7 +44,7 @@ open class TypeDSL<T : Any>(private val supportedUnions: Collection<KQLType.Unio
         extensionProperties.add(dsl.toKQL())
     }
 
-    fun <R> KProperty1<T, R>.describe(block : KotlinPropertyDSL<T>.() -> Unit){
+    fun <R> KProperty1<T, R>.configure(block : KotlinPropertyDSL<T>.() -> Unit){
         property(this, block)
     }
 
@@ -64,7 +64,7 @@ open class TypeDSL<T : Any>(private val supportedUnions: Collection<KQLType.Unio
         block()
     }
 
-    fun toKQLObject() : KQLType.Object<T> {
+    internal fun toKQLObject() : KQLType.Object<T> {
         return KQLType.Object(
                 name,
                 kClass,

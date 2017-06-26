@@ -146,7 +146,7 @@ class ObjectsSpecificationTest {
             type<Actor> {
                 property<String>("long"){
                     resolver {
-                        Thread.sleep(100)
+                        Thread.sleep(20)
                         "FINISHED LONG"
                     }
                 }

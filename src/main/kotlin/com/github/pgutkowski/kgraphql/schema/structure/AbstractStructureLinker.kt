@@ -87,13 +87,15 @@ abstract class AbstractStructureLinker (
     }
 
 
-    fun <T : Any> assertNotEnumNorFunction(kClass: KClass<T>) {
+    fun assertValidObjectType(kType: KType) {
         when {
-            kClass.isSubclassOf(Enum::class) ->
-                throw SchemaException("Cannot handle enum class $kClass as Object type")
-            kClass.isSubclassOf(Function::class) ->
-                throw SchemaException("Cannot handle function $kClass as Object type")
-
+            //function before generic, because it is its subset
+            kType.jvmErasure.isSubclassOf(Function::class) ->
+                throw SchemaException("Cannot handle function $kType as Object type")
+            kType.arguments.isNotEmpty() ->
+                throw SchemaException("Generic types are not supported by GraphQL, found $kType")
+            kType.jvmErasure.isSubclassOf(Enum::class) ->
+                throw SchemaException("Cannot handle enum class $kType as Object type")
         }
     }
 }

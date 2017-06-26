@@ -1,9 +1,11 @@
 package com.github.pgutkowski.kgraphql.schema.dsl
 
 import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
+import com.github.pgutkowski.kgraphql.schema.model.KQLMutation
+import com.github.pgutkowski.kgraphql.schema.model.KQLQuery
 
 
-class QueryOrMutationDSL(block : QueryOrMutationDSL.() -> Unit) : ItemDSL() {
+class QueryOrMutationDSL(val name : String, block : QueryOrMutationDSL.() -> Unit) : DepreciableItemDSL() {
     init {
         block()
     }
@@ -28,5 +30,13 @@ class QueryOrMutationDSL(block : QueryOrMutationDSL.() -> Unit) : ItemDSL() {
 
     fun <T, R, E, W, Q>resolver(function: (R, E, W, Q) -> T){
         functionWrapper = FunctionWrapper.on(function)
+    }
+
+    internal fun toKQLQuery(): KQLQuery<out Any?> {
+        return KQLQuery(name, functionWrapper, description, isDeprecated, deprecationReason)
+    }
+
+    internal fun toKQLMutation(): KQLMutation<out Any?> {
+        return KQLMutation(name, functionWrapper, description, isDeprecated, deprecationReason)
     }
 }

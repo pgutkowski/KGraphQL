@@ -19,5 +19,5 @@ class __List(override val ofType: __Type?) : __Type{
 
     override val inputFields: List<__InputValue>? = null
 
-    override fun toString(): String = "__List(ofType=$ofType)"
+    override fun toString() = asString()
 }

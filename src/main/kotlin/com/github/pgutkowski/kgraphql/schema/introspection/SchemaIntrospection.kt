@@ -9,6 +9,9 @@ import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
 import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import com.github.pgutkowski.kgraphql.schema.structure.SchemaNode
 import kotlin.reflect.KType
+import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.full.isSuperclassOf
+import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.full.withNullability
 import kotlin.reflect.jvm.jvmErasure
 
@@ -93,22 +96,24 @@ class SchemaIntrospection(val schema: DefaultSchema) : __Schema {
         if(cachedType != null) return cachedType
 
         val kind: __TypeKind = determineKind(type)
-        val enumValues : List<__EnumValue>? = introspectEnumValues(type)
 
+        val enumValues : List<__EnumValue>? = introspectEnumValues(type)
 
         //TODO: persist information about inheritance tree in schemas
         val mutableType = __MutableType(
                 kind = kind,
                 name = type.kqlType.name,
                 description = type.kqlType.description ?: "",
-                interfaces = emptyList(),
-                possibleTypes = emptyList(),
                 enumValues = enumValues
         )
 
         typeMap[type.kqlType.name] = mutableType
 
-        if(type.kqlType is KQLType.Object<*> || type.kqlType is KQLType.Interface<*>){
+        mutableType.mutableInterfaces += introspectInterfaces(kind, type)
+
+        mutableType.mutablePossibleTypes += introspectPossibleTypes(kind, type)
+
+        if(type.kqlType is KQLType.Object<*>){
             type.properties.values
                     .filterNot { it.kqlProperty.name.startsWith("__") }
                     .mapTo(mutableType.mutableFields) { introspectField(it) }
@@ -126,11 +131,70 @@ class SchemaIntrospection(val schema: DefaultSchema) : __Schema {
         return mutableType
     }
 
+    private fun introspectPossibleTypes(kind: __TypeKind, type: SchemaNode.Type) : List<__Type> {
+        return when(kind){
+            __TypeKind.INTERFACE -> {
+                if(type.kqlType is KQLType.Object<*>){
+                    introspectInterfacePossibleTypes(type.kqlType)
+                } else {
+                    throw IllegalStateException("Unexpected $kind for ${type.kqlType}")
+                }
+            }
+            __TypeKind.UNION -> {
+                if(type.kqlType is KQLType.Union){
+                    introspectUnionPossibleTypes(type.kqlType, type)
+                } else {
+                    throw IllegalStateException("Unexpected $kind for ${type.kqlType}")
+                }
+            }
+            else -> emptyList()
+        }
+    }
+
+    private fun introspectUnionPossibleTypes(kqlType: KQLType.Union, type: SchemaNode.Type): List<__Type> {
+        return kqlType.members.map {
+            val schemaType = schema.structure.queryTypes[it.starProjectedType]
+                    ?: throw IllegalStateException("Cannot introspect union ${type.kqlType.name}, member type $it not found ")
+            introspectType(schemaType)
+        }
+    }
+
+    private fun introspectInterfacePossibleTypes(kqlType: KQLType.Object<*>): List<__Type> {
+        val kClass = kqlType.kClass
+        return schema.structure.queryTypes.filterKeys { kType ->
+            val otherKClass = kType.jvmErasure
+            otherKClass != kClass && otherKClass.isFinal && otherKClass.isSubclassOf(kClass)
+        }.map { (_, schemaType) ->
+            introspectType(schemaType)
+        }
+    }
+
+    private fun introspectInterfaces(kind: __TypeKind, type: SchemaNode.Type): List<__Type> {
+        return if (kind == __TypeKind.OBJECT) {
+            if (type.kqlType is KQLType.Object<*>) {
+                val kClass = type.kqlType.kClass
+                schema.structure.queryTypes.filterKeys { kType ->
+                    val otherKClass = kType.jvmErasure
+                    otherKClass != kClass && otherKClass.isSuperclassOf(kClass)
+                }.map { (_, schemaType) ->
+                    introspectType(schemaType)
+                }
+            } else {
+                throw IllegalStateException("Unexpected $kind for ${type.kqlType}")
+            }
+        } else emptyList<__Type>()
+    }
+
     private fun determineKind(type: SchemaNode.Type) = when(type.kqlType) {
+        is KQLType.Object<*> -> {
+            if(type.kqlType.kClass.isFinal){
+                __TypeKind.OBJECT
+            } else {
+                __TypeKind.INTERFACE
+            }
+        }
         is KQLType.Scalar<*> -> __TypeKind.SCALAR
         is KQLType.Enumeration<*> -> __TypeKind.ENUM
-        is KQLType.Object<*> -> __TypeKind.OBJECT
-        is KQLType.Interface<*> -> __TypeKind.INTERFACE
         is KQLType.Input<*> -> __TypeKind.INPUT_OBJECT
         is KQLType.Union -> __TypeKind.UNION
         else -> throw IllegalStateException("Unexpected KQLType: ${type.kqlType}")

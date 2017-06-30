@@ -15,6 +15,7 @@ import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import com.github.pgutkowski.kgraphql.schema.model.SchemaDefinition
 import com.github.pgutkowski.kgraphql.schema.structure.SchemaStructure
 import com.github.pgutkowski.kgraphql.schema.structure.TypeDefinitionProvider
+import com.github.pgutkowski.kgraphql.schema.structure.TypenameSchemaStructureVisitor
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.full.starProjectedType
@@ -29,7 +30,9 @@ class DefaultSchema(
         const val OPERATION_NAME_PARAM = "operationName"
     }
 
-    val structure = SchemaStructure.of(definition)
+    val structure = SchemaStructure.of(definition).apply {
+        TypenameSchemaStructureVisitor(this@DefaultSchema).visit(this)
+    }
 
     val requestExecutor : RequestExecutor = ParallelRequestExecutor(this)
 

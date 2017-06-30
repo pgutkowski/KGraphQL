@@ -18,8 +18,6 @@ class QueryStructureLinker(
         val objects: List<KQLType.Object<*>>
 ) : AbstractStructureLinker(enumNodes, scalarNodes) {
 
-    val __typenameReturnType = SchemaNode.ReturnType(getType(String::class, String::class.starProjectedType))
-
     override fun <T : Any>handleObjectType(kClass: KClass<T>, kType: KType) : MutableSchemaNodeType {
         assertValidObjectType(kType)
 
@@ -43,15 +41,7 @@ class QueryStructureLinker(
             throw SchemaException("An Object type must define one or more fields. Found none on type ${kqlObject.name}")
         }
 
-        addTypeNameProperty(kqlObject, type)
-
         return type
-    }
-
-    private fun addTypeNameProperty(kqlObject: KQLType.Object<out Any>, type: MutableSchemaNodeType) {
-        val functionWrapper = FunctionWrapper.on { -> kqlObject.name }
-        val __typenameKQLProperty = KQLProperty.Function("__typename", functionWrapper)
-        type.mutableProperties.put("__typename", SchemaNode.Property(__typenameKQLProperty, __typenameReturnType))
     }
 
     private fun <T : Any> linkProperty(property: KProperty1<T, *>, kqlObject: KQLType.Object<out Any>): Pair<String, SchemaNode.Property> {

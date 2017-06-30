@@ -19,7 +19,5 @@ class __NonNull(override val ofType: __Type?) : __Type{
 
     override val inputFields: List<__InputValue>? = null
 
-    override fun toString(): String = "__NonNull(ofType=$ofType)"
-
-
+    override fun toString(): String = asString()
 }

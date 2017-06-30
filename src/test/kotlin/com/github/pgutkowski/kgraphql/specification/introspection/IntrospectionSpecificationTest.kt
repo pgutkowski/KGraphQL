@@ -11,6 +11,7 @@ import com.github.pgutkowski.kgraphql.schema.introspection.__NonNull
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.MatcherAssert.assertThat
+import org.junit.Ignore
 import org.junit.Test
 
 
@@ -166,5 +167,79 @@ class IntrospectionSpecificationTest {
 
         assertThat(inputValues[0].name, equalTo("doubleIt"))
         assertThat(inputValues[0].type.ofType?.name, equalTo("Boolean"))
+    }
+
+    interface Inter {
+        val value: String
+    }
+
+    class Face(override val value: String, override val value2 : Boolean = false) : InterInter
+
+    @Test
+    fun `__typename returns actual type of object`(){
+        val schema = defaultSchema {
+            query("interface"){
+                resolver { -> Face("~~MOCK~~") as Inter }
+            }
+
+            type<Inter>()
+            type<Face>()
+        }
+
+
+        val response = deserialize(schema.execute("{interface{value, __typename ... on Face{value2}}}"))
+        assertThat(response.extract("data/interface/__typename"), equalTo("Face"))
+        assertThat(response.extract("data/interface/value2"), equalTo(false))
+    }
+
+    interface InterInter : Inter {
+        val value2 : Boolean
+    }
+
+    @Test
+    fun `Interfaces are supported in introspection`(){
+        val schema = defaultSchema {
+            query("interface"){
+                resolver { -> Face("~~MOCK~~") }
+            }
+
+            type<Inter>()
+            type<InterInter>()
+            type<Face>()
+        }
+
+
+        val possibleTypes = schema.findTypeByName("Inter")?.possibleTypes?.map { it.name }
+        assertThat(possibleTypes, equalTo(listOf<String?>("Face")))
+
+        val interfaces = schema.findTypeByName("Face")?.interfaces?.map { it.name }
+        assertThat(interfaces, equalTo(listOf<String?>("Inter", "InterInter")))
+    }
+
+    data class Book(val id: String)
+
+    @Test
+    @Ignore("Union types are not introspected yet")
+    fun `union types possible types are supported`(){
+        val schema = defaultSchema {
+            query("interface"){
+                resolver { -> Face("~~MOCK~~") }
+            }
+
+            type<Face>{
+                unionProperty("union"){
+                    returnType = unionType("FaceBook"){
+                        type<Face>()
+                        type<Book>()
+                    }
+
+                    resolver { it -> Book(it.value) }
+                }
+            }
+        }
+
+
+        val possibleTypes = schema.findTypeByName("FaceBook")?.possibleTypes?.map { it.name }
+        assertThat(possibleTypes, equalTo(listOf<String?>("Face", "Book")))
     }
 }

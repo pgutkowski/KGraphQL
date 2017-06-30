@@ -22,3 +22,22 @@ interface __Type {
     //NON_NULL and LIST only
     val ofType : __Type?
 }
+
+fun __Type.asString() = buildString {
+    append(kind)
+    append(" : ")
+    append(name)
+    append(" ")
+
+    if(fields != null){
+        append("[")
+        fields?.forEach { field ->
+            append(field.name).append(" : ").append(field.type.name ?: field.type.kind).append(" ")
+        }
+        append("]")
+    }
+
+    if(ofType != null){
+        append(" => ").append(ofType?.name)
+    }
+}

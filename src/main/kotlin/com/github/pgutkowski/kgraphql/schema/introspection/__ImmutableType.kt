@@ -11,4 +11,6 @@ data class __ImmutableType(
         override val enumValues: List<__EnumValue>?,
         override val inputFields: List<__InputValue>?,
         override val ofType: __Type? = null
-) : __Type
+) : __Type {
+    override fun toString() = this.asString()
+}

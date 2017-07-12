@@ -9,18 +9,18 @@ import com.github.pgutkowski.kgraphql.defaultSchema
 import com.github.pgutkowski.kgraphql.deserialize
 import com.github.pgutkowski.kgraphql.expect
 import com.github.pgutkowski.kgraphql.extract
-import com.github.pgutkowski.kgraphql.schema.model.KQLType
+import com.github.pgutkowski.kgraphql.schema.introspection.TypeKind
 import com.github.pgutkowski.kgraphql.schema.scalar.StringScalarCoercion
+import com.github.pgutkowski.kgraphql.schema.structure2.Field
 import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.CoreMatchers.hasItem
+import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.MatcherAssert
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 import java.util.*
-import kotlin.reflect.full.starProjectedType
 
 /**
  * Tests for SchemaBuilder behaviour, not request execution
@@ -37,7 +37,7 @@ class SchemaBuilderTest {
             }
         }
 
-        val uuidScalar = testedSchema.definition.scalars.find { it.name == "UUID" }!!.coercion as StringScalarCoercion<UUID>
+        val uuidScalar = testedSchema.model.scalars[UUID::class]!!.coercion as StringScalarCoercion<UUID>
         val testUuid = UUID.randomUUID()
         MatcherAssert.assertThat(uuidScalar.serialize(testUuid), CoreMatchers.equalTo(testUuid.toString()))
         MatcherAssert.assertThat(uuidScalar.deserialize(testUuid.toString()), CoreMatchers.equalTo(testUuid))
@@ -58,10 +58,10 @@ class SchemaBuilderTest {
             }
         }
 
-        val scenarioType = testedSchema.structure.queryTypes[Scenario::class.starProjectedType]
+        val scenarioType = testedSchema.model.queryTypes[Scenario::class]
                 ?: throw Exception("Scenario type should be present in schema")
-        assertThat(scenarioType.properties["author"], nullValue())
-        assertThat(scenarioType.properties["content"], notNullValue())
+        assertThat(scenarioType["author"], nullValue())
+        assertThat(scenarioType["content"], notNullValue())
     }
 
     @Test
@@ -77,11 +77,10 @@ class SchemaBuilderTest {
                 })
             }
         }
-        val scenarioType = testedSchema.structure.queryTypes[Scenario::class.starProjectedType]
+        val scenarioType = testedSchema.model.queryTypes[Scenario::class]
                 ?: throw Exception("Scenario type should be present in schema")
-        assert(scenarioType.kqlType is KQLType.Object<*>)
-        val kqlType = scenarioType.kqlType as KQLType.Object<*>
-        assertThat(kqlType.transformations.getOrNull(0), notNullValue())
+        assertThat(scenarioType.kind, equalTo(TypeKind.OBJECT))
+        assertThat(scenarioType["content"], notNullValue())
     }
 
     @Test
@@ -100,13 +99,12 @@ class SchemaBuilderTest {
             }
         }
 
-        val scenarioType = testedSchema.structure.queryTypes[Scenario::class.starProjectedType]
+        val scenarioType = testedSchema.model.queryTypes[Scenario::class]
                 ?: throw Exception("Scenario type should be present in schema")
-        assert(scenarioType.kqlType is KQLType.Object<*>)
-        val kqlType = scenarioType.kqlType as KQLType.Object<*>
 
-        assertThat(kqlType.extensionProperties.getOrNull(0), notNullValue())
-        assertThat(scenarioType.properties.keys, hasItem("pdf"))
+        assertThat(scenarioType.kind, equalTo(TypeKind.OBJECT))
+        assertThat(scenarioType["pdf"], notNullValue())
+
     }
 
     @Test
@@ -137,11 +135,12 @@ class SchemaBuilderTest {
             }
         }
 
-        val scenarioType = tested.structure.queryTypes[Scenario::class.starProjectedType]
+        val scenarioType = tested.model.queryTypes[Scenario::class]
                 ?: throw Exception("Scenario type should be present in schema")
-        assert(scenarioType.kqlType is KQLType.Object<*>)
-        val unionProperty = scenarioType.unionProperties["pdf"] ?: throw Exception("Scenario should have union property 'pdf'")
-        assertThat(unionProperty, notNullValue())
+
+        val unionField = scenarioType["pdf"]
+        assertThat(unionField, notNullValue())
+        assertThat(unionField, instanceOf(Field.Union::class.java))
     }
 
     @Test
@@ -158,12 +157,12 @@ class SchemaBuilderTest {
             }
         }
 
-        val actorType = tested.structure.queryTypes[Actor::class.starProjectedType]
+        val actorType = tested.model.queryTypes[Actor::class]
                 ?: throw Exception("Scenario type should be present in schema")
-        assert(actorType.kqlType is KQLType.Object<*>)
-        val property = actorType.properties["linked"] ?: throw Exception("Actor should have ext property 'linked'")
+        assertThat(actorType.kind, equalTo(TypeKind.OBJECT))
+        val property = actorType["linked"] ?: throw Exception("Actor should have ext property 'linked'")
         assertThat(property, notNullValue())
-        assertThat(property.returnType.kqlType.name, equalTo("Actor"))
+        assertThat(property.returnType.unwrapped().name, equalTo("Actor"))
     }
 
     @Test
@@ -205,7 +204,7 @@ class SchemaBuilderTest {
 
     @Test
     fun `function properties cannot be handled`(){
-        expect<SchemaException>("Cannot handle function () -> kotlin.Int as Object type"){
+        expect<SchemaException>("Generic types are not supported by GraphQL, found () -> kotlin.Int"){
             KGraphQL.schema {
                 query("lambda"){
                     resolver { -> LambdaWrapper({ 1 }) }
@@ -249,5 +248,22 @@ class SchemaBuilderTest {
                 }
             }
         }
+    }
+
+    @Test
+    fun `input value default value can be specified`(){
+        val schema = defaultSchema {
+            query("data"){
+                resolver { int: Int, string: String? -> int }.withArgs {
+                    arg <Int> { name = "int"; defaultValue = 33 }
+                }
+            }
+        }
+
+        val intArg = schema.queryType.fields?.find { it.name == "data" }?.args?.find { it.name == "int" }
+        assertThat(intArg?.defaultValue, equalTo("33"))
+
+        val response = deserialize(schema.execute("{data}"))
+        assertThat(response.extract<Int>("data/data"), equalTo(33))
     }
 }

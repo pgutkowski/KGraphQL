@@ -5,7 +5,10 @@ package com.github.pgutkowski.kgraphql.schema.model
 import com.github.pgutkowski.kgraphql.ValidationException
 import com.github.pgutkowski.kgraphql.isNullable
 import com.github.pgutkowski.kgraphql.request.Arguments
+import com.github.pgutkowski.kgraphql.schema.SchemaException
+import com.github.pgutkowski.kgraphql.schema.structure2.validateName
 import kotlin.reflect.KFunction
+import kotlin.reflect.KType
 import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.reflect
 
@@ -45,25 +48,20 @@ interface FunctionWrapper <T>{
      */
     val hasReceiver : Boolean
 
-    fun validateArguments(args: Arguments?) : List<ValidationException> {
-        val exceptions = mutableListOf<ValidationException>()
+    val argumentsDescriptor : Map<String, KType>
 
-        val parameterNames = kFunction.parameters.map { it.name }
-        val invalidArguments = args?.filterKeys { it !in parameterNames }
+    abstract class Base<T> : FunctionWrapper<T>{
+        private fun createArgumentsDescriptor(): Map<String, KType> {
+            return valueParameters().associate { parameter ->
+                val parameterName = parameter.name
+                        ?: throw SchemaException("Cannot handle nameless argument on function: $kFunction")
 
-        if(invalidArguments != null && invalidArguments.isNotEmpty()){
-            invalidArguments.forEach { name, _ -> exceptions.add(ValidationException("Invalid argument $name")) }
-        }
-
-        kFunction.parameters.forEachIndexed { index, kParameter ->
-            val value = args?.get(kParameter.name)
-            if(value != null || (kParameter.isNullable() || (hasReceiver && index == 0))){
-                //is valid
-            } else {
-                exceptions.add(ValidationException("Missing value for non-nullable argument ${kParameter.name}"))
+                validateName(parameterName)
+                parameterName to parameter.type
             }
         }
-        return exceptions
+
+        override val argumentsDescriptor: Map<String, KType> by lazy { createArgumentsDescriptor() }
     }
 
     /**
@@ -75,7 +73,7 @@ interface FunctionWrapper <T>{
         }
     }
 
-    class ArityZero<T>(val implementation : ()-> T, override val hasReceiver: Boolean = false ) : FunctionWrapper<T> {
+    class ArityZero<T>(val implementation : ()-> T, override val hasReceiver: Boolean = false ) : Base<T>() {
         override val kFunction: KFunction<T> by lazy { implementation.reflect()!! }
 
         override fun arity(): Int = 0
@@ -89,7 +87,7 @@ interface FunctionWrapper <T>{
         }
     }
 
-    class ArityOne<T, R>(val implementation : (R)-> T, override val hasReceiver: Boolean) : FunctionWrapper<T> {
+    class ArityOne<T, R>(val implementation : (R)-> T, override val hasReceiver: Boolean) : Base<T>() {
         override val kFunction: KFunction<T> by lazy { implementation.reflect()!! }
 
         override fun arity(): Int = 1
@@ -103,7 +101,7 @@ interface FunctionWrapper <T>{
         }
     }
 
-    class ArityTwo<T, R, E>(val implementation : (R, E)-> T, override val hasReceiver: Boolean ) : FunctionWrapper<T> {
+    class ArityTwo<T, R, E>(val implementation : (R, E)-> T, override val hasReceiver: Boolean ) : Base<T>() {
         override val kFunction: KFunction<T> by lazy { implementation.reflect()!! }
 
         override fun arity(): Int = 2
@@ -117,7 +115,7 @@ interface FunctionWrapper <T>{
         }
     }
 
-    class ArityThree<T, R, E, W>(val implementation : (R, E, W)-> T, override val hasReceiver: Boolean ) : FunctionWrapper<T> {
+    class ArityThree<T, R, E, W>(val implementation : (R, E, W)-> T, override val hasReceiver: Boolean ) : Base<T>() {
         override val kFunction: KFunction<T> by lazy { implementation.reflect()!! }
 
         override fun arity(): Int = 3
@@ -131,7 +129,7 @@ interface FunctionWrapper <T>{
         }
     }
 
-    class ArityFour<T, R, E, W, Q>(val implementation : (R, E, W, Q)-> T, override val hasReceiver: Boolean ) : FunctionWrapper<T> {
+    class ArityFour<T, R, E, W, Q>(val implementation : (R, E, W, Q)-> T, override val hasReceiver: Boolean ) : Base<T>() {
         override val kFunction: KFunction<T> by lazy { implementation.reflect()!! }
 
         override fun arity(): Int = 4

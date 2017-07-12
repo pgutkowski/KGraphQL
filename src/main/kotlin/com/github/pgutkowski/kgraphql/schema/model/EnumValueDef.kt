@@ -1,11 +1,17 @@
 package com.github.pgutkowski.kgraphql.schema.model
 
+import com.github.pgutkowski.kgraphql.schema.structure2.EnumValue
 
-class KQLEnumValue<T : Enum<T>>(
+
+class EnumValueDef<T : Enum<T>>(
         val value: T,
         override val description: String? = null,
         override val isDeprecated: Boolean = false,
         override val deprecationReason: String? = null
-) : DescribedKQLObject, Depreciable {
+) : DescribedDef, Depreciable {
     val name = value.name
+
+    fun toEnumValue (): EnumValue<T> {
+        return EnumValue(this)
+    }
 }

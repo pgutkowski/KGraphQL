@@ -6,8 +6,7 @@ import com.github.pgutkowski.kgraphql.deserialize
 import com.github.pgutkowski.kgraphql.expect
 import com.github.pgutkowski.kgraphql.extract
 import com.github.pgutkowski.kgraphql.schema.Schema
-import com.github.pgutkowski.kgraphql.schema.introspection.__List
-import com.github.pgutkowski.kgraphql.schema.introspection.__NonNull
+import com.github.pgutkowski.kgraphql.schema.introspection.TypeKind
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.MatcherAssert.assertThat
@@ -98,10 +97,10 @@ class IntrospectionSpecificationTest {
             }
         }
 
-        val dataReturnType = schema.queryType.fields?.first()?.type!!
-        assert(dataReturnType is __NonNull)
-        assert(dataReturnType.ofType is __List)
-        assert(dataReturnType.ofType?.ofType is __NonNull)
+        val dataReturnType = schema.queryType.fields?.find { it.name == "data" }?.type!!
+        assertThat(dataReturnType.kind, equalTo(TypeKind.NON_NULL))
+        assertThat(dataReturnType.ofType?.kind, equalTo(TypeKind.LIST))
+        assertThat(dataReturnType.ofType?.ofType?.kind, equalTo(TypeKind.NON_NULL))
     }
 
     @Test

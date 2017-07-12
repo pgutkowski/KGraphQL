@@ -3,24 +3,24 @@ package com.github.pgutkowski.kgraphql.schema.dsl
 import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
-import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
-import com.github.pgutkowski.kgraphql.schema.model.KQLType
+import com.github.pgutkowski.kgraphql.schema.model.PropertyDef
+import com.github.pgutkowski.kgraphql.schema.model.TypeDef
 import com.github.pgutkowski.kgraphql.schema.model.Transformation
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 
-open class TypeDSL<T : Any>(private val supportedUnions: Collection<KQLType.Union>, val kClass: KClass<T>, block: TypeDSL<T>.() -> Unit) : ItemDSL() {
+open class TypeDSL<T : Any>(private val supportedUnions: Collection<TypeDef.Union>, val kClass: KClass<T>, block: TypeDSL<T>.() -> Unit) : ItemDSL() {
 
     var name = kClass.defaultKQLTypeName()
 
     internal val transformationProperties = mutableSetOf<Transformation<T, *>>()
 
-    internal val extensionProperties = mutableSetOf<KQLProperty.Function<*>>()
+    internal val extensionProperties = mutableSetOf<PropertyDef.Function<*>>()
 
-    internal val unionProperties = mutableSetOf<KQLProperty.Union>()
+    internal val unionProperties = mutableSetOf<PropertyDef.Union>()
 
-    internal val describedKotlinProperties = mutableMapOf<KProperty1<T, *>, KQLProperty.Kotlin<T, *>>()
+    internal val describedKotlinProperties = mutableMapOf<KProperty1<T, *>, PropertyDef.Kotlin<T, *>>()
 
     fun <R, E> transformation(kProperty: KProperty1<T, R>, function: (R, E) -> R) {
         transformationProperties.add(Transformation(kProperty, FunctionWrapper.on(function, true)))
@@ -49,7 +49,7 @@ open class TypeDSL<T : Any>(private val supportedUnions: Collection<KQLType.Unio
     }
 
     fun <R> KProperty1<T, R>.ignore(){
-        describedKotlinProperties[this] = KQLProperty.Kotlin(kProperty = this, isIgnored = true)
+        describedKotlinProperties[this] = PropertyDef.Kotlin(kProperty = this, isIgnored = true)
     }
 
     fun unionProperty(name : String, block : UnionPropertyDSL<T>.() -> Unit){
@@ -64,14 +64,14 @@ open class TypeDSL<T : Any>(private val supportedUnions: Collection<KQLType.Unio
         block()
     }
 
-    internal fun toKQLObject() : KQLType.Object<T> {
-        return KQLType.Object(
+    internal fun toKQLObject() : TypeDef.Object<T> {
+        return TypeDef.Object(
                 name,
                 kClass,
                 describedKotlinProperties.toMap(),
                 extensionProperties.toList(),
                 unionProperties.toList(),
-                transformationProperties.toList(),
+                transformationProperties.associate { it.kProperty to it },
                 description
         )
     }

@@ -6,7 +6,7 @@ package com.github.pgutkowski.kgraphql.schema.introspection
  * If some field does not apply to given type, it returns null
  */
 interface __Type {
-    val kind: __TypeKind
+    val kind: TypeKind
     val name : String?
     val description : String
     //OBJECT and INTERFACE only

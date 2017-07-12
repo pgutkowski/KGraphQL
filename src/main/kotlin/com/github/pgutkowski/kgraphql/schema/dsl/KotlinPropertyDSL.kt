@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.dsl
 
-import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
+import com.github.pgutkowski.kgraphql.schema.model.PropertyDef
 import kotlin.reflect.KProperty1
 
 
@@ -12,7 +12,7 @@ class KotlinPropertyDSL<T>(val kProperty: KProperty1<T, *>, block : KotlinProper
         block()
     }
 
-    fun toKQLProperty(): KQLProperty.Kotlin<T, Any?> {
-        return KQLProperty.Kotlin(kProperty, description, isDeprecated, deprecationReason, ignore)
+    fun toKQLProperty(): PropertyDef.Kotlin<T, Any?> {
+        return PropertyDef.Kotlin(kProperty, description, isDeprecated, deprecationReason, ignore)
     }
 }

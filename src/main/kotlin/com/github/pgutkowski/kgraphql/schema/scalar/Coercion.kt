@@ -9,10 +9,10 @@ import com.github.pgutkowski.kgraphql.schema.builtin.DOUBLE_COERCION
 import com.github.pgutkowski.kgraphql.schema.builtin.FLOAT_COERCION
 import com.github.pgutkowski.kgraphql.schema.builtin.INT_COERCION
 import com.github.pgutkowski.kgraphql.schema.builtin.STRING_COERCION
-import com.github.pgutkowski.kgraphql.schema.model.KQLType
+import com.github.pgutkowski.kgraphql.schema.structure2.Type
 
 @Suppress("UNCHECKED_CAST")
-fun <T : Any> deserializeScalar(scalar: KQLType.Scalar<T>, value : String): T {
+fun <T : Any> deserializeScalar(scalar: Type.Scalar<T>, value : String): T {
     try {
         return when(scalar.coercion){
             //built in scalars
@@ -34,7 +34,7 @@ fun <T : Any> deserializeScalar(scalar: KQLType.Scalar<T>, value : String): T {
 }
 
 @Suppress("UNCHECKED_CAST")
-fun <T> serializeScalar(jsonNodeFactory: JsonNodeFactory, scalar: KQLType.Scalar<*>, value: T) : JsonNode {
+fun <T> serializeScalar(jsonNodeFactory: JsonNodeFactory, scalar: Type.Scalar<*>, value: T) : JsonNode {
     return when(scalar.coercion){
         is StringScalarCoercion<*> -> {
             jsonNodeFactory.textNode((scalar.coercion as StringScalarCoercion<T>).serialize(value))

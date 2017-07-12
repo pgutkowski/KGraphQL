@@ -20,6 +20,8 @@ fun KParameter.isNotNullable() = !type.isMarkedNullable
 
 fun KClass<*>.isCollection() = isSubclassOf(Collection::class)
 
+fun KType.isCollection() = jvmErasure.isCollection()
+
 fun KType.getCollectionElementType(): KType? {
     if(!jvmErasure.isCollection()) throw IllegalArgumentException("KType $this is not collection type")
     return arguments.firstOrNull()?.type ?: throw NoSuchElementException("KType $this has no type arguments")

@@ -4,21 +4,21 @@ import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.RequestException
 import com.github.pgutkowski.kgraphql.getCollectionElementType
 import com.github.pgutkowski.kgraphql.isCollection
-import com.github.pgutkowski.kgraphql.schema.structure.TypeDefinitionProvider
-import java.util.*
+import com.github.pgutkowski.kgraphql.schema.structure2.LookupSchema
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
 @Suppress("UNCHECKED_CAST")
 data class Variables(
-        private val typeDefinitionProvider: TypeDefinitionProvider,
+        private val typeDefinitionProvider: LookupSchema,
         private val variablesJson: VariablesJson,
         private val variables: List<OperationVariable>?
 ) {
+
     /**
      * map and return object of requested class
      */
-    fun <T : Any> get(kClass: KClass<T>, kType: KType, key: String, transform: (value: String, type: KClass<T>) -> Any?): T? {
+    fun <T : Any> get(kClass: KClass<T>, kType: KType, key: String, transform: (value: String) -> Any?): T? {
         val variable = variables?.find { key == it.name }
                 ?: throw IllegalArgumentException("Variable '$key' was not declared for this operation")
 
@@ -46,8 +46,8 @@ data class Variables(
         return value
     }
 
-    private fun <T : Any> transformDefaultValue(transform: (value: String, type: KClass<T>) -> Any?, defaultValue: String, kClass: KClass<T>): T? {
-        val transformedDefaultValue = transform.invoke(defaultValue, kClass)
+    private fun <T : Any> transformDefaultValue(transform: (value: String) -> Any?, defaultValue: String, kClass: KClass<T>): T? {
+        val transformedDefaultValue = transform.invoke(defaultValue)
         when {
             transformedDefaultValue == null -> return null
             kClass.isInstance(transformedDefaultValue) -> return transformedDefaultValue as T?

@@ -1,5 +1,5 @@
 package com.github.pgutkowski.kgraphql.schema.execution
 
 class ExecutionPlan (
-        val operations: List<Execution.Operation<*>>
-) : List<Execution.Operation<*>> by operations
+        val operations: List<Execution.Node>
+) : List<Execution.Node> by operations

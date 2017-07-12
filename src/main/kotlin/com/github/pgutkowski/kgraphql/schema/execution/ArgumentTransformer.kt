@@ -5,66 +5,64 @@ import com.github.pgutkowski.kgraphql.RequestException
 import com.github.pgutkowski.kgraphql.isLiteral
 import com.github.pgutkowski.kgraphql.request.Variables
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
-import com.github.pgutkowski.kgraphql.schema.model.KQLType
 import com.github.pgutkowski.kgraphql.schema.scalar.deserializeScalar
-import kotlin.reflect.KParameter
+import com.github.pgutkowski.kgraphql.schema.structure2.InputValue
+import com.github.pgutkowski.kgraphql.schema.structure2.Type
 import kotlin.reflect.KType
-import kotlin.reflect.full.createType
-import kotlin.reflect.full.starProjectedType
-import kotlin.reflect.full.withNullability
 import kotlin.reflect.jvm.jvmErasure
 
 
 open class ArgumentTransformer(val schema : DefaultSchema) {
 
-    private val enumsByType = schema.definition.enums.associate { it.kClass.createType() to it }
+    fun transformValue(type: Type, value: String, variables: Variables) : Any? {
+        val kType = type.toKType()
 
-    private val scalarsByType = schema.definition.scalars.associate { it.kClass.createType() to it }
-
-    fun transformValue(type: KType, value: String, variables: Variables) : Any? {
         return when {
             value.startsWith("$") -> {
                 variables.get (
-                        type.jvmErasure, type, value, {value, type -> transformValue(type.starProjectedType, value, variables) }
+                        kType.jvmErasure, kType, value, { value -> transformValue(type, value, variables) }
                 )
             }
-            value == "null" && type.isMarkedNullable -> null
-            value == "null" && !type.isMarkedNullable -> {
-                throw RequestException("argument '$value' is not valid value of type ${schema.inputTypeByKType(type)?.name}")
+            value == "null" && type.isNullable() -> null
+            value == "null" && type.isNotNullable() -> {
+                throw RequestException("argument '$value' is not valid value of type ${type.unwrapped().name}")
             }
             else -> {
-                return transformString(value, type.withNullability(false))
+                return transformString(value, kType)
             }
         }
+
     }
 
-    private fun transformString(value: String, lookupType: KType): Any {
+    private fun transformString(value: String, kType: KType): Any {
 
-        fun throwInvalidEnumValue(enumType : KQLType.Enumeration<*>){
+        val kClass = kType.jvmErasure
+
+        fun throwInvalidEnumValue(enumType : Type.Enum<*>){
             throw RequestException(
-                    "Invalid enum ${schema.inputTypeByKType(lookupType)?.name} value. Expected one of ${enumType.values}"
+                    "Invalid enum ${schema.model.enums[kClass]?.name} value. Expected one of ${enumType.values}"
             )
         }
 
-        enumsByType[lookupType]?.let { enumType ->
+        schema.model.enums[kClass]?.let { enumType ->
             if(value.isLiteral()) {
                 throw RequestException("String literal '$value' is invalid value for enum type ${enumType.name}")
             }
             return enumType.values.find { it.name == value }?.value ?: throwInvalidEnumValue(enumType)
-        } ?: scalarsByType[lookupType]?.let { scalarType ->
+        } ?: schema.model.scalars[kClass]?.let { scalarType ->
             return deserializeScalar(scalarType, value)
-        } ?: throw RequestException("Invalid argument value '$value' for type ${schema.inputTypeByKType(lookupType)?.name}")
+        } ?: throw RequestException("Invalid argument value '$value' for type ${schema.model.inputTypes[kClass]?.name}")
     }
 
-    fun transformCollectionElementValue(collectionParameter: KParameter, value: String, variables: Variables): Any? {
-        assert(collectionParameter.type.jvmErasure == List::class)
-        val elementType = collectionParameter.type.arguments.firstOrNull()?.type
+    fun transformCollectionElementValue(inputValue: InputValue<*>, value: String, variables: Variables): Any? {
+        assert(inputValue.type.isList())
+        val elementType = inputValue.type.unwrapList().ofType as Type?
                 ?: throw ExecutionException("Unable to handle value of element of collection without type")
 
         return transformValue(elementType, value, variables)
     }
 
-    fun transformPropertyValue(parameter: KParameter, value: String, variables: Variables): Any? {
+    fun transformPropertyValue(parameter: InputValue<*>, value: String, variables: Variables): Any? {
         return transformValue(parameter.type, value, variables)
     }
 }

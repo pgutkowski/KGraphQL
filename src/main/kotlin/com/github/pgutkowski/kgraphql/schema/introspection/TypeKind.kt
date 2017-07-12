@@ -1,7 +1,7 @@
 package com.github.pgutkowski.kgraphql.schema.introspection
 
 
-enum class __TypeKind {
+enum class TypeKind {
     SCALAR,
     OBJECT,
     INTERFACE,

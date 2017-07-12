@@ -1,9 +1,10 @@
 package com.github.pgutkowski.kgraphql.schema.model
 
-class KQLMutation<R> (
+class MutationDef<R> (
         name : String,
         resolver: FunctionWrapper<R>,
         override val description : String?,
         override val isDeprecated: Boolean,
-        override val deprecationReason: String?
-) : BaseKQLOperation<R>(name, resolver), DescribedKQLObject
+        override val deprecationReason: String?,
+        inputValues : List<InputValueDef<*>> = emptyList()
+) : BaseOperationDef<R>(name, resolver, inputValues), DescribedDef

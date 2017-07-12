@@ -11,12 +11,12 @@ import com.github.pgutkowski.kgraphql.schema.directive.Directive
  * [SchemaStructure] contains full schema tree, with all types
  */
 data class SchemaDefinition(
-        val objects: List<KQLType.Object<*>>,
-        val queries: List<KQLQuery<*>>,
-        val scalars: List<KQLType.Scalar<*>>,
-        val mutations: List<KQLMutation<*>>,
-        val enums: List<KQLType.Enumeration<*>>,
-        val unions: List<KQLType.Union>,
-        val directives: List<Directive>,
-        val inputObjects: List<KQLType.Input<*>>
+        val objects: List<TypeDef.Object<*>>,
+        val queries: List<QueryDef<*>>,
+        val scalars: List<TypeDef.Scalar<*>>,
+        val mutations: List<MutationDef<*>>,
+        val enums: List<TypeDef.Enumeration<*>>,
+        val unions: List<TypeDef.Union>,
+        val directives: List<Directive.Partial>,
+        val inputObjects: List<TypeDef.Input<*>>
 )

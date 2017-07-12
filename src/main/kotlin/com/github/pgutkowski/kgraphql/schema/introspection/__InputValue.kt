@@ -1,9 +1,9 @@
 package com.github.pgutkowski.kgraphql.schema.introspection
 
 
-data class __InputValue(
-        val type: __Type,
-        val defaultValue: String?,
-        override val name: String,
-        override val description: String?
-) : __Described
+interface __InputValue : __Described {
+
+    val type: __Type
+
+    val defaultValue: String?
+}

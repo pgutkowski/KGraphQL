@@ -1,5 +1,5 @@
 package com.github.pgutkowski.kgraphql.schema.model
 
-interface DescribedKQLObject {
+interface DescribedDef {
     val description : String?
 }

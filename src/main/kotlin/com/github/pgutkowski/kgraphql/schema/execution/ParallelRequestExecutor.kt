@@ -10,10 +10,13 @@ import com.github.pgutkowski.kgraphql.request.Variables
 import com.github.pgutkowski.kgraphql.request.VariablesJson
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
-import com.github.pgutkowski.kgraphql.schema.model.KQLProperty
-import com.github.pgutkowski.kgraphql.schema.model.KQLType
+import com.github.pgutkowski.kgraphql.schema.introspection.TypeKind
+import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
+import com.github.pgutkowski.kgraphql.schema.model.TypeDef
 import com.github.pgutkowski.kgraphql.schema.scalar.serializeScalar
-import com.github.pgutkowski.kgraphql.schema.structure.SchemaNode
+import com.github.pgutkowski.kgraphql.schema.structure2.Field
+import com.github.pgutkowski.kgraphql.schema.structure2.InputValue
+import com.github.pgutkowski.kgraphql.schema.structure2.Type
 import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
@@ -26,8 +29,6 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
     data class Context(val variables: Variables)
 
     private val argumentsHandler = ArgumentsHandler(schema)
-
-    private val functionHandler = FunctionInvoker(argumentsHandler)
 
     private val jsonNodeFactory = JsonNodeFactory.instance
 
@@ -52,7 +53,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
                             val writeOperation = writeOperation(
                                     ctx = Context(Variables(schema, variables, execution.variables)),
                                     node = execution,
-                                    operation = execution.operationNode
+                                    operation = execution.field as Field.Function<*>
                             )
                             channel.send(execution to writeOperation)
                         } catch (e: Exception) {
@@ -82,48 +83,44 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         objectWriter.writeValueAsString(root)
     }
 
-    private fun <T>writeOperation(ctx: Context, node: Execution.Node, operation: SchemaNode.Operation<T>) : JsonNode {
-        val operationResult : T? = functionHandler.invokeFunWrapper(
-                funName = operation.kqlOperation.name,
-                functionWrapper = operation.kqlOperation,
+    private fun <T>writeOperation(ctx: Context, node: Execution.Node, operation: FunctionWrapper<T>) : JsonNode {
+        val operationResult : T? = operation.invoke(
+                funName = node.field.name,
                 receiver = null,
+                inputValues = node.field.arguments,
                 args = node.arguments,
                 variables = ctx.variables
         )
-        return createNode(ctx, operationResult, node, operation.returnType)
+        return createNode(ctx, operationResult, node, node.field.returnType)
     }
 
-    private fun <T> createUnionOperationNode(ctx: Context, parent: T, node: Execution.Union, unionProperty: SchemaNode.UnionProperty): JsonNode {
-        val operationResult : Any? = functionHandler.invokeFunWrapper(
-                funName = unionProperty.kqlProperty.name,
-                functionWrapper = unionProperty.kqlProperty,
+    private fun <T> createUnionOperationNode(ctx: Context, parent: T, node: Execution.Union, unionProperty: Field.Union): JsonNode {
+        val operationResult : Any? = unionProperty.invoke(
+                funName = unionProperty.name,
                 receiver = parent,
+                inputValues = node.field.arguments,
                 args = node.arguments,
                 variables = ctx.variables
         )
 
-        val returnType = unionProperty.returnTypes.find {
-            (it.kqlType as KQLType.Object<*>).kClass.isInstance(operationResult)
-        } ?: throw ExecutionException(
-                "Unexpected type of union property value, expected one of : ${unionProperty.kqlProperty.union.members}." +
+        val returnType = unionProperty.returnType.possibleTypes.find { it.isInstance(operationResult) }
+        if(returnType == null) throw ExecutionException (
+                "Unexpected type of union property value, expected one of : ${unionProperty.type.possibleTypes }." +
                         " value was $operationResult"
         )
 
         return createNode(ctx, operationResult, node, returnType)
     }
 
-    private fun <T> createNode(ctx: Context, value : T?,
-                               node: Execution.Node,
-                               returnType: SchemaNode.ReturnType,
-                               isCollectionElement : Boolean = false) : JsonNode {
+    private fun <T> createNode(ctx: Context, value : T?, node: Execution.Node, returnType: Type) : JsonNode {
         return when {
-            value == null -> createNullNode(node, returnType, isCollectionElement)
+            value == null -> createNullNode(node, returnType)
 
             //check value, not returnType, because this method can be invoked with element value
             value is Collection<*> -> {
-                if(returnType.isCollection){
+                if(returnType.isList()){
                     val arrayNode = jsonNodeFactory.arrayNode(value.size)
-                    value.forEach { element -> arrayNode.add(createNode(ctx, element, node, returnType, true)) }
+                    value.forEach { element -> arrayNode.add(createNode(ctx, element, node, returnType.unwrapList())) }
                     arrayNode
                 } else {
                     throw ExecutionException("Invalid collection value for non collection property")
@@ -144,30 +141,29 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         }
     }
 
-    private fun <T> createSimpleValueNode(returnType: SchemaNode.ReturnType, value: T) : JsonNode {
-        val kqlType = returnType.kqlType
-        return when (kqlType) {
-            is KQLType.Scalar<*> -> {
-                serializeScalar(jsonNodeFactory, kqlType, value)
+    private fun <T> createSimpleValueNode(returnType: Type, value: T) : JsonNode {
+        val unwrapped = returnType.unwrapped()
+        return when (unwrapped) {
+            is Type.Scalar<*> -> {
+                serializeScalar(jsonNodeFactory, unwrapped, value)
             }
-            is KQLType.Enumeration<*> -> {
+            is Type.Enum<*> -> {
                 jsonNodeFactory.textNode(value.toString())
             }
-            is KQLType.Object<*> -> throw ExecutionException("Cannot handle object return type, schema structure exception")
-            else -> throw ExecutionException("Invalid KQLType:  $kqlType")
+            is TypeDef.Object<*> -> throw ExecutionException("Cannot handle object return type, schema structure exception")
+            else -> throw ExecutionException("Invalid Type:  ${returnType.name}")
         }
     }
 
-    private fun createNullNode(node: Execution.Node, returnType: SchemaNode.ReturnType, collectionElement: Boolean): NullNode {
-        val isNullable = if(collectionElement) returnType.areEntriesNullable else returnType.isNullable
-        if (isNullable) {
+    private fun createNullNode(node: Execution.Node, returnType: Type): NullNode {
+        if (returnType !is Type.NonNull) {
             return jsonNodeFactory.nullNode()
         } else {
-            throw ExecutionException("null result for non-nullable operation ${node.schemaNode}")
+            throw ExecutionException("null result for non-nullable operation ${node.field}")
         }
     }
 
-    private fun <T> createObjectNode(ctx: Context, value : T, node: Execution.Node, type: SchemaNode.Type): ObjectNode {
+    private fun <T> createObjectNode(ctx: Context, value : T, node: Execution.Node, type: Type): ObjectNode {
         val objectNode = jsonNodeFactory.objectNode()
         for(child in node.children){
             if(child is Execution.Fragment){
@@ -180,18 +176,22 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         return objectNode
     }
 
-    private fun <T> handleProperty(ctx: Context, value: T, child: Execution, type: SchemaNode.Type): Pair<String, JsonNode?> {
+    private fun <T> handleProperty(ctx: Context, value: T, child: Execution, type: Type): Pair<String, JsonNode?> {
         when (child) {
         //Union is subclass of Node so check it first
             is Execution.Union -> {
-                val property = type.unionProperties[child.key]
+                val field = type.unwrapped()[child.key]
                         ?: throw IllegalStateException("Execution unit ${child.key} is not contained by operation return type")
-                return child.aliasOrKey to createUnionOperationNode(ctx, value, child, property)
+                if(field is Field.Union){
+                    return child.aliasOrKey to createUnionOperationNode(ctx, value, child, field)
+                } else {
+                    throw ExecutionException("Unexpected non-union field for union execution node")
+                }
             }
             is Execution.Node -> {
-                val property = type.properties[child.key]
+                val field = type.unwrapped()[child.key]
                         ?: throw IllegalStateException("Execution unit ${child.key} is not contained by operation return type")
-                return child.aliasOrKey to createPropertyNode(ctx, value, child, property)
+                return child.aliasOrKey to createPropertyNode(ctx, value, child, field)
             }
             else -> {
                 throw UnsupportedOperationException("Handling containers is not implemented yet")
@@ -200,13 +200,13 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
     }
 
     private fun <T> handleFragment(ctx: Context, value: T, container: Execution.Fragment): Map<String, JsonNode?> {
-        val schemaNode = container.condition.schemaNode
+        val expectedType = container.condition.type
         val include = determineInclude(ctx, container.directives)
 
         if(include){
-            if(schemaNode.kqlType is KQLType.Object<*>){
-                if(schemaNode.kqlType.kClass.isInstance(value)){
-                    return container.elements.map { handleProperty(ctx, value, it, schemaNode)}.toMap()
+            if(expectedType.kind == TypeKind.OBJECT){
+                if(expectedType.isInstance(value)){
+                    return container.elements.map { handleProperty(ctx, value, it, expectedType)}.toMap()
                 }
             } else {
                 throw IllegalStateException("fragments can be specified on object types, interfaces, and unions")
@@ -216,34 +216,33 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         return emptyMap()
     }
 
-    private fun <T> createPropertyNode(ctx: Context, parentValue: T, node: Execution.Node, property: SchemaNode.Property) : JsonNode? {
+    private fun <T> createPropertyNode(ctx: Context, parentValue: T, node: Execution.Node, field: Field) : JsonNode? {
         val include = determineInclude(ctx, node.directives)
 
         if(include){
-            val kqlProperty = property.kqlProperty
-            when(kqlProperty){
-                is KQLProperty.Kotlin<*,*> -> {
-                    kqlProperty.kProperty as KProperty1<T, *>
-                    val rawValue = kqlProperty.kProperty.get(parentValue)
+            when(field){
+                is Field.Kotlin<*,*> -> {
+                    field.kProperty as KProperty1<T, *>
+                    val rawValue = field.kProperty.get(parentValue)
                     val value : Any?
-                    if(property.transformation != null){
-                        value = functionHandler.invokeFunWrapper(
-                                funName = kqlProperty.name,
-                                functionWrapper = property.transformation,
+                    if(field.transformation != null){
+                        value = field.transformation.invoke(
+                                funName = field.name,
                                 receiver = rawValue,
+                                inputValues = field.arguments,
                                 args = node.arguments,
                                 variables = ctx.variables
                         )
                     } else {
                         value = rawValue
                     }
-                    return createNode(ctx, value, node, property.returnType)
+                    return createNode(ctx, value, node, field.returnType)
                 }
-                is KQLProperty.Function<*> -> {
-                    return handleFunctionProperty(ctx, parentValue, node, property, kqlProperty)
+                is Field.Function<*> -> {
+                    return handleFunctionProperty(ctx, parentValue, node, field)
                 }
                 else -> {
-                    throw Exception("Unexpected kql property type: $kqlProperty, should be KQLProperty.Kotlin or KQLProperty.Function")
+                    throw Exception("Unexpected field type: $field, should be Field.Kotlin or Field.Function")
                 }
             }
         } else {
@@ -251,26 +250,42 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         }
     }
 
-    fun <T>handleFunctionProperty(ctx: Context, parentValue: T, node: Execution.Node, property: SchemaNode.Property, kqlProperty: KQLProperty.Function<*>) : JsonNode {
-        val result = functionHandler.invokeFunWrapper(
-                funName = kqlProperty.name,
-                functionWrapper = kqlProperty,
+    fun <T>handleFunctionProperty(ctx: Context, parentValue: T, node: Execution.Node, field: Field.Function<*>) : JsonNode {
+        val result = field.invoke(
+                funName = field.name,
                 receiver = parentValue,
+                inputValues = field.arguments,
                 args = node.arguments,
                 variables = ctx.variables
         )
-        return createNode(ctx, result, node, property.returnType)
+        return createNode(ctx, result, node, field.returnType)
     }
 
     private fun determineInclude(ctx: Context, directives: Map<Directive, Arguments?>?): Boolean {
         return directives?.map { (directive, arguments) ->
-            functionHandler.invokeFunWrapper(
+            directive.execution.invoke(
                     funName = directive.name,
-                    functionWrapper = directive.execution,
+                    inputValues = directive.arguments,
                     receiver = null,
                     args = arguments,
                     variables = ctx.variables
             )?.include ?: throw ExecutionException("Illegal directive implementation returning null result")
         }?.reduce { acc, b -> acc && b } ?: true
     }
+
+    fun <T> FunctionWrapper<T>.invoke(funName: String, receiver: Any?, inputValues: List<InputValue<*>>, args: Arguments?, variables: Variables): T? {
+
+        val transformedArgs = argumentsHandler.transformArguments(funName, inputValues, args, variables)
+
+        try {
+            if(receiver != null && hasReceiver){
+                return invoke(receiver, *transformedArgs.toTypedArray())
+            } else {
+                return invoke(*transformedArgs.toTypedArray())
+            }
+        } catch (e: Exception){
+            throw ExecutionException("Failed to invoke function $funName", e)
+        }
+    }
+
 }

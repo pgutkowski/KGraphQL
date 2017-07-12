@@ -40,16 +40,16 @@ class HttpRequestHandler(val schema : DefaultSchema) : SimpleChannelInboundHandl
         val path = msg.uri().substring("/graphql/docs".length).split('/').filter(String::isNotBlank)
 
         val response = when {
-            path.isEmpty() -> schema.writeHomeHtml()
-            path[0] == "query" -> schema.writeQueriesHtml()
-            path[0] == "mutation" -> schema.writeMutationsHtml()
-            path[0] == "type" -> {
-                schema.writeTypeHtml(path.getOrElse(1, {throw IllegalArgumentException("Missing type name")}))
-            }
+//            path.isEmpty() -> schema.writeHomeHtml()
+//            path[0] == "query" -> schema.writeQueriesHtml()
+//            path[0] == "mutation" -> schema.writeMutationsHtml()
+//            path[0] == "type" -> {
+//                schema.writeTypeHtml(path.getOrElse(1, {throw IllegalArgumentException("Missing type name")}))
+//            }
             else -> throw IllegalArgumentException("Illegal request")
         }
 
-        writeResponse(ctx, response, AsciiString("text/html"))
+//        writeResponse(ctx, response, AsciiString("text/html"))
     }
 
     private fun handleQuery(ctx: ChannelHandlerContext, msg: FullHttpRequest) {

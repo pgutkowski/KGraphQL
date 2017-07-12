@@ -3,19 +3,21 @@ package com.github.pgutkowski.kgraphql.schema.execution
 import com.github.pgutkowski.kgraphql.request.Arguments
 import com.github.pgutkowski.kgraphql.request.OperationVariable
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
-import com.github.pgutkowski.kgraphql.schema.structure.SchemaNode
+import com.github.pgutkowski.kgraphql.schema.structure2.Field
+import com.github.pgutkowski.kgraphql.schema.structure2.Type
 
 
 sealed class Execution {
 
     open class Node (
-            val schemaNode: SchemaNode.Branch,
+            val field: Field,
             val children: Collection<Execution>,
             val key : String,
             val alias: String? = null,
             val arguments : Arguments? = null,
             val typeCondition: TypeCondition? = null,
-            val directives: Map<Directive, Arguments?>?
+            val directives: Map<Directive, Arguments?>?,
+            val variables: List<OperationVariable>?
     ) : Execution() {
         val aliasOrKey = alias ?: key
     }
@@ -26,34 +28,24 @@ sealed class Execution {
             val directives: Map<Directive, Arguments?>?
     ) : Execution()
 
-    class Operation<T>(
-            val operationNode: SchemaNode.Operation<T>,
-            children: Collection<Execution>,
-            key : String,
-            alias: String? = null,
-            arguments : Arguments? = null,
-            condition : TypeCondition? = null,
-            directives: Map<Directive, Arguments?>?,
-            val variables: List<OperationVariable>?
-    ) : Execution.Node(operationNode, children, key, alias, arguments, condition, directives)
-
     class Union (
-            val unionNode : SchemaNode.UnionProperty,
-            val memberChildren: Map<SchemaNode.ReturnType, Collection<Execution>>,
+            val unionField: Field.Union,
+            val memberChildren: Map<Type, Collection<Execution>>,
             key: String,
             alias: String? = null,
             condition : TypeCondition? = null,
-            directives: Map<Directive, Arguments?>?
-    ) : Execution.Node (unionNode, emptyList(), key, alias, null, condition, directives) {
-        fun memberExecution(type: SchemaNode.ReturnType): Execution.Node {
+            directives: Map<Directive, Arguments?>? = null
+    ) : Execution.Node (unionField, emptyList(), key, alias, null, condition, directives, null) {
+        fun memberExecution(type: Type): Execution.Node {
             return Execution.Node (
-                    schemaNode,
-                    memberChildren[type] ?: throw IllegalArgumentException("Union ${unionNode.kqlProperty.name} has no member $type"),
+                    field,
+                    memberChildren[type] ?: throw IllegalArgumentException("Union ${unionField.name} has no member $type"),
                     key,
                     alias,
                     arguments,
                     typeCondition,
-                    directives
+                    directives,
+                    null
             )
         }
     }

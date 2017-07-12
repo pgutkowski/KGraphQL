@@ -49,7 +49,7 @@ class NonNullSpecificationTest {
             }
         }
 
-        expect<RequestException>("argument 'input' of type String! on field 'nonNull' is not nullable, value cannot be null"){
+        expect<RequestException>("Missing value for non-nullable argument input"){
             schema.execute("{nonNull}")
         }
     }

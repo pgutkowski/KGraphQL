@@ -153,7 +153,7 @@ package com.github.pgutkowski.kgraphql.server
 //private fun FlowContent.returnType(type: SchemaNode.ReturnType) {
 //    val kqlType = type.kqlType
 //    when (kqlType) {
-//        is KQLType.Kotlin<*> -> typeLink(kqlType.kClass.starProjectedType, type.isCollection, type.isNullable)
+//        is KQLType.Kotlin<*> -> typeLink(kqlType.kClass.starProjectedType, type.isIterable, type.isNullable)
 //        else -> throw UnsupportedOperationException("Type representation for $kqlType is not supported yet")
 //    }
 //}

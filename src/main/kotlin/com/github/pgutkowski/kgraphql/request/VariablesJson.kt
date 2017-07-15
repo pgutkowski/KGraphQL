@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.type.TypeFactory
 import com.github.pgutkowski.kgraphql.ExecutionException
-import com.github.pgutkowski.kgraphql.getCollectionElementType
-import com.github.pgutkowski.kgraphql.isCollection
+import com.github.pgutkowski.kgraphql.getIterableElementType
+import com.github.pgutkowski.kgraphql.isIterable
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.jvm.jvmErasure
@@ -44,8 +44,8 @@ interface VariablesJson{
     }
 
     fun KType.toTypeReference(): JavaType {
-        if(jvmErasure.isCollection()){
-            val elementType = getCollectionElementType()
+        if(jvmErasure.isIterable()){
+            val elementType = getIterableElementType()
                     ?: throw ExecutionException("Cannot handle collection without element type")
 
             return TypeFactory.defaultInstance().constructCollectionType(List::class.java, elementType.jvmErasure.java)

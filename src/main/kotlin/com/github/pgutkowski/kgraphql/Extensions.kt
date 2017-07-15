@@ -18,12 +18,12 @@ fun KParameter.isNullable() = type.isMarkedNullable
 
 fun KParameter.isNotNullable() = !type.isMarkedNullable
 
-fun KClass<*>.isCollection() = isSubclassOf(Collection::class)
+fun KClass<*>.isIterable() = isSubclassOf(Iterable::class)
 
-fun KType.isCollection() = jvmErasure.isCollection()
+fun KType.isIterable() = jvmErasure.isIterable()
 
-fun KType.getCollectionElementType(): KType? {
-    if(!jvmErasure.isCollection()) throw IllegalArgumentException("KType $this is not collection type")
+fun KType.getIterableElementType(): KType? {
+    if(!jvmErasure.isIterable()) throw IllegalArgumentException("KType $this is not collection type")
     return arguments.firstOrNull()?.type ?: throw NoSuchElementException("KType $this has no type arguments")
 }
 

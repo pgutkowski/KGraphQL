@@ -2,8 +2,8 @@ package com.github.pgutkowski.kgraphql.schema.structure2
 
 import com.github.pgutkowski.kgraphql.configuration.SchemaConfiguration
 import com.github.pgutkowski.kgraphql.defaultKQLTypeName
-import com.github.pgutkowski.kgraphql.getCollectionElementType
-import com.github.pgutkowski.kgraphql.isCollection
+import com.github.pgutkowski.kgraphql.getIterableElementType
+import com.github.pgutkowski.kgraphql.isIterable
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
@@ -134,7 +134,7 @@ class SchemaCompilation(val configuration : SchemaConfiguration, val definition 
     }
 
     private fun handlePossiblyWrappedType(kType : KType, typeCategory: TypeCategory) : Type {
-        if(kType.isCollection()){
+        if(kType.isIterable()){
             return handleCollectionType(kType, typeCategory)
         } else {
             if(kType.arguments.isNotEmpty()){
@@ -145,7 +145,7 @@ class SchemaCompilation(val configuration : SchemaConfiguration, val definition 
     }
 
     private fun handleCollectionType(kType: KType, typeCategory: TypeCategory): Type {
-        val type = kType.getCollectionElementType()
+        val type = kType.getIterableElementType()
                 ?: throw SchemaException("Cannot handle collection without element type")
 
         val nullableListType = Type.AList(handleSimpleType(type, typeCategory))

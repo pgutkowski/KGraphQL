@@ -112,6 +112,5 @@ object BOOLEAN_COERCION : StringScalarCoercion<Boolean> {
                 else -> throw IllegalArgumentException("$raw does not represent valid Boolean value")
             }
         }
-
     }
 }

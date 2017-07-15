@@ -107,7 +107,7 @@ class ScalarsSpecificationTest {
 
         val schema = KGraphQL.schema {
             intScalar<Number> {
-                deserialize = { int -> Number(int) }
+                deserialize = ::Number
                 serialize = { (int) -> int }
             }
 
@@ -128,7 +128,7 @@ class ScalarsSpecificationTest {
 
         val schema = KGraphQL.schema {
             booleanScalar<Bool> {
-                deserialize = { boolean -> Bool(boolean) }
+                deserialize = ::Bool
                 serialize = { (boolean) -> boolean }
             }
 
@@ -149,7 +149,7 @@ class ScalarsSpecificationTest {
 
         val schema = KGraphQL.schema {
             floatScalar<Dob> {
-                deserialize = { double -> Dob(double) }
+                deserialize = ::Dob
                 serialize = { (double) -> double }
             }
 

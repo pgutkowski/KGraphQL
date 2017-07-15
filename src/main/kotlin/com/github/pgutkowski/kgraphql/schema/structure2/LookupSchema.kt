@@ -1,6 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.structure2
 
-import com.github.pgutkowski.kgraphql.isCollection
+import com.github.pgutkowski.kgraphql.isIterable
 import com.github.pgutkowski.kgraphql.request.TypeReference
 import com.github.pgutkowski.kgraphql.schema.Schema
 import com.github.pgutkowski.kgraphql.schema.introspection.TypeKind
@@ -24,7 +24,7 @@ interface LookupSchema : Schema {
     fun inputTypeByName(name: String) : Type?
 
     fun typeReference(kType: KType) : TypeReference {
-        if(kType.jvmErasure.isCollection()){
+        if(kType.jvmErasure.isIterable()){
             val elementKType = kType.arguments.first().type
                    ?: throw IllegalArgumentException("Cannot transform kotlin collection type $kType to KGraphQL TypeReference")
             val elementKTypeErasure = elementKType.jvmErasure

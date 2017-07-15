@@ -2,8 +2,8 @@ package com.github.pgutkowski.kgraphql.request
 
 import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.RequestException
-import com.github.pgutkowski.kgraphql.getCollectionElementType
-import com.github.pgutkowski.kgraphql.isCollection
+import com.github.pgutkowski.kgraphql.getIterableElementType
+import com.github.pgutkowski.kgraphql.isIterable
 import com.github.pgutkowski.kgraphql.schema.structure2.LookupSchema
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -22,7 +22,7 @@ data class Variables(
         val variable = variables?.find { key == it.name }
                 ?: throw IllegalArgumentException("Variable '$key' was not declared for this operation")
 
-        val isCollection = kClass.isCollection()
+        val isIterable = kClass.isIterable()
 
         validateVariable(typeDefinitionProvider.typeReference(kType), variable)
 
@@ -32,8 +32,8 @@ data class Variables(
         }
 
         value?.let {
-            if (isCollection && !(kType.getCollectionElementType()?.isMarkedNullable ?: true)) {
-                for (element in value as Collection<*>) {
+            if (isIterable && !(kType.getIterableElementType()?.isMarkedNullable ?: true)) {
+                for (element in value as Iterable<*>) {
                     if (element == null) {
                         throw RequestException(
                                 "Invalid argument value $value from variable $key, expected list with non null arguments"

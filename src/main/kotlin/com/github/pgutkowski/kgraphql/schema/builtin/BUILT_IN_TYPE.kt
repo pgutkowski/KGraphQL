@@ -14,6 +14,10 @@ private val STRING_DESCRIPTION =
 private val INT_DESCRIPTION =
         "The Int scalar type represents a signed 32‐bit numeric non‐fractional value"
 
+private val LONG_DESCRIPTION =
+        "The Long scalar type represents a signed 64‐bit numeric non‐fractional value"
+
+
 private val FLOAT_DESCRIPTION =
         "The Float scalar type represents signed double‐precision fractional values as specified by IEEE 754"
 
@@ -36,6 +40,7 @@ object BUILT_IN_TYPE {
 
     val BOOLEAN = TypeDef.Scalar(Boolean::class.defaultKQLTypeName(), Boolean::class, BOOLEAN_COERCION, BOOLEAN_DESCRIPTION)
 
+    val LONG = TypeDef.Scalar(Long::class.defaultKQLTypeName(), Long::class, LONG_COERCION, LONG_DESCRIPTION)
 }
 
 object STRING_COERCION : StringScalarCoercion<String>{
@@ -80,7 +85,20 @@ object INT_COERCION : StringScalarCoercion<Int>{
     }
 }
 
-object BOOLEAN_COERCION : StringScalarCoercion<Boolean>{
+object LONG_COERCION : StringScalarCoercion<Long> {
+    override fun serialize(instance: Long): String = instance.toString()
+
+    override fun deserialize(raw: String): Long {
+        if(raw.isLiteral()) {
+            throw RequestException("Cannot coerce string literal, expected numeric string constant")
+        } else {
+            return raw.toLong()
+        }
+    }
+}
+
+
+object BOOLEAN_COERCION : StringScalarCoercion<Boolean> {
     override fun serialize(instance: Boolean): String = instance.toString()
 
     override fun deserialize(raw: String): Boolean {

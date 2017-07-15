@@ -131,6 +131,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
             value is Float -> jsonNodeFactory.numberNode(value)
             value is Double -> jsonNodeFactory.numberNode(value)
             value is Boolean -> jsonNodeFactory.booleanNode(value)
+            value is Long -> jsonNodeFactory.numberNode(value)
             //big decimal etc?
 
             node.children.isNotEmpty() -> createObjectNode(ctx, value, node, returnType)

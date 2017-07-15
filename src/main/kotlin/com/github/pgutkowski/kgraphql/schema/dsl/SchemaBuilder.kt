@@ -70,6 +70,15 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
         floatScalar(T::class, block)
     }
 
+    fun <T : Any>longScalar(kClass: KClass<T>, block: ScalarDSL<T, Long>.() -> Unit){
+        val scalar = LongScalarDSL(kClass, block)
+        model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.getCoercion(), scalar.description))
+    }
+
+    inline fun <reified T : Any>longScalar(noinline block: ScalarDSL<T, Long>.() -> Unit) {
+        longScalar(T::class, block)
+    }
+
     fun <T : Any>booleanScalar(kClass: KClass<T>, block: ScalarDSL<T, Boolean>.() -> Unit){
         val scalar = BooleanScalarDSL(kClass, block)
         model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.getCoercion(), scalar.description))

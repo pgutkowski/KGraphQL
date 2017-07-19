@@ -5,7 +5,7 @@ import com.github.pgutkowski.kgraphql.schema.model.InputValueDef
 import com.github.pgutkowski.kgraphql.schema.model.PropertyDef
 
 
-class PropertyDSL<T, R>(val name : String, block : PropertyDSL<T, R>.() -> Unit) : DepreciableItemDSL(), ResolverDSL.Target {
+class PropertyDSL<out T, R>(val name : String, block : PropertyDSL<T, R>.() -> Unit) : DepreciableItemDSL(), ResolverDSL.Target {
 
     init {
         block()
@@ -15,25 +15,18 @@ class PropertyDSL<T, R>(val name : String, block : PropertyDSL<T, R>.() -> Unit)
 
     private val inputValues = mutableListOf<InputValueDef<*>>()
 
-    fun resolver(function: (T) -> R): ResolverDSL {
-        functionWrapper = FunctionWrapper.on(function, true)
+    private fun resolver(function: FunctionWrapper<R>): ResolverDSL {
+        functionWrapper = function
         return ResolverDSL(this)
     }
 
-    fun <E>resolver(function: (T, E) -> R): ResolverDSL {
-        functionWrapper = FunctionWrapper.on(function, true)
-        return ResolverDSL(this)
-    }
+    fun resolver(function: (T) -> R) = resolver(FunctionWrapper.on(function, true))
 
-    fun <E, W>resolver(function: (T, E, W) -> R): ResolverDSL {
-        functionWrapper = FunctionWrapper.on(function, true)
-        return ResolverDSL(this)
-    }
+    fun <E>resolver(function: (T, E) -> R) = resolver(FunctionWrapper.on(function, true))
 
-    fun <E, W, Q>resolver(function: (T, E, W, Q) -> R): ResolverDSL {
-        functionWrapper = FunctionWrapper.on(function, true)
-        return ResolverDSL(this)
-    }
+    fun <E, W>resolver(function: (T, E, W) -> R) = resolver(FunctionWrapper.on(function, true))
+
+    fun <E, W, Q>resolver(function: (T, E, W, Q) -> R) = resolver(FunctionWrapper.on(function, true))
 
     fun toKQL(): PropertyDef.Function<R> {
         return PropertyDef.Function(

@@ -18,25 +18,18 @@ class UnionPropertyDSL<T>(val name : String, block: UnionPropertyDSL<T>.() -> Un
 
     private val inputValues = mutableListOf<InputValueDef<*>>()
 
-    fun resolver(function: (T) -> Any?): ResolverDSL {
-        functionWrapper = FunctionWrapper.on(function, true)
+    private fun resolver(function: FunctionWrapper<Any?>): ResolverDSL {
+        functionWrapper = function
         return ResolverDSL(this)
     }
 
-    fun <E>resolver(function: (T, E) -> Any?): ResolverDSL {
-        functionWrapper = FunctionWrapper.on(function, true)
-        return ResolverDSL(this)
-    }
+    fun resolver(function: (T) -> Any?) = resolver(FunctionWrapper.on(function, true))
 
-    fun <E, W>resolver(function: (T, E, W) -> Any?): ResolverDSL {
-        functionWrapper = FunctionWrapper.on(function, true)
-        return ResolverDSL(this)
-    }
+    fun <E>resolver(function: (T, E) -> Any?) = resolver(FunctionWrapper.on(function, true))
 
-    fun <E, W, Q>resolver(function: (T, E, W, Q) -> Any?): ResolverDSL {
-        functionWrapper = FunctionWrapper.on(function, true)
-        return ResolverDSL(this)
-    }
+    fun <E, W>resolver(function: (T, E, W) -> Any?) = resolver(FunctionWrapper.on(function, true))
+
+    fun <E, W, Q>resolver(function: (T, E, W, Q) -> Any?) = resolver(FunctionWrapper.on(function, true))
 
     fun toKQL(union : TypeDef.Union): PropertyDef.Union {
         return PropertyDef.Union (

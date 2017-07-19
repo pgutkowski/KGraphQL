@@ -17,30 +17,20 @@ class QueryOrMutationDSL(val name : String, block : QueryOrMutationDSL.() -> Uni
 
     internal lateinit var functionWrapper : FunctionWrapper<*>
 
-    fun <T>resolver(function: () -> T): ResolverDSL {
-        functionWrapper = FunctionWrapper.on(function)
+    private fun resolver(function: FunctionWrapper<*>): ResolverDSL {
+        functionWrapper = function
         return ResolverDSL(this)
     }
 
-    fun <T, R>resolver(function: (R) -> T): ResolverDSL {
-        functionWrapper = FunctionWrapper.on(function)
-        return ResolverDSL(this)
-    }
+    fun <T>resolver(function: () -> T) = resolver(FunctionWrapper.on(function))
 
-    fun <T, R, E>resolver(function: (R, E) -> T): ResolverDSL {
-        functionWrapper = FunctionWrapper.on(function)
-        return ResolverDSL(this)
-    }
+    fun <T, R>resolver(function: (R) -> T) = resolver(FunctionWrapper.on(function))
 
-    fun <T, R, E, W>resolver(function: (R, E, W) -> T): ResolverDSL {
-        functionWrapper = FunctionWrapper.on(function)
-        return ResolverDSL(this)
-    }
+    fun <T, R, E>resolver(function: (R, E) -> T) = resolver(FunctionWrapper.on(function))
 
-    fun <T, R, E, W, Q>resolver(function: (R, E, W, Q) -> T): ResolverDSL {
-        functionWrapper = FunctionWrapper.on(function)
-        return ResolverDSL(this)
-    }
+    fun <T, R, E, W>resolver(function: (R, E ,W ) -> T) = resolver(FunctionWrapper.on(function))
+
+    fun <T, R, E, W, Q>resolver(function: (R, E, W, Q) -> T) = resolver(FunctionWrapper.on(function))
 
     override fun addInputValues(inputValues: Collection<InputValueDef<*>>) {
         this.inputValues.addAll(inputValues)

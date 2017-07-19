@@ -1,6 +1,5 @@
 package com.github.pgutkowski.kgraphql.specification.typesystem
 
-import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.KGraphQL
 import com.github.pgutkowski.kgraphql.RequestException
 import com.github.pgutkowski.kgraphql.Specification
@@ -21,7 +20,7 @@ class NonNullSpecificationTest {
                 resolver { string : String? -> string!! }
             }
         }
-        expect<ExecutionException>("Failed to invoke function nonNull"){
+        expect<NullPointerException> {
             schema.execute("{nonNull}")
         }
     }

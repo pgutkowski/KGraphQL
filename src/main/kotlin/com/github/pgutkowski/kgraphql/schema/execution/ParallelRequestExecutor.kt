@@ -278,14 +278,11 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
 
         val transformedArgs = argumentsHandler.transformArguments(funName, inputValues, args, variables)
 
-        try {
-            if(receiver != null && hasReceiver){
-                return invoke(receiver, *transformedArgs.toTypedArray())
-            } else {
-                return invoke(*transformedArgs.toTypedArray())
-            }
-        } catch (e: Exception){
-            throw ExecutionException("Failed to invoke function $funName", e)
+        //exceptions are not caught on purpose to pass up business logic errors
+        if(receiver != null && hasReceiver){
+            return invoke(receiver, *transformedArgs.toTypedArray())
+        } else {
+            return invoke(*transformedArgs.toTypedArray())
         }
     }
 

@@ -65,14 +65,15 @@ fun assertError(map : Map<*,*>, vararg messageElements : String) {
             .forEach { throw AssertionError("Expected error message to contain $it, but was: $errorMessage") }
 }
 
-inline fun <reified T: Exception> expect(message: String, block: () -> Unit){
+inline fun <reified T: Exception> expect(message: String? = null, block: () -> Unit){
     try {
         block()
         throw AssertionError("No exception caught")
     } catch (e : Exception){
         assertThat(e, instanceOf(T::class.java))
-        assertThat(e, ExceptionMessageMatcher(message))
-//        assertThat(e.message, containsString(message))
+        if(message != null){
+            assertThat(e, ExceptionMessageMatcher(message))
+        }
     }
 }
 
@@ -84,7 +85,7 @@ fun executeEqualQueries(schema: Schema, expected: Map<*,*>, vararg queries : Str
     }
 }
 
-class ExceptionMessageMatcher(message: String)
+class ExceptionMessageMatcher(message: String?)
     : FeatureMatcher<Exception, String>(Matchers.containsString(message), "exception message is", "exception message"){
 
     override fun featureValueOf(actual: Exception?): String? = actual?.message

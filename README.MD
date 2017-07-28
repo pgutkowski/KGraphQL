@@ -191,6 +191,10 @@ buildscript {
 }
 ```
 
+## Contributing
+
+All contributions are welcome. Feel free to open issues and PRs!
+
 ## Building
 
 To build KGraphQL you only need to have JDK8 installed. invoke

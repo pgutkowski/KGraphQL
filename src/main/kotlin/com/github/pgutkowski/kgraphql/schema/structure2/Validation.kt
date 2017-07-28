@@ -32,10 +32,8 @@ fun Field.validateArguments(selectionArgs: Arguments?, parentTypeName : String?)
     val invalidArguments = selectionArgs?.filterKeys { it !in parameterNames }
 
     if(invalidArguments != null && invalidArguments.isNotEmpty()){
-        invalidArguments.forEach { name, _ ->
-            exceptions.add(ValidationException("${this.name} does support arguments ${arguments.map { it.name }}. " +
-                    "Found arguments ${selectionArgs.map { it.key }}"))
-        }
+        exceptions.add(ValidationException("${this.name} does support arguments ${arguments.map { it.name }}. " +
+                "Found arguments ${selectionArgs.map { it.key }}"))
     }
 
     arguments.forEach { arg ->

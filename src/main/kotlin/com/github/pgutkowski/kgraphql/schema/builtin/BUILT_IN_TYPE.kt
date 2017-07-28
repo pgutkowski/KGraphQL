@@ -17,7 +17,6 @@ private val INT_DESCRIPTION =
 private val LONG_DESCRIPTION =
         "The Long scalar type represents a signed 64‐bit numeric non‐fractional value"
 
-
 private val FLOAT_DESCRIPTION =
         "The Float scalar type represents signed double‐precision fractional values as specified by IEEE 754"
 

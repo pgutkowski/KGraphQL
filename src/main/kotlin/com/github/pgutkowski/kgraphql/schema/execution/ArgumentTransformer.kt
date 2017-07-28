@@ -20,7 +20,7 @@ open class ArgumentTransformer(val schema : DefaultSchema) {
         return when {
             value.startsWith("$") -> {
                 variables.get (
-                        kType.jvmErasure, kType, value, { value -> transformValue(type, value, variables) }
+                        kType.jvmErasure, kType, value, { subValue -> transformValue(type, subValue, variables) }
                 )
             }
             value == "null" && type.isNullable() -> null

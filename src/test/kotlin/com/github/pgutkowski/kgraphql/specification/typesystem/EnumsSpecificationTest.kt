@@ -19,7 +19,13 @@ class EnumsSpecificationTest {
     }
 
     val schema = KGraphQL.schema {
-        enum<Coolness>()
+        enum<Coolness>{
+            description = "State of coolness"
+            value(Coolness.COOL){
+                description = "really cool"
+            }
+        }
+
         query("cool"){
             resolver{ cool: Coolness -> cool.toString() }
         }

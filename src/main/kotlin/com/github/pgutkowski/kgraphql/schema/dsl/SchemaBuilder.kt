@@ -1,6 +1,5 @@
 package com.github.pgutkowski.kgraphql.schema.dsl
 
-import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.Schema
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.model.EnumValueDef
@@ -45,7 +44,7 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
 
     fun <T : Any>stringScalar(kClass: KClass<T>, block: ScalarDSL<T, String>.() -> Unit){
         val scalar = StringScalarDSL(kClass, block)
-        model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.getCoercion(), scalar.description))
+        model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.createCoercion(), scalar.description))
     }
 
     inline fun <reified T : Any> stringScalar(noinline block: ScalarDSL<T, String>.() -> Unit) {
@@ -54,7 +53,7 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
 
     fun <T : Any>intScalar(kClass: KClass<T>, block: ScalarDSL<T, Int>.() -> Unit){
         val scalar = IntScalarDSL(kClass, block)
-        model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.getCoercion(), scalar.description))
+        model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.createCoercion(), scalar.description))
     }
 
     inline fun <reified T : Any> intScalar(noinline block: ScalarDSL<T, Int>.() -> Unit) {
@@ -63,7 +62,7 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
 
     fun <T : Any>floatScalar(kClass: KClass<T>, block: ScalarDSL<T, Double>.() -> Unit){
         val scalar = DoubleScalarDSL(kClass, block)
-        model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.getCoercion(), scalar.description))
+        model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.createCoercion(), scalar.description))
     }
 
     inline fun <reified T : Any> floatScalar(noinline block: ScalarDSL<T, Double>.() -> Unit) {
@@ -72,7 +71,7 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
 
     fun <T : Any>longScalar(kClass: KClass<T>, block: ScalarDSL<T, Long>.() -> Unit){
         val scalar = LongScalarDSL(kClass, block)
-        model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.getCoercion(), scalar.description))
+        model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.createCoercion(), scalar.description))
     }
 
     inline fun <reified T : Any>longScalar(noinline block: ScalarDSL<T, Long>.() -> Unit) {
@@ -81,7 +80,7 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
 
     fun <T : Any>booleanScalar(kClass: KClass<T>, block: ScalarDSL<T, Boolean>.() -> Unit){
         val scalar = BooleanScalarDSL(kClass, block)
-        model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.getCoercion(), scalar.description))
+        model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.createCoercion(), scalar.description))
     }
 
     inline fun <reified T : Any> booleanScalar(noinline block: ScalarDSL<T, Boolean>.() -> Unit) {

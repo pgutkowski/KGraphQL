@@ -254,7 +254,7 @@ class SchemaBuilderTest {
     fun `input value default value can be specified`(){
         val schema = defaultSchema {
             query("data"){
-                resolver { int: Int, string: String? -> int }.withArgs {
+                resolver { int: Int -> int }.withArgs {
                     arg <Int> { name = "int"; defaultValue = 33 }
                 }
             }
@@ -265,5 +265,31 @@ class SchemaBuilderTest {
 
         val response = deserialize(schema.execute("{data}"))
         assertThat(response.extract<Int>("data/data"), equalTo(33))
+    }
+
+    @Test
+    fun `arg name must match exactly one of type property`(){
+        expect<SchemaException>("Invalid input values on data: [intss]") {
+            defaultSchema {
+                query("data"){
+                    resolver { int: Int, string: String? -> int }.withArgs {
+                        arg <Int> { name = "intss"; defaultValue = 33 }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `arg name must be defined`(){
+        expect<UninitializedPropertyAccessException>("lateinit property name has not been initialized") {
+            defaultSchema {
+                query("data"){
+                    resolver { int: Int, string: String? -> int }.withArgs {
+                        arg <Int> { defaultValue = 33 }
+                    }
+                }
+            }
+        }
     }
 }

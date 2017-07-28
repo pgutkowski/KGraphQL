@@ -18,4 +18,10 @@ class EnumDSL<T : Enum<T>>(kClass: KClass<T>, block : (EnumDSL<T>.() -> Unit)?) 
         valueDefinitions[value] = EnumValueDSL(value, block)
     }
 
+    infix fun T.describe(content: String){
+        valueDefinitions[this] = EnumValueDSL(this){
+            description = content
+        }
+    }
+
 }

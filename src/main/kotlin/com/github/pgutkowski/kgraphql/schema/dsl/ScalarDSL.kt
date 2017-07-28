@@ -22,10 +22,10 @@ abstract class ScalarDSL<T : Any, Raw : Any>(kClass: KClass<T>, block: ScalarDSL
 
     var serialize : ((T) -> Raw)? = null
 
-    var support : ScalarCoercion<T, Raw>? = null
+    var coercion: ScalarCoercion<T, Raw>? = null
 
-    fun getCoercion() : ScalarCoercion<T, Raw> {
-        return support ?: createCoercionFromFunctions()
+    internal fun createCoercion() : ScalarCoercion<T, Raw> {
+        return coercion ?: createCoercionFromFunctions()
     }
 
     abstract protected fun createCoercionFromFunctions() : ScalarCoercion<T, Raw>

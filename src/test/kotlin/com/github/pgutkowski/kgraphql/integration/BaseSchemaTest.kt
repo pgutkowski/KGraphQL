@@ -79,7 +79,7 @@ abstract class BaseSchemaTest {
         }
         stringScalar<Id> {
             description = "unique, concise representation of film"
-            support = IdScalarSupport()
+            coercion = IdScalarSupport()
         }
         enum<FilmType>{ description = "type of film, base on its length" }
         type<Person>{ description = "Common data for any person"}

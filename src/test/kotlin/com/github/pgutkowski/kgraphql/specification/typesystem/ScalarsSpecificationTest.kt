@@ -6,6 +6,7 @@ import com.github.pgutkowski.kgraphql.Specification
 import com.github.pgutkowski.kgraphql.deserialize
 import com.github.pgutkowski.kgraphql.expect
 import com.github.pgutkowski.kgraphql.extract
+import com.github.pgutkowski.kgraphql.schema.scalar.StringScalarCoercion
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
@@ -22,8 +23,12 @@ class ScalarsSpecificationTest {
         val testedSchema = KGraphQL.schema {
             stringScalar<UUID> {
                 description = "unique identifier of object"
-                deserialize = { uuid : String -> UUID.fromString(uuid) }
-                serialize = UUID::toString
+
+                coercion = object : StringScalarCoercion<UUID>{
+                    override fun serialize(instance: UUID): String = instance.toString()
+
+                    override fun deserialize(raw: String): UUID = UUID.fromString(raw)
+                }
             }
             query("person"){
                 resolver{ -> Person(uuid, "John Smith")}

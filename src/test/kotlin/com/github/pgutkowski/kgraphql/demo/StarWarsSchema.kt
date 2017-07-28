@@ -1,5 +1,7 @@
 package com.github.pgutkowski.kgraphql.demo
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.github.pgutkowski.kgraphql.KGraphQL
 
 enum class Episode {
@@ -39,6 +41,8 @@ fun main(args: Array<String>) {
 
         configure {
             useDefaultPrettyPrinter = true
+            objectMapper = jacksonObjectMapper()
+            useCachingDocumentParser = false
         }
 
         query("hero") {

@@ -31,17 +31,15 @@ class UnionPropertyDSL<T>(val name : String, block: UnionPropertyDSL<T>.() -> Un
 
     fun <E, W, Q>resolver(function: (T, E, W, Q) -> Any?) = resolver(FunctionWrapper.on(function, true))
 
-    fun toKQL(union : TypeDef.Union): PropertyDef.Union {
-        return PropertyDef.Union (
-                name = name,
-                resolver = functionWrapper,
-                union = union,
-                description = description,
-                isDeprecated = isDeprecated,
-                deprecationReason = deprecationReason,
-                inputValues = inputValues
-        )
-    }
+    fun toKQLProperty(union : TypeDef.Union) = PropertyDef.Union (
+            name = name,
+            resolver = functionWrapper,
+            union = union,
+            description = description,
+            isDeprecated = isDeprecated,
+            deprecationReason = deprecationReason,
+            inputValues = inputValues
+    )
 
     override fun addInputValues(inputValues: Collection<InputValueDef<*>>) {
         this.inputValues.addAll(inputValues)

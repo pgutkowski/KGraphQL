@@ -36,11 +36,21 @@ class QueryOrMutationDSL(val name : String, block : QueryOrMutationDSL.() -> Uni
         this.inputValues.addAll(inputValues)
     }
 
-    internal fun toKQLQuery(): QueryDef<out Any?> {
-        return QueryDef(name, functionWrapper, description, isDeprecated, deprecationReason, inputValues)
-    }
+    internal fun toKQLQuery() = QueryDef (
+            name = name,
+            resolver = functionWrapper,
+            description = description,
+            isDeprecated = isDeprecated,
+            deprecationReason = deprecationReason,
+            inputValues = inputValues
+    )
 
-    internal fun toKQLMutation(): MutationDef<out Any?> {
-        return MutationDef(name, functionWrapper, description, isDeprecated, deprecationReason, inputValues)
-    }
+    internal fun toKQLMutation() = MutationDef(
+            name = name,
+            resolver = functionWrapper,
+            description = description,
+            isDeprecated = isDeprecated,
+            deprecationReason = deprecationReason,
+            inputValues = inputValues
+    )
 }

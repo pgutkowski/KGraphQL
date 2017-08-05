@@ -12,7 +12,11 @@ class KotlinPropertyDSL<T>(val kProperty: KProperty1<T, *>, block : KotlinProper
         block()
     }
 
-    fun toKQLProperty(): PropertyDef.Kotlin<T, Any?> {
-        return PropertyDef.Kotlin(kProperty, description, isDeprecated, deprecationReason, ignore)
-    }
+    fun toKQLProperty() = PropertyDef.Kotlin (
+            kProperty = kProperty,
+            description = description,
+            isDeprecated = isDeprecated,
+            deprecationReason = deprecationReason,
+            isIgnored = ignore
+    )
 }

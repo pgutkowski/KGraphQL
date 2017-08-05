@@ -15,6 +15,11 @@ class InputValueDSL<T : Any>(val kClass: KClass<T>, block : InputValueDSL<T>.() 
     var defaultValue : T? = null
 
     fun toKQLInputValue() : InputValueDef<T> = InputValueDef(
-            kClass, name, defaultValue, isDeprecated, deprecationReason, description
+            kClass = kClass,
+            name = name,
+            defaultValue = defaultValue,
+            isDeprecated = isDeprecated,
+            description = description,
+            deprecationReason = deprecationReason
     )
 }

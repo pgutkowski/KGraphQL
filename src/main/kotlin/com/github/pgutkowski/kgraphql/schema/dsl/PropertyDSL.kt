@@ -28,16 +28,14 @@ class PropertyDSL<out T, R>(val name : String, block : PropertyDSL<T, R>.() -> U
 
     fun <E, W, Q>resolver(function: (T, E, W, Q) -> R) = resolver(FunctionWrapper.on(function, true))
 
-    fun toKQL(): PropertyDef.Function<R> {
-        return PropertyDef.Function(
-                name,
-                functionWrapper,
-                description,
-                isDeprecated,
-                deprecationReason,
-                inputValues
-        )
-    }
+    fun toKQLProperty() = PropertyDef.Function(
+            name = name,
+            resolver = functionWrapper,
+            description = description,
+            isDeprecated = isDeprecated,
+            deprecationReason = deprecationReason,
+            inputValues = inputValues
+    )
 
     override fun addInputValues(inputValues: Collection<InputValueDef<*>>) {
         this.inputValues.addAll(inputValues)

@@ -251,20 +251,26 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun `input value default value can be specified`(){
+    fun `input value default value and description can be specified`(){
+        val expectedDescription = "Int Argument"
+        val expectedDefaultValue = 33
         val schema = defaultSchema {
             query("data"){
                 resolver { int: Int -> int }.withArgs {
-                    arg <Int> { name = "int"; defaultValue = 33 }
+                    arg <Int> { name = "int"; defaultValue = expectedDefaultValue; description = expectedDescription }
                 }
             }
         }
 
         val intArg = schema.queryType.fields?.find { it.name == "data" }?.args?.find { it.name == "int" }
-        assertThat(intArg?.defaultValue, equalTo("33"))
+        assertThat(intArg?.defaultValue, equalTo(expectedDefaultValue.toString()))
+        assertThat(intArg?.description, equalTo(expectedDescription))
 
         val response = deserialize(schema.execute("{data}"))
         assertThat(response.extract<Int>("data/data"), equalTo(33))
+
+        val introspection = deserialize(schema.execute("{__schema{queryType{fields{name, args{name, description, defaultValue}}}}}"))
+        assertThat(introspection.extract<String>("data/__schema/queryType/fields[0]/args[0]/description"), equalTo(expectedDescription))
     }
 
     @Test

@@ -41,7 +41,7 @@ open class TypeDSL<T : Any>(private val supportedUnions: Collection<TypeDef.Unio
 
     fun <R> property(name : String, block : PropertyDSL<T, R>.() -> Unit){
         val dsl = PropertyDSL(name, block)
-        extensionProperties.add(dsl.toKQL())
+        extensionProperties.add(dsl.toKQLProperty())
     }
 
     fun <R> KProperty1<T, R>.configure(block : KotlinPropertyDSL<T>.() -> Unit){
@@ -57,7 +57,7 @@ open class TypeDSL<T : Any>(private val supportedUnions: Collection<TypeDef.Unio
         val union = supportedUnions.find { property.returnType.typeID.equals(it.name, true) }
                 ?: throw SchemaException("Union Type: ${property.returnType.typeID} does not exist")
 
-        unionProperties.add(property.toKQL(union))
+        unionProperties.add(property.toKQLProperty(union))
     }
 
     init {

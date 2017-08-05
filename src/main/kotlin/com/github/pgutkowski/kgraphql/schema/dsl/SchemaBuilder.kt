@@ -113,7 +113,12 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
 
         val kqlEnumValues = enumValues.map { value ->
             type.valueDefinitions[value]?.let { valueDSL ->
-                EnumValueDef(value, valueDSL.description, valueDSL.isDeprecated, valueDSL.deprecationReason)
+                EnumValueDef (
+                        value = value,
+                        description = valueDSL.description,
+                        isDeprecated = valueDSL.isDeprecated,
+                        deprecationReason = valueDSL.deprecationReason
+                )
             } ?: EnumValueDef(value)
         }
 

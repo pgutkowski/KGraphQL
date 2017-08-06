@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/pgutkowski/KGraphQL.svg?branch=master)](https://travis-ci.org/pgutkowski/KGraphQL)
 [![codebeat badge](https://codebeat.co/badges/b26d3c87-7cd1-4358-93cd-45d395669bdc)](https://codebeat.co/projects/github-com-pgutkowski-kgraphql-master)
 [![Coverage Status](https://coveralls.io/repos/github/pgutkowski/KGraphQL/badge.svg?branch=master)](https://coveralls.io/github/pgutkowski/KGraphQL?branch=master)
+[ ![Download](https://api.bintray.com/packages/pgutkowski/Maven/KGraphQL/images/download.svg) ](https://bintray.com/pgutkowski/Maven/KGraphQL/_latestVersion)
 [![Awesome Kotlin Badge](https://kotlin.link/awesome-kotlin.svg)](https://github.com/KotlinBy/awesome-kotlin)
 
 KGraphQL is [Kotlin](https://kotlinlang.org/) implementation of [GraphQL](http://graphql.org/). It provides rich DSL to setup GraphQL schema. 

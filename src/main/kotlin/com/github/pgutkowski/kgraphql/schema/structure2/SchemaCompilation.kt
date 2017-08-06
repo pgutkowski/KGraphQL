@@ -111,7 +111,7 @@ class SchemaCompilation(val configuration : SchemaConfiguration, val definition 
     }
 
     private fun introspectionSchemaQuery() = handleOperation(
-            QueryDef("__schema", FunctionWrapper.on<__Schema> { schemaProxy })
+            QueryDef("__schema", FunctionWrapper.on<__Schema> { schemaProxy as __Schema })
     )
 
     private fun introspectionTypeQuery() = handleOperation(
@@ -128,7 +128,7 @@ class SchemaCompilation(val configuration : SchemaConfiguration, val definition 
 
     private fun handleUnionProperty(unionProperty: PropertyDef.Union) : Field {
         val inputValues = handleInputValues(unionProperty.name, unionProperty, unionProperty.inputValues)
-        val type  = handleUnionType(unionProperty.union)
+        val type = handleUnionType(unionProperty.union)
 
         return Field.Union(unionProperty, type, inputValues)
     }

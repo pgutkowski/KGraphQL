@@ -5,10 +5,15 @@ import com.github.pgutkowski.kgraphql.defaultSchema
 import com.github.pgutkowski.kgraphql.deserialize
 import com.github.pgutkowski.kgraphql.expect
 import com.github.pgutkowski.kgraphql.extract
+import com.github.pgutkowski.kgraphql.integration.BaseSchemaTest
 import com.github.pgutkowski.kgraphql.schema.Schema
 import com.github.pgutkowski.kgraphql.schema.introspection.TypeKind
+import junit.framework.Assert.fail
+import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.not
 import org.hamcrest.CoreMatchers.notNullValue
+import org.hamcrest.CoreMatchers.startsWith
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Ignore
 import org.junit.Test
@@ -240,5 +245,45 @@ class IntrospectionSpecificationTest {
 
         val possibleTypes = schema.findTypeByName("FaceBook")?.possibleTypes?.map { it.name }
         assertThat(possibleTypes, equalTo(listOf<String?>("Face", "Book")))
+    }
+
+    @Test
+    fun `introspection types must not leak into schema`(){
+        val schema = defaultSchema {
+            query("interface"){
+                resolver { -> Face("~~MOCK~~") }
+            }
+        }
+
+        val map = deserialize(schema.execute(BaseSchemaTest.INTROSPECTION_QUERY))
+        val types = map.extract<List<Map<Any,*>>>("data/__schema/types")
+
+        types.forEach { type ->
+            assertThat(type["name"] as String, not(startsWith("__")))
+        }
+
+        val fields = map.extract<List<Map<String,*>>>("data/__schema/types[0]/fields")
+
+        fields.forEach { field ->
+            assertThat(field["name"] as String, not(startsWith("__")))
+        }
+    }
+
+    @Test
+    fun `introspection types should not contain duplicated float type for kotlin Double and Float`(){
+        val schema = defaultSchema {
+            query("interface"){
+                resolver { -> Face("~~MOCK~~") }
+            }
+        }
+
+        val map = deserialize(schema.execute(BaseSchemaTest.INTROSPECTION_QUERY))
+        val types = map.extract<List<Map<Any,*>>>("data/__schema/types")
+
+        val typenames = types.map { type -> type["name"] as String }.sorted()
+
+        for(i in typenames.indices){
+            if(typenames[i] == typenames.getOrNull(i + 1)) fail()
+        }
     }
 }

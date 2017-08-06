@@ -5,9 +5,15 @@ import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.builtin.BUILT_IN_TYPE
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
 import com.github.pgutkowski.kgraphql.schema.directive.DirectiveLocation
+import com.github.pgutkowski.kgraphql.schema.dsl.TypeDSL
 import com.github.pgutkowski.kgraphql.schema.introspection.__Schema
 import com.github.pgutkowski.kgraphql.schema.introspection.TypeKind
+import com.github.pgutkowski.kgraphql.schema.introspection.__Directive
+import com.github.pgutkowski.kgraphql.schema.introspection.__EnumValue
+import com.github.pgutkowski.kgraphql.schema.introspection.__Field
+import com.github.pgutkowski.kgraphql.schema.introspection.__Type
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty1
 import kotlin.reflect.full.isSubclassOf
 
 /**
@@ -16,7 +22,8 @@ import kotlin.reflect.full.isSubclassOf
  */
 data class MutableSchemaDefinition (
         private val objects: ArrayList<TypeDef.Object<*>> = arrayListOf(
-                TypeDef.Object(__Schema::class.defaultKQLTypeName(), __Schema::class)
+                TypeDef.Object(__Schema::class.defaultKQLTypeName(), __Schema::class),
+                create__TypeDefinition()
         ),
         private val queries: ArrayList<QueryDef<*>> = arrayListOf(),
         private val scalars: ArrayList<TypeDef.Scalar<*>> = arrayListOf(
@@ -130,3 +137,12 @@ data class MutableSchemaDefinition (
                 return this.name.equals(other.name, true)
         }
 }
+
+private fun create__TypeDefinition() = TypeDSL(emptyList(), __Type::class){
+        transformation(__Type::fields){ fields: List<__Field>?, includeDeprecated : Boolean? ->
+                if (includeDeprecated == true) fields else fields?.filterNot { it.isDeprecated }
+        }
+        transformation(__Type::enumValues){ enumValues: List<__EnumValue>?, includeDeprecated: Boolean? ->
+                if (includeDeprecated == true) enumValues else enumValues?.filterNot { it.isDeprecated }
+        }
+}.toKQLObject()

@@ -61,8 +61,10 @@ interface Type : __Type {
 
     val kClass : KClass<*>?
 
-    abstract class ComplexType(override val fields: List<Field>) : Type {
-        val fieldsByName = fields.associate { it.name to it }
+    abstract class ComplexType(val allFields: List<Field>) : Type {
+        val fieldsByName = allFields.associate { it.name to it }
+
+        override val fields: List<__Field>? = allFields.filterNot { it.name.startsWith("__") }
 
         override fun hasField(name: String): Boolean = fieldsByName[name] != null
 
@@ -114,7 +116,7 @@ interface Type : __Type {
 
         override val possibleTypes: List<__Type>? = null
 
-        fun withInterfaces(interfaces : List<Type>) = Object(this.definition, this.fields, interfaces)
+        fun withInterfaces(interfaces : List<Type>) = Object(this.definition, this.allFields, interfaces)
     }
 
     class Interface<T : Any>(
@@ -139,7 +141,7 @@ interface Type : __Type {
 
         override val interfaces: List<__Type>? = null
 
-        fun withPossibleTypes(possibleTypes: List<Type>) = Interface(this.definition, this.fields, possibleTypes)
+        fun withPossibleTypes(possibleTypes: List<Type>) = Interface(this.definition, this.allFields, possibleTypes)
     }
 
     class Scalar<T : Any>(

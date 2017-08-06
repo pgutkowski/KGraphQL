@@ -20,12 +20,10 @@ open class DocumentParser {
     open fun parseDocument(input: String) : List<Operation> {
         val request = validateAndFilterRequest(input)
         val documentTokens = createDocumentTokens(tokenizeRequest(request))
-        val fragments = mutableMapOf<String, Fragment.External>()
-
-        documentTokens.fragmentsTokens.forEach { (name, typeCondition, graphTokens) ->
+        val fragments = Document.Fragments(documentTokens.fragmentsTokens, { fragments, (name, typeCondition, graphTokens) ->
             val fragmentGraph = parseSelectionTree(ParsingContext(input, graphTokens, fragments))
-            fragments.put("...$name", Fragment.External("...$name", fragmentGraph, typeCondition))
-        }
+            Fragment.External("...$name", fragmentGraph, typeCondition)
+        })
 
         return documentTokens.operationTokens.map { (name, type, operationVariables, graphTokens) ->
             Operation (
@@ -37,11 +35,15 @@ open class DocumentParser {
         }
     }
 
-    fun parseSelectionTree(input: String, fragments: Map<String, Fragment.External> = emptyMap()): SelectionTree {
-        return parseSelectionTree(ParsingContext(input, tokenizeRequest(input), fragments))
+    internal fun parseSelectionTree(input: String): SelectionTree {
+        return parseSelectionTree(ParsingContext(
+                fullString = input,
+                tokens = tokenizeRequest(input),
+                fragments = Document.Fragments(emptyList(), { _, _ ->  throw IllegalStateException() })
+        ))
     }
 
-    private fun parseSelectionTree(input: String, tokens: List<String>, fragments: Map<String, Fragment.External> = emptyMap()): SelectionTree {
+    private fun parseSelectionTree(input: String, tokens: List<String>, fragments: Document.Fragments): SelectionTree {
         return parseSelectionTree(ParsingContext(input, tokens, fragments))
     }
 
@@ -76,7 +78,7 @@ open class DocumentParser {
                     if (key == "...") {
                         graph.add(parseInlineFragment(ctx, directives))
                     } else {
-                        graph.add(ctx.fragments[key] ?: throw RequestException("Fragment $key} does not exist"))
+                        graph.add(ctx.fragments[key])
                     }
                 } else {
                     graph.add(SelectionNode(key = key, alias = alias, directives = directives))

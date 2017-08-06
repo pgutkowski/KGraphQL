@@ -1,17 +1,23 @@
 package com.github.pgutkowski.kgraphql.specification.language
 
 import com.github.pgutkowski.kgraphql.Actor
+import com.github.pgutkowski.kgraphql.RequestException
 import com.github.pgutkowski.kgraphql.Specification
 import com.github.pgutkowski.kgraphql.assertNoErrors
 import com.github.pgutkowski.kgraphql.defaultSchema
 import com.github.pgutkowski.kgraphql.deserialize
 import com.github.pgutkowski.kgraphql.executeEqualQueries
+import com.github.pgutkowski.kgraphql.expect
 import com.github.pgutkowski.kgraphql.extract
 import com.github.pgutkowski.kgraphql.extractOrNull
 import com.github.pgutkowski.kgraphql.integration.BaseSchemaTest
+import com.github.pgutkowski.kgraphql.integration.BaseSchemaTest.Companion.INTROSPECTION_QUERY
 import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.not
+import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.CoreMatchers.nullValue
+import org.hamcrest.CoreMatchers.startsWith
 import org.hamcrest.MatcherAssert
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
@@ -25,7 +31,7 @@ class FragmentsSpecificationTest {
 
     val id = "BLinda"
 
-    data class ActorWrapper(val id : String, val actualActor: Actor)
+    data class ActorWrapper(val id: String, val actualActor: Actor)
 
     val schema = defaultSchema {
         query("actor") {
@@ -33,10 +39,10 @@ class FragmentsSpecificationTest {
         }
     }
 
-    val BaseTestSchema = object : BaseSchemaTest(){}
+    val BaseTestSchema = object : BaseSchemaTest() {}
 
     @Test
-    fun `fragment's fields are added to the query at the same level as the fragment invocation`(){
+    fun `fragment's fields are added to the query at the same level as the fragment invocation`() {
         val expected = mapOf("data" to mapOf(
                 "actor" to mapOf(
                         "id" to id,
@@ -51,7 +57,7 @@ class FragmentsSpecificationTest {
     }
 
     @Test
-    fun `fragments can be nested`(){
+    fun `fragments can be nested`() {
         val expected = mapOf("data" to mapOf(
                 "actor" to mapOf(
                         "id" to id,
@@ -66,8 +72,8 @@ class FragmentsSpecificationTest {
     }
 
     @Test
-    fun `Inline fragments may also be used to apply a directive to a group of fields`(){
-        val response = deserialize(schema.execute (
+    fun `Inline fragments may also be used to apply a directive to a group of fields`() {
+        val response = deserialize(schema.execute(
                 "query (\$expandedInfo : Boolean){actor{actualActor{name ... @include(if: \$expandedInfo){ age }}}}",
                 "{\"expandedInfo\":false}"
         ))
@@ -77,13 +83,13 @@ class FragmentsSpecificationTest {
     }
 
     @Test
-    fun `query with inline fragment with type condition`(){
+    fun `query with inline fragment with type condition`() {
         val map = BaseTestSchema.execute("{people{name, age, ... on Actor {isOld} ... on Director {favActors{name}}}}")
         assertNoErrors(map)
-        for(i in map.extract<List<*>>("data/people").indices){
+        for (i in map.extract<List<*>>("data/people").indices) {
             val name = map.extract<String>("data/people[$i]/name")
-            when(name){
-                "David Fincher" /* director */  ->{
+            when (name) {
+                "David Fincher" /* director */ -> {
                     MatcherAssert.assertThat(map.extract<List<*>>("data/people[$i]/favActors"), CoreMatchers.notNullValue())
                     MatcherAssert.assertThat(extractOrNull<Boolean>(map, "data/people[$i]/isOld"), CoreMatchers.nullValue())
                 }
@@ -96,13 +102,13 @@ class FragmentsSpecificationTest {
     }
 
     @Test
-    fun `query with external fragment with type condition`(){
+    fun `query with external fragment with type condition`() {
         val map = BaseTestSchema.execute("{people{name, age ...act ...dir}} fragment act on Actor {isOld} fragment dir on Director {favActors{name}}")
         assertNoErrors(map)
-        for(i in map.extract<List<*>>("data/people").indices){
+        for (i in map.extract<List<*>>("data/people").indices) {
             val name = map.extract<String>("data/people[$i]/name")
-            when(name){
-                "David Fincher" /* director */  ->{
+            when (name) {
+                "David Fincher" /* director */ -> {
                     MatcherAssert.assertThat(map.extract<List<*>>("data/people[$i]/favActors"), CoreMatchers.notNullValue())
                     MatcherAssert.assertThat(extractOrNull<Boolean>(map, "data/people[$i]/isOld"), CoreMatchers.nullValue())
                 }
@@ -111,6 +117,40 @@ class FragmentsSpecificationTest {
                     MatcherAssert.assertThat(extractOrNull<List<*>>(map, "data/people[$i]/favActors"), CoreMatchers.nullValue())
                 }
             }
+        }
+    }
+
+    @Test
+    fun `multiple nested fragments are handled`() {
+        val map = BaseTestSchema.execute(INTROSPECTION_QUERY)
+        val fields = map.extract<List<Map<String,*>>>("data/__schema/types[0]/fields")
+
+        fields.forEach { field ->
+            assertThat(field["name"], notNullValue())
+        }
+    }
+
+    @Test
+    fun `queries with recursive fragments are denied`() {
+        expect<RequestException>("Fragment spread circular references are not allowed"){
+            BaseTestSchema.execute("""
+            query IntrospectionQuery {
+                __schema {
+                    types {
+                        ...FullType
+                    }
+                }
+            }
+
+            fragment FullType on __Type {
+                fields(includeDeprecated: true) {
+                    name
+                    type {
+                        ...FullType
+                    }
+                }
+            }
+        """)
         }
     }
 }

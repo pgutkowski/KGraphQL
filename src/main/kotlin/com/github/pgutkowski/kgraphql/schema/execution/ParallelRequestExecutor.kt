@@ -205,7 +205,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         val include = determineInclude(ctx, container.directives)
 
         if(include){
-            if(expectedType.kind == TypeKind.OBJECT){
+            if(expectedType.kind == TypeKind.OBJECT || expectedType.kind == TypeKind.INTERFACE){
                 if(expectedType.isInstance(value)){
                     return container.elements.map { handleProperty(ctx, value, it, expectedType)}.toMap()
                 }
@@ -279,7 +279,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         val transformedArgs = argumentsHandler.transformArguments(funName, inputValues, args, variables)
 
         //exceptions are not caught on purpose to pass up business logic errors
-        if(receiver != null && hasReceiver){
+        if(hasReceiver){
             return invoke(receiver, *transformedArgs.toTypedArray())
         } else {
             return invoke(*transformedArgs.toTypedArray())

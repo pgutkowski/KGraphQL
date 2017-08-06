@@ -1,12 +1,11 @@
 package com.github.pgutkowski.kgraphql.request
 
 import com.github.pgutkowski.kgraphql.RequestException
-import com.github.pgutkowski.kgraphql.request.graph.Fragment
 
 data class ParsingContext(
         val fullString : String,
         val tokens: List<String>,
-        val fragments: Map<String, Fragment.External>,
+        val fragments: Document.Fragments,
         private var index : Int = 0,
         var nestedBrackets: Int = 0,
         var nestedParenthesis: Int = 0

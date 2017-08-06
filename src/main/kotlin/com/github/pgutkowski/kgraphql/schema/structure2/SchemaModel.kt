@@ -25,6 +25,9 @@ data class SchemaModel (
     val inputTypesByName = inputTypes.values.associate { it.name to it }
 
     override val types: List<__Type> = allTypes.values.toList()
+            .filterNot { it.name?.startsWith("__") ?: false }
+            //workaround on the fact that Double and Float are treated as GraphQL Float
+            .filterNot { it is Type.Scalar<*> && it.kClass == Float::class }
 
     override val queryType: __Type = query
 

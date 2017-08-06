@@ -20,17 +20,12 @@ interface TypeDef {
     class Object<T : Any> (
             name : String,
             override val kClass: KClass<T>,
-            val kotlinProperties: Map<KProperty1<T, *>, PropertyDef.Kotlin<T, *>>,
-            val extensionProperties : List<PropertyDef.Function<*>>,
-            val unionProperties : List<PropertyDef.Union>,
-            val transformations : Map<KProperty1<T, *>, Transformation<T, *>>,
-            description : String?
+            val kotlinProperties: Map<KProperty1<T, *>, PropertyDef.Kotlin<T, *>> = emptyMap(),
+            val extensionProperties : List<PropertyDef.Function<*>> = emptyList(),
+            val unionProperties : List<PropertyDef.Union> = emptyList(),
+            val transformations : Map<KProperty1<T, *>, Transformation<T, *>> = emptyMap(),
+            description : String? = null
     ) : BaseKQLType(name, description), Kotlin<T> {
-
-        constructor (
-                name : String, kClass: KClass<T>
-        ) : this(name, kClass, emptyMap(), emptyList(), emptyList(), emptyMap(), null)
-
         fun isIgnored(property: KProperty1<*, *>): Boolean = kotlinProperties[property]?.isIgnored ?: false
     }
 

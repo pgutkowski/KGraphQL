@@ -74,7 +74,7 @@ class FragmentsSpecificationTest {
     @Test
     fun `Inline fragments may also be used to apply a directive to a group of fields`() {
         val response = deserialize(schema.execute(
-                "query (\$expandedInfo : Boolean){actor{actualActor{name ... @include(if: \$expandedInfo){ age }}}}",
+                "query (\$expandedInfo : Boolean!){actor{actualActor{name ... @include(if: \$expandedInfo){ age }}}}",
                 "{\"expandedInfo\":false}"
         ))
         assertNoErrors(response)

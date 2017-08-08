@@ -10,11 +10,13 @@ import com.github.pgutkowski.kgraphql.schema.Schema
 import com.github.pgutkowski.kgraphql.schema.introspection.TypeKind
 import junit.framework.Assert.fail
 import org.hamcrest.CoreMatchers
+import org.hamcrest.CoreMatchers.anyOf
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.not
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.CoreMatchers.startsWith
 import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.collection.IsEmptyCollection.empty
 import org.junit.Ignore
 import org.junit.Test
 
@@ -248,7 +250,7 @@ class IntrospectionSpecificationTest {
     }
 
     @Test
-    fun `introspection types must not leak into schema`(){
+    fun `introspection field __typename must not leak into schema introspection`(){
         val schema = defaultSchema {
             query("interface"){
                 resolver { -> Face("~~MOCK~~") }
@@ -256,12 +258,6 @@ class IntrospectionSpecificationTest {
         }
 
         val map = deserialize(schema.execute(BaseSchemaTest.INTROSPECTION_QUERY))
-        val types = map.extract<List<Map<Any,*>>>("data/__schema/types")
-
-        types.forEach { type ->
-            assertThat(type["name"] as String, not(startsWith("__")))
-        }
-
         val fields = map.extract<List<Map<String,*>>>("data/__schema/types[0]/fields")
 
         fields.forEach { field ->
@@ -284,6 +280,42 @@ class IntrospectionSpecificationTest {
 
         for(i in typenames.indices){
             if(typenames[i] == typenames.getOrNull(i + 1)) fail()
+        }
+    }
+
+    /**
+     * Not part of spec, but assumption of many graphql tools
+     */
+    @Test
+    fun `query type should have non null, empty interface list`(){
+        val schema = defaultSchema {
+            query("interface"){
+                resolver { -> Face("~~MOCK~~") }
+            }
+        }
+
+        val response = deserialize(schema.execute("{__schema{queryType{interfaces{name}}}}"))
+        assertThat(response.extract<List<*>>("data/__schema/queryType/interfaces"), empty())
+    }
+
+    /**
+     * Not part of spec, but assumption of many graphql tools
+     */
+    @Test
+    fun `__Directive introspection type should have onField, onFragment, onOperation fields`(){
+        val schema = defaultSchema {
+            query("interface"){
+                resolver { -> Face("~~MOCK~~") }
+            }
+        }
+
+        val response = deserialize(schema.execute("{__schema{directives{name, onField, onFragment, onOperation}}}"))
+        val directives = response.extract<List<Map<String, *>>>("data/__schema/directives")
+        directives.forEach { directive ->
+            assertThat(directive["name"] as String, anyOf(equalTo("skip"), equalTo("include")))
+            assertThat(directive["onField"] as Boolean, equalTo(true))
+            assertThat(directive["onFragment"] as Boolean, equalTo(true))
+            assertThat(directive["onOperation"] as Boolean, equalTo(false))
         }
     }
 }

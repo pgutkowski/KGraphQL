@@ -8,7 +8,6 @@ import com.github.pgutkowski.kgraphql.schema.model.QueryDef
 
 class QueryOrMutationDSL(val name : String, block : QueryOrMutationDSL.() -> Unit) : DepreciableItemDSL(), ResolverDSL.Target {
 
-
     private val inputValues = mutableListOf<InputValueDef<*>>()
 
     init {

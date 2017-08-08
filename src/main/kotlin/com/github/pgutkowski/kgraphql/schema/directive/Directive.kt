@@ -44,7 +44,7 @@ data class Directive (
          */
         val SKIP = Directive.Partial( "skip",
                 listOf(FIELD, FRAGMENT_SPREAD, INLINE_FRAGMENT),
-                DirectiveExecution(FunctionWrapper.on({ `if` : Boolean? -> DirectiveResult(!(`if` ?: false)) }))
+                DirectiveExecution(FunctionWrapper.on({ `if` : Boolean -> DirectiveResult(!`if`) }))
         )
 
         /**
@@ -53,7 +53,7 @@ data class Directive (
          */
         val INCLUDE = Directive.Partial( "include",
                 listOf(FIELD, FRAGMENT_SPREAD, INLINE_FRAGMENT),
-                DirectiveExecution(FunctionWrapper.on({ `if` : Boolean? -> DirectiveResult(`if` ?: false) }))
+                DirectiveExecution(FunctionWrapper.on({ `if` : Boolean -> DirectiveResult(`if`) }))
         )
     }
 }

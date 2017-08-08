@@ -89,7 +89,7 @@ interface Type : __Type {
 
         override val possibleTypes: List<__Type>? = null
 
-        override val interfaces: List<Type.Interface<*>>? = null
+        override val interfaces: List<Type.Interface<*>>? = emptyList()
 
         override fun isInstance(value: Any?): Boolean = false
     }

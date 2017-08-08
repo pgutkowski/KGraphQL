@@ -6,14 +6,13 @@ import com.github.pgutkowski.kgraphql.schema.builtin.BUILT_IN_TYPE
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
 import com.github.pgutkowski.kgraphql.schema.directive.DirectiveLocation
 import com.github.pgutkowski.kgraphql.schema.dsl.TypeDSL
-import com.github.pgutkowski.kgraphql.schema.introspection.__Schema
 import com.github.pgutkowski.kgraphql.schema.introspection.TypeKind
 import com.github.pgutkowski.kgraphql.schema.introspection.__Directive
 import com.github.pgutkowski.kgraphql.schema.introspection.__EnumValue
 import com.github.pgutkowski.kgraphql.schema.introspection.__Field
+import com.github.pgutkowski.kgraphql.schema.introspection.__Schema
 import com.github.pgutkowski.kgraphql.schema.introspection.__Type
 import kotlin.reflect.KClass
-import kotlin.reflect.KProperty1
 import kotlin.reflect.full.isSubclassOf
 
 /**
@@ -23,7 +22,8 @@ import kotlin.reflect.full.isSubclassOf
 data class MutableSchemaDefinition (
         private val objects: ArrayList<TypeDef.Object<*>> = arrayListOf(
                 TypeDef.Object(__Schema::class.defaultKQLTypeName(), __Schema::class),
-                create__TypeDefinition()
+                create__TypeDefinition(),
+                create__DirectiveDefinition()
         ),
         private val queries: ArrayList<QueryDef<*>> = arrayListOf(),
         private val scalars: ArrayList<TypeDef.Scalar<*>> = arrayListOf(
@@ -146,3 +146,30 @@ private fun create__TypeDefinition() = TypeDSL(emptyList(), __Type::class){
                 if (includeDeprecated == true) enumValues else enumValues?.filterNot { it.isDeprecated }
         }
 }.toKQLObject()
+
+private fun create__DirectiveDefinition() = TypeDSL(emptyList(), __Directive::class){
+        property<Boolean>("onField"){
+                resolver { dir: __Directive ->
+                        dir.locations.contains(DirectiveLocation.FIELD)
+                }
+                deprecate("Use `locations`.")
+        }
+        property<Boolean>("onFragment"){
+                resolver { dir: __Directive -> dir.locations.containsAny (
+                        DirectiveLocation.FRAGMENT_SPREAD,
+                        DirectiveLocation.FRAGMENT_DEFINITION,
+                        DirectiveLocation.INLINE_FRAGMENT)
+                }
+                deprecate("Use `locations`.")
+        }
+        property<Boolean>("onOperation"){
+                resolver{ dir : __Directive -> dir.locations.containsAny (
+                        DirectiveLocation.QUERY,
+                        DirectiveLocation.MUTATION,
+                        DirectiveLocation.SUBSCRIPTION)
+                }
+                deprecate("Use `locations`.")
+        }
+}.toKQLObject()
+
+private fun <T> List<T>.containsAny(vararg elements: T) = elements.filter { this.contains(it) }.any()

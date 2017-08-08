@@ -15,6 +15,7 @@ import io.netty.handler.codec.http.HttpResponseStatus
 import io.netty.handler.codec.http.HttpVersion
 import io.netty.handler.codec.http.QueryStringDecoder
 import io.netty.util.AsciiString
+import java.nio.charset.Charset
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -30,33 +31,18 @@ class HttpRequestHandler(val schema : DefaultSchema) : SimpleChannelInboundHandl
 
     override fun channelRead0(ctx: ChannelHandlerContext, msg: FullHttpRequest) {
         when{
-            msg.uri().startsWith("/graphql?") -> handleQuery(ctx, msg)
-            msg.uri().startsWith("/graphql/docs") -> handleDocQuery(ctx, msg)
+            msg.uri().startsWith("/graphql") -> handleQuery(ctx, msg)
             else -> exceptionCaught(ctx, IllegalArgumentException("Invalid path"))
         }
     }
 
-    fun handleDocQuery(ctx: ChannelHandlerContext, msg: FullHttpRequest){
-        val path = msg.uri().substring("/graphql/docs".length).split('/').filter(String::isNotBlank)
-
-        val response = when {
-//            path.isEmpty() -> schema.writeHomeHtml()
-//            path[0] == "query" -> schema.writeQueriesHtml()
-//            path[0] == "mutation" -> schema.writeMutationsHtml()
-//            path[0] == "type" -> {
-//                schema.writeTypeHtml(path.getOrElse(1, {throw IllegalArgumentException("Missing type name")}))
-//            }
-            else -> throw IllegalArgumentException("Illegal request")
-        }
-
-//        writeResponse(ctx, response, AsciiString("text/html"))
-    }
-
     private fun handleQuery(ctx: ChannelHandlerContext, msg: FullHttpRequest) {
-        val queryParameters = QueryStringDecoder(msg.uri()).parameters()["query"] ?: throw IllegalArgumentException("Please specify query")
-        val query = if (queryParameters.size == 1) queryParameters.first() else throw IllegalArgumentException("Please specify only one query")
+        val content = msg.content().toString(Charset.defaultCharset())
+        val query = objectMapper.readTree(content)["query"].textValue()
+                ?: throw IllegalArgumentException("Please specify only one query")
         try {
-            writeResponse(ctx, schema.execute(query, null))
+            val response = schema.execute(query, null)
+            writeResponse(ctx, response)
         } catch(e: Exception) {
             writeResponse(ctx, "{\"errors\" : { \"message\": \"Caught ${e.javaClass.canonicalName}: ${e.message?.replace("\"", "\\\"")}\"}}")
         }

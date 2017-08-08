@@ -185,21 +185,22 @@ class SchemaCompilation(val configuration : SchemaConfiguration, val definition 
 
     private fun handleObjectType(kClass: KClass<*>) : Type {
         assertValidObjectType(kClass)
-
-        val kind = if(kClass.isFinal){
-            TypeKind.OBJECT
-        } else {
-            TypeKind.INTERFACE
-        }
-
         val objectDef = definition.objects.find { it.kClass == kClass } ?: TypeDef.Object(kClass.defaultKQLTypeName(), kClass)
+
+        //treat introspection types as objects -> adhere to reference implementation behaviour
+        val kind = if(kClass.isFinal || objectDef.name.startsWith("__")) TypeKind.OBJECT else TypeKind.INTERFACE
+
         val objectType = if(kind == TypeKind.OBJECT) Type.Object(objectDef) else Type.Interface(objectDef)
         val typeProxy = TypeProxy(objectType)
         queryTypeProxies.put(kClass, typeProxy)
 
         val kotlinFields = kClass.memberProperties
                 .filterNot { objectDef.isIgnored(it) }
-                .map { property -> handleKotlinProperty(property, objectDef.kotlinProperties[property], objectDef.transformations[property]) }
+                .map { property -> handleKotlinProperty (
+                        kProperty = property,
+                        kqlProperty = objectDef.kotlinProperties[property],
+                        transformation = objectDef.transformations[property]
+                ) }
 
         val extensionFields = objectDef.extensionProperties.map { property -> handleOperation(property) }
 
@@ -278,7 +279,11 @@ class SchemaCompilation(val configuration : SchemaConfiguration, val definition 
         return InputValue(InputValueDef(kProperty.returnType.jvmErasure, kProperty.name), type)
     }
 
-    private fun <T : Any, R>handleKotlinProperty(kProperty: KProperty1<T, R>, kqlProperty: PropertyDef.Kotlin<*, *>?, transformation: Transformation<*, *>?) : Field.Kotlin<*, *>{
+    private fun <T : Any, R> handleKotlinProperty (
+            kProperty: KProperty1<T, R>,
+            kqlProperty: PropertyDef.Kotlin<*, *>?,
+            transformation: Transformation<*, *>?
+    ) : Field.Kotlin<*, *> {
         val returnType = handlePossiblyWrappedType(kProperty.returnType, TypeCategory.QUERY)
         val inputValues = if(transformation != null){
             handleInputValues("$kProperty transformation", transformation.transformation, emptyList())

@@ -158,7 +158,7 @@ Add dependency:
   <groupId>com.github.pgutkowski</groupId>
   <artifactId>kgraphql</artifactId>
   <version>${KGraphQLVersion}</version>
-</dependency>s
+</dependency>
 ```
 
 And make sure that you use the right Kotlin version:

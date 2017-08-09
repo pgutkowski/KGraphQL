@@ -157,8 +157,8 @@ Add dependency:
 <dependency>
   <groupId>com.github.pgutkowski</groupId>
   <artifactId>kgraphql</artifactId>
-  <version>0.2.1</version>
-</dependency>
+  <version>${KGraphQLVersion}</version>
+</dependency>s
 ```
 
 And make sure that you use the right Kotlin version:
@@ -182,14 +182,14 @@ repositories {
 Add dependencies (you can also add other modules that you need):
 
 ```
-compile 'com.github.pgutkowski:kgraphql:0.2.1'
+compile 'com.github.pgutkowski:kgraphql:${KGraphQLVersion}'
 ```
 
 And make sure that you use the right Kotlin version:
 
 ```
 buildscript {
-    ext.kotlin_version = '1.1.2'
+    ext.kotlin_version = '1.1.3'
 }
 ```
 

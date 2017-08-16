@@ -21,7 +21,7 @@ object BenchmarkSchema {
 
     val threeResolver : ()-> ModelThree = { ModelThree("", ones.map { ModelTwo(it, it.quantity..10) }) }
 
-    fun create(block : SchemaBuilder.()-> Unit): Schema = KGraphQL.schema {
+    fun create(block : SchemaBuilder<Unit>.()-> Unit): Schema<Unit> = KGraphQL.schema {
         block()
         query("one"){
             resolver(oneResolver)

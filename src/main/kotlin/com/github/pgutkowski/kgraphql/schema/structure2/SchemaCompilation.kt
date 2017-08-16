@@ -7,17 +7,17 @@ import com.github.pgutkowski.kgraphql.isIterable
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
-import com.github.pgutkowski.kgraphql.schema.introspection.__Schema
 import com.github.pgutkowski.kgraphql.schema.introspection.SchemaProxy
 import com.github.pgutkowski.kgraphql.schema.introspection.TypeKind
+import com.github.pgutkowski.kgraphql.schema.introspection.__Schema
 import com.github.pgutkowski.kgraphql.schema.model.BaseOperationDef
 import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
 import com.github.pgutkowski.kgraphql.schema.model.InputValueDef
 import com.github.pgutkowski.kgraphql.schema.model.PropertyDef
 import com.github.pgutkowski.kgraphql.schema.model.QueryDef
-import com.github.pgutkowski.kgraphql.schema.model.TypeDef
 import com.github.pgutkowski.kgraphql.schema.model.SchemaDefinition
 import com.github.pgutkowski.kgraphql.schema.model.Transformation
+import com.github.pgutkowski.kgraphql.schema.model.TypeDef
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
@@ -26,7 +26,11 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.jvmErasure
 
 @Suppress("UNCHECKED_CAST")
-class SchemaCompilation(val configuration : SchemaConfiguration, val definition : SchemaDefinition){
+class SchemaCompilation<Context: Any>(
+        val contextClass: KClass<Context>,
+        val configuration : SchemaConfiguration,
+        val definition : SchemaDefinition
+){
 
     private val queryTypeProxies = mutableMapOf<KClass<*>, TypeProxy>()
 
@@ -38,13 +42,15 @@ class SchemaCompilation(val configuration : SchemaConfiguration, val definition 
 
     private val scalars = definition.scalars.associate { scalar -> scalar.kClass to scalar.toScalarType() }
 
-    private val schemaProxy = SchemaProxy()
+    private val schemaProxy = SchemaProxy<Context>()
+
+    private val contextType = Type._Context(contextClass)
 
     private enum class TypeCategory {
         INPUT, QUERY
     }
 
-    fun perform(): DefaultSchema {
+    fun perform(): DefaultSchema<Context> {
         val queryType = handleQueries()
         val mutationType = handleMutations()
         definition.objects.forEach { handleObjectType(it.kClass) }
@@ -68,7 +74,7 @@ class SchemaCompilation(val configuration : SchemaConfiguration, val definition 
                 allTypes = queryTypeProxies + inputTypeProxies + enums + scalars,
                 directives = definition.directives.map { handlePartialDirective(it) }
         )
-        val schema = DefaultSchema(configuration, model)
+        val schema = DefaultSchema(contextClass, configuration, model)
         schemaProxy.proxiedSchema = schema
         return schema
     }
@@ -133,15 +139,12 @@ class SchemaCompilation(val configuration : SchemaConfiguration, val definition 
         return Field.Union(unionProperty, type, inputValues)
     }
 
-    private fun handlePossiblyWrappedType(kType : KType, typeCategory: TypeCategory) : Type {
-        if(kType.isIterable()){
-            return handleCollectionType(kType, typeCategory)
-        } else {
-            if(kType.arguments.isNotEmpty()){
-                throw SchemaException("Generic types are not supported by GraphQL, found $kType")
-            }
-            return handleSimpleType(kType, typeCategory)
-        }
+    private fun handlePossiblyWrappedType(kType : KType, typeCategory: TypeCategory) : Type = when {
+        kType.isIterable() -> handleCollectionType(kType, typeCategory)
+        kType.jvmErasure == contextClass && typeCategory == TypeCategory.INPUT -> contextType
+        kType.jvmErasure == contextClass && typeCategory == TypeCategory.QUERY -> throw SchemaException("Context type cannot be part of schema")
+        kType.arguments.isNotEmpty() -> throw SchemaException("Generic types are not supported by GraphQL, found $kType")
+        else -> handleSimpleType(kType, typeCategory)
     }
 
     private fun handleCollectionType(kType: KType, typeCategory: TypeCategory): Type {
@@ -166,6 +169,8 @@ class SchemaCompilation(val configuration : SchemaConfiguration, val definition 
     }
 
     private fun handleRawType(kClass: KClass<*>, typeCategory: TypeCategory) : Type {
+
+        if(kClass == contextClass) throw SchemaException("Context type cannot be part of schema")
 
         val cachedInstances = when(typeCategory) {
             TypeCategory.QUERY -> queryTypeProxies

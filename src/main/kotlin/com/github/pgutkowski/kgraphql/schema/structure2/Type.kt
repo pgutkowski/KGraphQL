@@ -1,18 +1,16 @@
 package com.github.pgutkowski.kgraphql.schema.structure2
 
-import com.github.pgutkowski.kgraphql.request.TypeReference
+import com.github.pgutkowski.kgraphql.schema.introspection.TypeKind
 import com.github.pgutkowski.kgraphql.schema.introspection.__EnumValue
 import com.github.pgutkowski.kgraphql.schema.introspection.__Field
 import com.github.pgutkowski.kgraphql.schema.introspection.__InputValue
 import com.github.pgutkowski.kgraphql.schema.introspection.__Type
-import com.github.pgutkowski.kgraphql.schema.introspection.TypeKind
 import com.github.pgutkowski.kgraphql.schema.introspection.asString
 import com.github.pgutkowski.kgraphql.schema.model.TypeDef
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.KTypeProjection
 import kotlin.reflect.full.createType
-import kotlin.reflect.full.starProjectedType
 
 
 interface Type : __Type {
@@ -245,6 +243,28 @@ interface Type : __Type {
         override val fields: List<__Field>? = null
 
         override fun isInstance(value: Any?): Boolean = false
+    }
+
+    class _Context(contextKClass: KClass<*>) : Type {
+        override val kClass: KClass<*>? = contextKClass
+
+        override val kind: TypeKind = TypeKind.OBJECT
+
+        override val name: String? = null
+
+        override val description: String = ""
+
+        override val enumValues: List<__EnumValue>? = null
+
+        override val inputFields: List<__InputValue>? = null
+
+        override val ofType: __Type? = null
+
+        override val interfaces: List<__Type>? = null
+
+        override val fields: List<__Field>? = null
+
+        override val possibleTypes: List<__Type>? = null
     }
 
     class NonNull(override val ofType: Type) : Type {

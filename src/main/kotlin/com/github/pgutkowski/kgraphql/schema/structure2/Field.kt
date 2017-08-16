@@ -1,5 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.structure2
 
+import com.github.pgutkowski.kgraphql.schema.introspection.NotIntrospected
 import com.github.pgutkowski.kgraphql.schema.introspection.__Field
 import com.github.pgutkowski.kgraphql.schema.introspection.__InputValue
 import com.github.pgutkowski.kgraphql.schema.introspection.__Type
@@ -7,6 +8,7 @@ import com.github.pgutkowski.kgraphql.schema.model.BaseOperationDef
 import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
 import com.github.pgutkowski.kgraphql.schema.model.PropertyDef
 import com.github.pgutkowski.kgraphql.schema.model.Transformation
+import kotlin.reflect.full.findAnnotation
 
 
 sealed class Field : __Field {
@@ -14,7 +16,7 @@ sealed class Field : __Field {
     abstract val arguments : List<InputValue<*>>
 
     override val args: List<__InputValue>
-        get() = arguments
+        get() = arguments.filterNot { it.type.kClass?.findAnnotation<NotIntrospected>() != null }
 
     abstract val returnType : Type
 

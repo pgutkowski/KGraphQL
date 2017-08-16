@@ -9,6 +9,7 @@ import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.structure2.validateName
 import kotlin.reflect.KFunction
 import kotlin.reflect.KType
+import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.reflect
 
@@ -21,17 +22,29 @@ import kotlin.reflect.jvm.reflect
 interface FunctionWrapper <T>{
     //lots of boilerplate here, because kotlin-reflect doesn't support invoking lambdas, local and anonymous functions yet
     companion object {
-        fun <T> on (function : () -> T) : FunctionWrapper<T> = FunctionWrapper.ArityZero(function)
+        fun <T> on (function : () -> T) : FunctionWrapper<T>
+                = FunctionWrapper.ArityZero(function)
 
-        fun <T, R> on (function : (R) -> T) = FunctionWrapper.ArityOne(function, false)
+        fun <T, R> on (function : (R) -> T)
+                = FunctionWrapper.ArityOne(function, false)
 
-        fun <T, R> on (function : (R) -> T, hasReceiver: Boolean = false) = FunctionWrapper.ArityOne(function, hasReceiver)
+        fun <T, R> on (function : (R) -> T, hasReceiver: Boolean = false)
+                = FunctionWrapper.ArityOne(function, hasReceiver)
 
-        fun <T, R, E> on (function : (R, E) -> T, hasReceiver: Boolean = false) = FunctionWrapper.ArityTwo(function, hasReceiver)
+        fun <T, R, E> on (function : (R, E) -> T, hasReceiver: Boolean = false)
+                = FunctionWrapper.ArityTwo(function, hasReceiver)
 
-        fun <T, R, E, W> on (function : (R, E, W) -> T, hasReceiver: Boolean = false) = FunctionWrapper.ArityThree(function, hasReceiver)
+        fun <T, R, E, W> on (function : (R, E, W) -> T, hasReceiver: Boolean = false)
+                = FunctionWrapper.ArityThree(function, hasReceiver)
 
-        fun <T, R, E, W, Q> on (function : (R, E, W, Q) -> T, hasReceiver: Boolean = false) = FunctionWrapper.ArityFour(function, hasReceiver)
+        fun <T, R, E, W, Q> on (function : (R, E, W, Q) -> T, hasReceiver: Boolean = false)
+                = FunctionWrapper.ArityFour(function, hasReceiver)
+
+        fun <T, R, E, W, Q, A> on (function : (R, E, W, Q, A) -> T, hasReceiver: Boolean = false)
+                = FunctionWrapper.ArityFive(function, hasReceiver)
+
+        fun <T, R, E, W, Q, A, S> on (function : (R, E, W, Q, A, S) -> T, hasReceiver: Boolean = false)
+                = FunctionWrapper.AritySix(function, hasReceiver)
     }
 
     val kFunction: KFunction<T>
@@ -87,7 +100,10 @@ interface FunctionWrapper <T>{
         }
     }
 
-    class ArityOne<T, R>(val implementation : (R)-> T, override val hasReceiver: Boolean) : Base<T>() {
+    class ArityOne<T, R>(
+            val implementation : (R)-> T, override val hasReceiver: Boolean
+    ) : Base<T>() {
+
         override val kFunction: KFunction<T> by lazy { implementation.reflect()!! }
 
         override fun arity(): Int = 1
@@ -101,7 +117,11 @@ interface FunctionWrapper <T>{
         }
     }
 
-    class ArityTwo<T, R, E>(val implementation : (R, E)-> T, override val hasReceiver: Boolean ) : Base<T>() {
+    class ArityTwo<T, R, E>(
+            val implementation : (R, E)-> T,
+            override val hasReceiver: Boolean
+    ) : Base<T>() {
+
         override val kFunction: KFunction<T> by lazy { implementation.reflect()!! }
 
         override fun arity(): Int = 2
@@ -115,7 +135,10 @@ interface FunctionWrapper <T>{
         }
     }
 
-    class ArityThree<T, R, E, W>(val implementation : (R, E, W)-> T, override val hasReceiver: Boolean ) : Base<T>() {
+    class ArityThree<T, R, E, W>(
+            val implementation : (R, E, W)-> T, override val hasReceiver: Boolean
+    ) : Base<T>() {
+
         override val kFunction: KFunction<T> by lazy { implementation.reflect()!! }
 
         override fun arity(): Int = 3
@@ -129,7 +152,10 @@ interface FunctionWrapper <T>{
         }
     }
 
-    class ArityFour<T, R, E, W, Q>(val implementation : (R, E, W, Q)-> T, override val hasReceiver: Boolean ) : Base<T>() {
+    class ArityFour<T, R, E, W, Q>(
+            val implementation : (R, E, W, Q)-> T, override val hasReceiver: Boolean
+    ) : Base<T>() {
+
         override val kFunction: KFunction<T> by lazy { implementation.reflect()!! }
 
         override fun arity(): Int = 4
@@ -137,6 +163,40 @@ interface FunctionWrapper <T>{
         override fun invoke(vararg args: Any?): T? {
             if(args.size == arity()){
                 return implementation(args[0] as R, args[1] as E, args[2] as W, args[3] as Q)
+            } else {
+                throw IllegalArgumentException("This function needs exactly ${arity()} arguments")
+            }
+        }
+    }
+
+    class ArityFive<T, R, E, W, Q, A>(
+            val implementation : (R, E, W, Q, A)-> T, override val hasReceiver: Boolean
+    ) : Base<T>() {
+
+        override val kFunction: KFunction<T> by lazy { implementation.reflect()!! }
+
+        override fun arity(): Int = 5
+
+        override fun invoke(vararg args: Any?): T? {
+            if(args.size == arity()){
+                return implementation(args[0] as R, args[1] as E, args[2] as W, args[3] as Q, args[4] as A)
+            } else {
+                throw IllegalArgumentException("This function needs exactly ${arity()} arguments")
+            }
+        }
+    }
+
+    class AritySix<T, R, E, W, Q, A, S>(
+            val implementation : (R, E, W, Q, A, S)-> T, override val hasReceiver: Boolean
+    ) : Base<T>() {
+
+        override val kFunction: KFunction<T> by lazy { implementation.reflect()!! }
+
+        override fun arity(): Int = 6
+
+        override fun invoke(vararg args: Any?): T? {
+            if(args.size == arity()){
+                return implementation(args[0] as R, args[1] as E, args[2] as W, args[3] as Q, args[4] as A, args[5] as S)
             } else {
                 throw IllegalArgumentException("This function needs exactly ${arity()} arguments")
             }

@@ -34,6 +34,14 @@ open class TypeDSL<T : Any>(private val supportedUnions: Collection<TypeDef.Unio
         transformationProperties.add(Transformation(kProperty, FunctionWrapper.on(function, true)))
     }
 
+    fun <R, E, W, Q, A> transformation(kProperty: KProperty1<T, R>, function: (R, E, W, Q, A) -> R) {
+        transformationProperties.add(Transformation(kProperty, FunctionWrapper.on(function, true)))
+    }
+
+    fun <R, E, W, Q, A, S> transformation(kProperty: KProperty1<T, R>, function: (R, E, W, Q, A, S) -> R) {
+        transformationProperties.add(Transformation(kProperty, FunctionWrapper.on(function, true)))
+    }
+
     fun property(kProperty: KProperty1<T, *>, block : KotlinPropertyDSL<T>.() -> Unit){
         val dsl = KotlinPropertyDSL(kProperty, block)
         describedKotlinProperties[kProperty] = dsl.toKQLProperty()

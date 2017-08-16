@@ -1,9 +1,11 @@
 package com.github.pgutkowski.kgraphql.schema.structure2
 
 import com.github.pgutkowski.kgraphql.schema.directive.Directive
+import com.github.pgutkowski.kgraphql.schema.introspection.NotIntrospected
 import com.github.pgutkowski.kgraphql.schema.introspection.__Schema
 import com.github.pgutkowski.kgraphql.schema.introspection.__Type
 import kotlin.reflect.KClass
+import kotlin.reflect.full.findAnnotation
 
 
 data class SchemaModel (
@@ -27,6 +29,7 @@ data class SchemaModel (
     override val types: List<__Type> = allTypes.values.toList()
             //workaround on the fact that Double and Float are treated as GraphQL Float
             .filterNot { it is Type.Scalar<*> && it.kClass == Float::class }
+            .filterNot { it.kClass?.findAnnotation<NotIntrospected>() != null }
             //query and mutation must be present in introspection 'types' field for introspection tools
             .plus(mutation).plus(query)
 

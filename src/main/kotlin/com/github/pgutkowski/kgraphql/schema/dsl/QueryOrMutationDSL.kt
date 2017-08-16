@@ -6,7 +6,10 @@ import com.github.pgutkowski.kgraphql.schema.model.MutationDef
 import com.github.pgutkowski.kgraphql.schema.model.QueryDef
 
 
-class QueryOrMutationDSL(val name : String, block : QueryOrMutationDSL.() -> Unit) : DepreciableItemDSL(), ResolverDSL.Target {
+class QueryOrMutationDSL<Context : Any>(
+        val name : String,
+        block : QueryOrMutationDSL<Context>.() -> Unit
+) : DepreciableItemDSL(), ResolverDSL.Target {
 
     private val inputValues = mutableListOf<InputValueDef<*>>()
 
@@ -30,6 +33,10 @@ class QueryOrMutationDSL(val name : String, block : QueryOrMutationDSL.() -> Uni
     fun <T, R, E, W>resolver(function: (R, E ,W ) -> T) = resolver(FunctionWrapper.on(function))
 
     fun <T, R, E, W, Q>resolver(function: (R, E, W, Q) -> T) = resolver(FunctionWrapper.on(function))
+
+    fun <T, R, E, W, Q, A>resolver(function: (R, E, W, Q, A) -> T) = resolver(FunctionWrapper.on(function))
+
+    fun <T, R, E, W, Q, A, S>resolver(function: (R, E, W, Q, A, S) -> T) = resolver(FunctionWrapper.on(function))
 
     override fun addInputValues(inputValues: Collection<InputValueDef<*>>) {
         this.inputValues.addAll(inputValues)

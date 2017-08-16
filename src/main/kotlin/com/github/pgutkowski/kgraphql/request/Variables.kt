@@ -10,7 +10,7 @@ import kotlin.reflect.KType
 
 @Suppress("UNCHECKED_CAST")
 data class Variables(
-        private val typeDefinitionProvider: LookupSchema,
+        private val typeDefinitionProvider: LookupSchema<*>,
         private val variablesJson: VariablesJson,
         private val variables: List<OperationVariable>?
 ) {

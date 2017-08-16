@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit
 @Fork(value = 5)
 open class ParallelExecutionBenchmark {
 
-    var schema : Schema = KGraphQL.schema {  }
+    var schema : Schema<Unit> = KGraphQL.schema {  }
 
     @Setup
     fun setup(){

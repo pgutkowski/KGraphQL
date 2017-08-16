@@ -298,4 +298,67 @@ class SchemaBuilderTest {
             }
         }
     }
+
+    data class Context(val username: String, val stuff: String)
+
+    @Test
+    fun `client code can declare custom context class and use it in query resolver`(){
+        val schema = KGraphQL.schema(Context::class) {
+            query("name") {
+                resolver { ctx: Context -> ctx.username }
+            }
+        }
+
+        val georgeName = "George"
+        val response = deserialize(schema.execute("{name}", Context(georgeName, "STUFF")))
+        assertThat(response.extract<String>("data/name"), equalTo(georgeName))
+    }
+
+    @Test
+    fun `client code can declare custom context class and use it in property resolver`(){
+        val georgeName = "George"
+        val schema = KGraphQL.schema(Context::class) {
+            query("actor") {
+                resolver { -> Actor("George", 23) }
+            }
+
+            type<Actor> {
+                property<String>("nickname"){
+                    resolver { actor : Actor, ctx: Context -> "Hodor and ${ctx.username}" }
+                }
+
+                transformation(Actor::name) { name: String, addStuff: Boolean?, ctx: Context ->
+                    if(addStuff == true) name + ctx.stuff  else name
+                }
+            }
+        }
+
+        val response = deserialize(schema.execute("{actor{ nickname, name(addStuff: true) }}", Context(georgeName, "STUFF")))
+        assertThat(response.extract<String>("data/actor/name"), equalTo("${georgeName}STUFF"))
+        assertThat(response.extract<String>("data/actor/nickname"), equalTo("Hodor and $georgeName"))
+    }
+
+    @Test
+    fun `if no context type is specified unit type is used`(){
+        val georgeName = "George"
+        val schema = defaultSchema {
+            query("query"){
+                resolver { -> georgeName }
+            }
+        }
+
+        val george = deserialize(schema.execute("{query}", Unit))
+        assertThat(george.extract<String>("data/query"), equalTo(georgeName))
+    }
+
+    @Test
+    fun `context type cannot be part of schema`(){
+        expect<SchemaException>("Context type cannot be part of schema") {
+            KGraphQL.schema(Context::class) {
+                query("name") {
+                    resolver { ctx: Context -> ctx }
+                }
+            }
+        }
+    }
 }

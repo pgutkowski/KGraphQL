@@ -17,16 +17,17 @@ import kotlin.reflect.KType
 import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.jvmErasure
 
-class DefaultSchema(
+class DefaultSchema<Context : Any>(
+        internal val contextClass: KClass<Context>,
         internal val configuration: SchemaConfiguration,
         internal val model : SchemaModel
-) : Schema, __Schema by model, LookupSchema {
+) : Schema<Context>, __Schema by model, LookupSchema<Context> {
 
     companion object {
         const val OPERATION_NAME_PARAM = "operationName"
     }
 
-    val requestExecutor : RequestExecutor = ParallelRequestExecutor(this)
+    val requestExecutor : RequestExecutor<Context> = ParallelRequestExecutor(this)
 
     val requestInterpreter : RequestInterpreter = RequestInterpreter(model)
 
@@ -39,7 +40,7 @@ class DefaultSchema(
         DocumentParser()
     }
 
-    override fun execute(request: String, variables: String?): String {
+    override fun execute(request: String, variables: String?, context: Context?): String {
         val parsedVariables = variables
                 ?.let { VariablesJson.Defined(configuration.objectMapper, variables) }
                 ?: VariablesJson.Empty()
@@ -50,7 +51,11 @@ class DefaultSchema(
                 throw RequestException("Must provide any operation")
             }
             1 -> {
-                return requestExecutor.execute(requestInterpreter.createExecutionPlan(operations.first()), parsedVariables)
+                return requestExecutor.execute(
+                        plan = requestInterpreter.createExecutionPlan(operations.first()),
+                        variables = parsedVariables,
+                        context = context
+                )
             }
             else -> {
                 if(operations.any { it.name == null }){
@@ -64,7 +69,7 @@ class DefaultSchema(
                     val executionPlan = executionPlans[operationName]
                             ?: throw RequestException("Must provide an operation name from: ${executionPlans.keys}, found $operationName")
 
-                    return requestExecutor.execute(executionPlan, parsedVariables)
+                    return requestExecutor.execute(executionPlan, parsedVariables, context)
                 }
             }
         }

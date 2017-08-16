@@ -28,7 +28,7 @@ open class SimpleExecutionOverheadBenchmark {
     @Param("true", "false")
     var withKGraphQL = true
 
-    lateinit var schema : Schema
+    lateinit var schema : Schema<Unit>
 
     lateinit var objectMapper : ObjectMapper
 

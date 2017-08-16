@@ -13,7 +13,7 @@ class NettyServer {
 
     companion object {
 
-        fun run(schema : Schema, port : Int) {
+        fun run(schema : Schema<*>, port : Int) {
 
             val workerGroup = NioEventLoopGroup()
             try {
@@ -22,7 +22,7 @@ class NettyServer {
                         .localAddress(port)
                         .group(workerGroup)
                         .handler(LoggingHandler())
-                        .childHandler(NettyServerPipelineConfig(HttpRequestHandler(schema as DefaultSchema)))
+                        .childHandler(NettyServerPipelineConfig(HttpRequestHandler(schema as DefaultSchema<*>)))
                         .option(ChannelOption.TCP_NODELAY, true)
                         .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                         .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)

@@ -11,15 +11,15 @@ import kotlin.reflect.KClass
 /**
  * SchemaBuilder exposes rich DSL to setup GraphQL schema
  */
-class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
+class SchemaBuilder<Context : Any>(private val init: SchemaBuilder<Context>.() -> Unit) {
 
     private val model = MutableSchemaDefinition()
 
     private var configuration = SchemaConfigurationDSL()
 
-    fun build(): Schema {
+    fun build(kClass: KClass<Context>): Schema<Context> {
         init()
-        return SchemaCompilation(configuration.build(), model.toSchemaDefinition()).perform()
+        return SchemaCompilation(kClass, configuration.build(), model.toSchemaDefinition()).perform()
     }
 
     fun configure(block: SchemaConfigurationDSL.() -> Unit){
@@ -30,11 +30,11 @@ class SchemaBuilder(private val init: SchemaBuilder.() -> Unit) {
     // OPERATIONS
     //================================================================================
 
-    fun query(name : String, init: QueryOrMutationDSL.() -> Unit){
+    fun query(name : String, init: QueryOrMutationDSL<Context>.() -> Unit){
         model.addQuery(QueryOrMutationDSL(name, init).toKQLQuery())
     }
 
-    fun mutation(name : String, init: QueryOrMutationDSL.() -> Unit){
+    fun mutation(name : String, init: QueryOrMutationDSL<Context>.() -> Unit){
         model.addMutation(QueryOrMutationDSL(name, init).toKQLMutation())
     }
 

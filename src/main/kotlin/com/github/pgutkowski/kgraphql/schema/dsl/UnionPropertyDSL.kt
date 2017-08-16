@@ -31,6 +31,10 @@ class UnionPropertyDSL<T>(val name : String, block: UnionPropertyDSL<T>.() -> Un
 
     fun <E, W, Q>resolver(function: (T, E, W, Q) -> Any?) = resolver(FunctionWrapper.on(function, true))
 
+    fun <E, W, Q, A>resolver(function: (T, E, W, Q, A) -> Any?) = resolver(FunctionWrapper.on(function, true))
+
+    fun <E, W, Q, A, S>resolver(function: (T, E, W, Q, A, S) -> Any?) = resolver(FunctionWrapper.on(function, true))
+
     fun toKQLProperty(union : TypeDef.Union) = PropertyDef.Union (
             name = name,
             resolver = functionWrapper,

@@ -25,7 +25,7 @@ class IntrospectionSpecificationTest {
 
     @Test
     fun `simple introspection`(){
-        val schema : Schema = defaultSchema {
+        val schema = defaultSchema {
             query("sample"){
                 resolver { -> "Ronaldinho" }
             }
@@ -38,7 +38,7 @@ class IntrospectionSpecificationTest {
 
     @Test
     fun `__typename field can be used to obtain type of object`(){
-        val schema : Schema = defaultSchema {
+        val schema = defaultSchema {
             query("sample"){
                 resolver { -> Data("Ronaldingo")}
             }
@@ -50,7 +50,7 @@ class IntrospectionSpecificationTest {
 
     @Test
     fun `__typename field cannot be used on scalars`(){
-        val schema : Schema = defaultSchema {
+        val schema = defaultSchema {
             query("sample"){
                 resolver { -> Data("Ronaldingo")}
             }

@@ -8,6 +8,7 @@ import com.github.pgutkowski.kgraphql.Id
 import com.github.pgutkowski.kgraphql.IdScalarSupport
 import com.github.pgutkowski.kgraphql.Person
 import com.github.pgutkowski.kgraphql.Scenario
+import com.github.pgutkowski.kgraphql.defaultSchema
 import com.github.pgutkowski.kgraphql.deserialize
 import com.github.pgutkowski.kgraphql.schema.DefaultSchema
 import com.github.pgutkowski.kgraphql.schema.dsl.SchemaBuilder
@@ -137,7 +138,7 @@ abstract class BaseSchemaTest {
     //new actors created via mutations in schema
     val createdActors = mutableListOf<Actor>()
 
-    val testedSchema = SchemaBuilder {
+    val testedSchema = defaultSchema {
         configure {
             useDefaultPrettyPrinter = true
         }
@@ -231,7 +232,7 @@ abstract class BaseSchemaTest {
                 }}
             }
         }
-    }.build() as DefaultSchema
+    }
 
     @After
     fun cleanup() = createdActors.clear()

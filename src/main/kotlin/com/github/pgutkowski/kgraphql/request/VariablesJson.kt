@@ -14,7 +14,7 @@ import kotlin.reflect.jvm.jvmErasure
 /**
  * Represents already parsed variables json
  */
-interface VariablesJson{
+interface VariablesJson {
 
     fun <T : Any>get(kClass: KClass<T>, kType: KType, key : String) : T?
 

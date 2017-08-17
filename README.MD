@@ -165,7 +165,7 @@ And make sure that you use the right Kotlin version:
 
 ```
 <properties>
-    <kotlin.version>1.1.3</kotlin.version>
+    <kotlin.version>1.1.4</kotlin.version>
 </properties>
 ```
 
@@ -189,7 +189,7 @@ And make sure that you use the right Kotlin version:
 
 ```
 buildscript {
-    ext.kotlin_version = '1.1.3'
+    ext.kotlin_version = '1.1.4'
 }
 ```
 

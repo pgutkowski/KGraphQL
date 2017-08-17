@@ -20,17 +20,23 @@ class PropertyDSL<out T, R>(val name : String, block : PropertyDSL<T, R>.() -> U
         return ResolverDSL(this)
     }
 
-    fun resolver(function: (T) -> R) = resolver(FunctionWrapper.on(function, true))
+    fun resolver(function: (T) -> R)
+            = resolver(FunctionWrapper.on(function, true))
 
-    fun <E>resolver(function: (T, E) -> R) = resolver(FunctionWrapper.on(function, true))
+    fun <E>resolver(function: (T, E) -> R)
+            = resolver(FunctionWrapper.on(function, true))
 
-    fun <E, W>resolver(function: (T, E, W) -> R) = resolver(FunctionWrapper.on(function, true))
+    fun <E, W>resolver(function: (T, E, W) -> R)
+            = resolver(FunctionWrapper.on(function, true))
 
-    fun <E, W, Q>resolver(function: (T, E, W, Q) -> R) = resolver(FunctionWrapper.on(function, true))
+    fun <E, W, Q>resolver(function: (T, E, W, Q) -> R)
+            = resolver(FunctionWrapper.on(function, true))
 
-    fun <E, W, Q, A>resolver(function: (T, E, W, Q, A) -> R) = resolver(FunctionWrapper.on(function, true))
+    fun <E, W, Q, A>resolver(function: (T, E, W, Q, A) -> R)
+            = resolver(FunctionWrapper.on(function, true))
 
-    fun <E, W, Q, A, S>resolver(function: (T, E, W, Q, A, S) -> R) = resolver(FunctionWrapper.on(function, true))
+    fun <E, W, Q, A, S>resolver(function: (T, E, W, Q, A, S) -> R)
+            = resolver(FunctionWrapper.on(function, true))
 
     fun toKQLProperty() = PropertyDef.Function(
             name = name,

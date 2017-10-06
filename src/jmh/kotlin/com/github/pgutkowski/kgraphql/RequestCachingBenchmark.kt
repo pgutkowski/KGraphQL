@@ -23,7 +23,7 @@ open class RequestCachingBenchmark {
     @Param("true", "false")
     var caching = true
 
-    lateinit var schema : Schema<Unit>
+    lateinit var schema : Schema
 
     @Setup
     fun setup(){

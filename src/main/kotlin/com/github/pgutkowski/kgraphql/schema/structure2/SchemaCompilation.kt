@@ -1,5 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.structure2
 
+import com.github.pgutkowski.kgraphql.Context
 import com.github.pgutkowski.kgraphql.configuration.SchemaConfiguration
 import com.github.pgutkowski.kgraphql.defaultKQLTypeName
 import com.github.pgutkowski.kgraphql.getIterableElementType
@@ -26,8 +27,7 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.jvmErasure
 
 @Suppress("UNCHECKED_CAST")
-class SchemaCompilation<Context: Any>(
-        val contextClass: KClass<Context>,
+class SchemaCompilation(
         val configuration : SchemaConfiguration,
         val definition : SchemaDefinition
 ){
@@ -42,15 +42,15 @@ class SchemaCompilation<Context: Any>(
 
     private val scalars = definition.scalars.associate { scalar -> scalar.kClass to scalar.toScalarType() }
 
-    private val schemaProxy = SchemaProxy<Context>()
+    private val schemaProxy = SchemaProxy()
 
-    private val contextType = Type._Context(contextClass)
+    private val contextType = Type._Context()
 
     private enum class TypeCategory {
         INPUT, QUERY
     }
 
-    fun perform(): DefaultSchema<Context> {
+    fun perform(): DefaultSchema {
         val queryType = handleQueries()
         val mutationType = handleMutations()
         definition.objects.forEach { handleObjectType(it.kClass) }
@@ -74,7 +74,7 @@ class SchemaCompilation<Context: Any>(
                 allTypes = queryTypeProxies + inputTypeProxies + enums + scalars,
                 directives = definition.directives.map { handlePartialDirective(it) }
         )
-        val schema = DefaultSchema(contextClass, configuration, model)
+        val schema = DefaultSchema(configuration, model)
         schemaProxy.proxiedSchema = schema
         return schema
     }
@@ -141,8 +141,8 @@ class SchemaCompilation<Context: Any>(
 
     private fun handlePossiblyWrappedType(kType : KType, typeCategory: TypeCategory) : Type = when {
         kType.isIterable() -> handleCollectionType(kType, typeCategory)
-        kType.jvmErasure == contextClass && typeCategory == TypeCategory.INPUT -> contextType
-        kType.jvmErasure == contextClass && typeCategory == TypeCategory.QUERY -> throw SchemaException("Context type cannot be part of schema")
+        kType.jvmErasure == Context::class && typeCategory == TypeCategory.INPUT -> contextType
+        kType.jvmErasure == Context::class && typeCategory == TypeCategory.QUERY -> throw SchemaException("Context type cannot be part of schema")
         kType.arguments.isNotEmpty() -> throw SchemaException("Generic types are not supported by GraphQL, found $kType")
         else -> handleSimpleType(kType, typeCategory)
     }
@@ -170,7 +170,7 @@ class SchemaCompilation<Context: Any>(
 
     private fun handleRawType(kClass: KClass<*>, typeCategory: TypeCategory) : Type {
 
-        if(kClass == contextClass) throw SchemaException("Context type cannot be part of schema")
+        if(kClass == Context::class) throw SchemaException("Context type cannot be part of schema")
 
         val cachedInstances = when(typeCategory) {
             TypeCategory.QUERY -> queryTypeProxies

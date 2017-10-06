@@ -1,5 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.execution
 
+import com.github.pgutkowski.kgraphql.Context
 import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.RequestException
 import com.github.pgutkowski.kgraphql.request.Arguments
@@ -9,20 +10,19 @@ import com.github.pgutkowski.kgraphql.schema.introspection.TypeKind
 import com.github.pgutkowski.kgraphql.schema.structure2.InputValue
 
 
-internal class ArgumentsHandler<in Context: Any>(schema : DefaultSchema<Context>) : ArgumentTransformer(schema) {
+internal class ArgumentsHandler(schema : DefaultSchema) : ArgumentTransformer(schema) {
 
     fun transformArguments (
             funName: String,
             inputValues: List<InputValue<*>>,
             args: Arguments?,
             variables: Variables,
-            requestContext: Context?
+            requestContext: Context
     ) : List<Any?>{
         val unsupportedArguments = args?.filter { arg -> inputValues.none { value -> value.name == arg.key }}
 
-        if(unsupportedArguments?.isNotEmpty() ?: false){
-            throw RequestException("$funName does support arguments ${inputValues.map { it.name }}. " +
-                            "found arguments ${args?.keys}"
+        if(unsupportedArguments?.isNotEmpty() == true){
+            throw RequestException("$funName does support arguments ${inputValues.map { it.name }}. found arguments ${args.keys}"
             )
         }
 

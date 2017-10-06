@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.github.pgutkowski.kgraphql.Context
 import com.github.pgutkowski.kgraphql.ExecutionException
 import com.github.pgutkowski.kgraphql.request.Arguments
 import com.github.pgutkowski.kgraphql.request.Variables
@@ -24,9 +25,9 @@ import kotlin.reflect.KProperty1
 
 
 @Suppress("UNCHECKED_CAST") // For valid structure there is no risk of ClassCastException
-class ParallelRequestExecutor<Context : Any>(val schema: DefaultSchema<Context>) : RequestExecutor<Context> {
+class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
 
-    data class ExecutionContext<Context>(val variables: Variables, val requestContext: Context?)
+    data class ExecutionContext(val variables: Variables, val requestContext: Context)
 
     private val argumentsHandler = ArgumentsHandler(schema)
 
@@ -42,7 +43,7 @@ class ParallelRequestExecutor<Context : Any>(val schema: DefaultSchema<Context>)
         }
     }
 
-    override fun execute(plan : ExecutionPlan, variables: VariablesJson, context: Context?) : String = runBlocking {
+    override fun execute(plan : ExecutionPlan, variables: VariablesJson, context: Context) : String = runBlocking {
         val root = jsonNodeFactory.objectNode()
         val data = root.putObject("data")
         val channel = Channel<Pair<Execution, JsonNode>>()
@@ -83,7 +84,7 @@ class ParallelRequestExecutor<Context : Any>(val schema: DefaultSchema<Context>)
         objectWriter.writeValueAsString(root)
     }
 
-    private fun <T>writeOperation(ctx: ExecutionContext<Context>, node: Execution.Node, operation: FunctionWrapper<T>) : JsonNode {
+    private fun <T>writeOperation(ctx: ExecutionContext, node: Execution.Node, operation: FunctionWrapper<T>) : JsonNode {
         val operationResult : T? = operation.invoke (
                 funName = node.field.name,
                 receiver = null,
@@ -94,7 +95,7 @@ class ParallelRequestExecutor<Context : Any>(val schema: DefaultSchema<Context>)
         return createNode(ctx, operationResult, node, node.field.returnType)
     }
 
-    private fun <T> createUnionOperationNode(ctx: ExecutionContext<Context>, parent: T, node: Execution.Union, unionProperty: Field.Union): JsonNode {
+    private fun <T> createUnionOperationNode(ctx: ExecutionContext, parent: T, node: Execution.Union, unionProperty: Field.Union): JsonNode {
         val operationResult : Any? = unionProperty.invoke(
                 funName = unionProperty.name,
                 receiver = parent,
@@ -113,7 +114,7 @@ class ParallelRequestExecutor<Context : Any>(val schema: DefaultSchema<Context>)
         return createNode(ctx, operationResult, node, returnType)
     }
 
-    private fun <T> createNode(ctx: ExecutionContext<Context>, value : T?, node: Execution.Node, returnType: Type) : JsonNode {
+    private fun <T> createNode(ctx: ExecutionContext, value : T?, node: Execution.Node, returnType: Type) : JsonNode {
         return when {
             value == null -> createNullNode(node, returnType)
 
@@ -165,7 +166,7 @@ class ParallelRequestExecutor<Context : Any>(val schema: DefaultSchema<Context>)
         }
     }
 
-    private fun <T> createObjectNode(ctx: ExecutionContext<Context>, value : T, node: Execution.Node, type: Type): ObjectNode {
+    private fun <T> createObjectNode(ctx: ExecutionContext, value : T, node: Execution.Node, type: Type): ObjectNode {
         val objectNode = jsonNodeFactory.objectNode()
         for(child in node.children){
             if(child is Execution.Fragment){
@@ -178,7 +179,7 @@ class ParallelRequestExecutor<Context : Any>(val schema: DefaultSchema<Context>)
         return objectNode
     }
 
-    private fun <T> handleProperty(ctx: ExecutionContext<Context>, value: T, child: Execution, type: Type): Pair<String, JsonNode?> {
+    private fun <T> handleProperty(ctx: ExecutionContext, value: T, child: Execution, type: Type): Pair<String, JsonNode?> {
         when (child) {
         //Union is subclass of Node so check it first
             is Execution.Union -> {
@@ -201,7 +202,7 @@ class ParallelRequestExecutor<Context : Any>(val schema: DefaultSchema<Context>)
         }
     }
 
-    private fun <T> handleFragment(ctx: ExecutionContext<Context>, value: T, container: Execution.Fragment): Map<String, JsonNode?> {
+    private fun <T> handleFragment(ctx: ExecutionContext, value: T, container: Execution.Fragment): Map<String, JsonNode?> {
         val expectedType = container.condition.type
         val include = determineInclude(ctx, container.directives)
 
@@ -218,7 +219,7 @@ class ParallelRequestExecutor<Context : Any>(val schema: DefaultSchema<Context>)
         return emptyMap()
     }
 
-    private fun <T> createPropertyNode(ctx: ExecutionContext<Context>, parentValue: T, node: Execution.Node, field: Field) : JsonNode? {
+    private fun <T> createPropertyNode(ctx: ExecutionContext, parentValue: T, node: Execution.Node, field: Field) : JsonNode? {
         val include = determineInclude(ctx, node.directives)
 
         if(include){
@@ -252,7 +253,7 @@ class ParallelRequestExecutor<Context : Any>(val schema: DefaultSchema<Context>)
         }
     }
 
-    fun <T>handleFunctionProperty(ctx: ExecutionContext<Context>, parentValue: T, node: Execution.Node, field: Field.Function<*>) : JsonNode {
+    fun <T>handleFunctionProperty(ctx: ExecutionContext, parentValue: T, node: Execution.Node, field: Field.Function<*>) : JsonNode {
         val result = field.invoke(
                 funName = field.name,
                 receiver = parentValue,
@@ -263,7 +264,7 @@ class ParallelRequestExecutor<Context : Any>(val schema: DefaultSchema<Context>)
         return createNode(ctx, result, node, field.returnType)
     }
 
-    private fun determineInclude(ctx: ExecutionContext<Context>, directives: Map<Directive, Arguments?>?): Boolean {
+    private fun determineInclude(ctx: ExecutionContext, directives: Map<Directive, Arguments?>?): Boolean {
         return directives?.map { (directive, arguments) ->
             directive.execution.invoke(
                     funName = directive.name,
@@ -275,20 +276,20 @@ class ParallelRequestExecutor<Context : Any>(val schema: DefaultSchema<Context>)
         }?.reduce { acc, b -> acc && b } ?: true
     }
 
-    fun <T> FunctionWrapper<T>.invoke(
+    private fun <T> FunctionWrapper<T>.invoke(
             funName: String,
             receiver: Any?,
             inputValues: List<InputValue<*>>,
             args: Arguments?,
-            ctx: ExecutionContext<Context>
+            ctx: ExecutionContext
     ): T? {
         val transformedArgs = argumentsHandler.transformArguments(funName, inputValues, args, ctx.variables, ctx.requestContext)
 
         //exceptions are not caught on purpose to pass up business logic errors
-        if(hasReceiver){
-            return invoke(receiver, *transformedArgs.toTypedArray())
+        return if(hasReceiver){
+            invoke(receiver, *transformedArgs.toTypedArray())
         } else {
-            return invoke(*transformedArgs.toTypedArray())
+            invoke(*transformedArgs.toTypedArray())
         }
     }
 

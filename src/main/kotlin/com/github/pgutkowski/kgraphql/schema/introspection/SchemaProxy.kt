@@ -1,12 +1,13 @@
 package com.github.pgutkowski.kgraphql.schema.introspection
 
+import com.github.pgutkowski.kgraphql.Context
 import com.github.pgutkowski.kgraphql.schema.structure2.LookupSchema
 import com.github.pgutkowski.kgraphql.schema.structure2.Type
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
 
-class SchemaProxy<Context: Any>(var proxiedSchema : LookupSchema<Context>? = null) : LookupSchema<Context> {
+class SchemaProxy(var proxiedSchema : LookupSchema? = null) : LookupSchema {
 
     companion object {
         const val ILLEGAL_STATE_MESSAGE = "Missing proxied __Schema instance"
@@ -43,7 +44,7 @@ class SchemaProxy<Context: Any>(var proxiedSchema : LookupSchema<Context>? = nul
 
     override fun inputTypeByName(name: String): Type? = inputTypeByName(name)
 
-    override fun execute(request: String, variables: String?, context: Context?): String {
+    override fun execute(request: String, variables: String?, context: Context): String {
         return getProxied().execute(request, variables, context)
     }
 }

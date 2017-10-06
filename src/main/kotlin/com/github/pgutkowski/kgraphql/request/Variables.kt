@@ -10,7 +10,7 @@ import kotlin.reflect.KType
 
 @Suppress("UNCHECKED_CAST")
 data class Variables(
-        private val typeDefinitionProvider: LookupSchema<*>,
+        private val typeDefinitionProvider: LookupSchema,
         private val variablesJson: VariablesJson,
         private val variables: List<OperationVariable>?
 ) {
@@ -32,7 +32,7 @@ data class Variables(
         }
 
         value?.let {
-            if (isIterable && !(kType.getIterableElementType()?.isMarkedNullable ?: true)) {
+            if (isIterable && kType.getIterableElementType()?.isMarkedNullable == false) {
                 for (element in value as Iterable<*>) {
                     if (element == null) {
                         throw RequestException(

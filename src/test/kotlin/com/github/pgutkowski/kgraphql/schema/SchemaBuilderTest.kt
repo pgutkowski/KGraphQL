@@ -1,10 +1,12 @@
 package com.github.pgutkowski.kgraphql.schema
 
 import com.github.pgutkowski.kgraphql.Actor
+import com.github.pgutkowski.kgraphql.Context
 import com.github.pgutkowski.kgraphql.FilmType
 import com.github.pgutkowski.kgraphql.Id
 import com.github.pgutkowski.kgraphql.KGraphQL
 import com.github.pgutkowski.kgraphql.Scenario
+import com.github.pgutkowski.kgraphql.context
 import com.github.pgutkowski.kgraphql.defaultSchema
 import com.github.pgutkowski.kgraphql.deserialize
 import com.github.pgutkowski.kgraphql.expect
@@ -299,62 +301,53 @@ class SchemaBuilderTest {
         }
     }
 
-    data class Context(val username: String, val stuff: String)
+    data class UserData(val username: String, val stuff: String)
 
     @Test
     fun `client code can declare custom context class and use it in query resolver`(){
-        val schema = KGraphQL.schema(Context::class) {
+        val schema = KGraphQL.schema {
             query("name") {
-                resolver { ctx: Context -> ctx.username }
+                resolver { ctx: Context -> ctx.get<UserData>()?.username }
             }
         }
 
         val georgeName = "George"
-        val response = deserialize(schema.execute("{name}", Context(georgeName, "STUFF")))
+        val response = deserialize(schema.execute("{name}", context { + UserData(georgeName, "STUFF") }))
         assertThat(response.extract<String>("data/name"), equalTo(georgeName))
     }
 
     @Test
-    fun `client code can declare custom context class and use it in property resolver`(){
+    fun `client code can use context class in property resolver`(){
         val georgeName = "George"
-        val schema = KGraphQL.schema(Context::class) {
+        val schema = KGraphQL.schema {
             query("actor") {
                 resolver { -> Actor("George", 23) }
             }
 
             type<Actor> {
                 property<String>("nickname"){
-                    resolver { actor : Actor, ctx: Context -> "Hodor and ${ctx.username}" }
+                    resolver { _: Actor, ctx: Context -> "Hodor and ${ctx.get<UserData>()?.username}" }
                 }
 
                 transformation(Actor::name) { name: String, addStuff: Boolean?, ctx: Context ->
-                    if(addStuff == true) name + ctx.stuff  else name
+                    if(addStuff == true) name + ctx[UserData::class]?.stuff  else name
                 }
             }
         }
 
-        val response = deserialize(schema.execute("{actor{ nickname, name(addStuff: true) }}", Context(georgeName, "STUFF")))
+        val context = context {
+            + UserData(georgeName, "STUFF")
+            inject("ADA")
+        }
+        val response = deserialize (schema.execute("{actor{ nickname, name(addStuff: true) }}", context))
         assertThat(response.extract<String>("data/actor/name"), equalTo("${georgeName}STUFF"))
         assertThat(response.extract<String>("data/actor/nickname"), equalTo("Hodor and $georgeName"))
     }
 
     @Test
-    fun `if no context type is specified unit type is used`(){
-        val georgeName = "George"
-        val schema = defaultSchema {
-            query("query"){
-                resolver { -> georgeName }
-            }
-        }
-
-        val george = deserialize(schema.execute("{query}", Unit))
-        assertThat(george.extract<String>("data/query"), equalTo(georgeName))
-    }
-
-    @Test
     fun `context type cannot be part of schema`(){
         expect<SchemaException>("Context type cannot be part of schema") {
-            KGraphQL.schema(Context::class) {
+            KGraphQL.schema {
                 query("name") {
                     resolver { ctx: Context -> ctx }
                 }

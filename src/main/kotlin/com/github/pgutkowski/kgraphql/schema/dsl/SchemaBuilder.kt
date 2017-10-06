@@ -17,9 +17,9 @@ class SchemaBuilder<Context : Any>(private val init: SchemaBuilder<Context>.() -
 
     private var configuration = SchemaConfigurationDSL()
 
-    fun build(kClass: KClass<Context>): Schema<Context> {
+    fun build(): Schema {
         init()
-        return SchemaCompilation(kClass, configuration.build(), model.toSchemaDefinition()).perform()
+        return SchemaCompilation(configuration.build(), model.toSchemaDefinition()).perform()
     }
 
     fun configure(block: SchemaConfigurationDSL.() -> Unit){

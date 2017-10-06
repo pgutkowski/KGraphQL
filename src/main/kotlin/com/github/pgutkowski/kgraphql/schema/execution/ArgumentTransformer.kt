@@ -12,7 +12,7 @@ import kotlin.reflect.KType
 import kotlin.reflect.jvm.jvmErasure
 
 
-open class ArgumentTransformer(val schema : DefaultSchema<*>) {
+open class ArgumentTransformer(val schema : DefaultSchema) {
 
     fun transformValue(type: Type, value: String, variables: Variables) : Any? {
         val kType = type.toKType()

@@ -47,8 +47,8 @@ fun <T>extractOrNull(map: Map<*,*>, path : String) : T? {
     }
 }
 
-fun defaultSchema(block: SchemaBuilder<Unit>.() -> Unit): DefaultSchema<Unit> {
-    return SchemaBuilder(block).build(Unit::class) as DefaultSchema<Unit>
+fun defaultSchema(block: SchemaBuilder<Unit>.() -> Unit): DefaultSchema {
+    return SchemaBuilder(block).build() as DefaultSchema
 }
 
 fun assertNoErrors(map : Map<*,*>) {
@@ -77,7 +77,7 @@ inline fun <reified T: Exception> expect(message: String? = null, block: () -> U
     }
 }
 
-fun executeEqualQueries(schema: Schema<*>, expected: Map<*,*>, vararg queries : String){
+fun executeEqualQueries(schema: Schema, expected: Map<*,*>, vararg queries : String){
     queries.map { request ->
         deserialize(schema.execute(request))
     }.forEach { map ->

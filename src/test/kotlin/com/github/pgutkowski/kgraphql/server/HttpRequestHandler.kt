@@ -22,7 +22,7 @@ import java.util.logging.Logger
  * TODO: refactor and splitOperationsAndFragments to two handlers : for queries and for API docs
  */
 @ChannelHandler.Sharable
-class HttpRequestHandler(val schema : DefaultSchema<*>) : SimpleChannelInboundHandler<FullHttpRequest>() {
+class HttpRequestHandler(val schema : DefaultSchema) : SimpleChannelInboundHandler<FullHttpRequest>() {
 
     val logger : Logger = Logger.getLogger( HttpRequestHandler::class.qualifiedName )
 

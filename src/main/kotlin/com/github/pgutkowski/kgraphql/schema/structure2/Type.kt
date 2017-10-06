@@ -1,5 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema.structure2
 
+import com.github.pgutkowski.kgraphql.Context
 import com.github.pgutkowski.kgraphql.schema.introspection.TypeKind
 import com.github.pgutkowski.kgraphql.schema.introspection.__EnumValue
 import com.github.pgutkowski.kgraphql.schema.introspection.__Field
@@ -245,8 +246,8 @@ interface Type : __Type {
         override fun isInstance(value: Any?): Boolean = false
     }
 
-    class _Context(contextKClass: KClass<*>) : Type {
-        override val kClass: KClass<*>? = contextKClass
+    class _Context : Type {
+        override val kClass: KClass<*>? = Context::class
 
         override val kind: TypeKind = TypeKind.OBJECT
 

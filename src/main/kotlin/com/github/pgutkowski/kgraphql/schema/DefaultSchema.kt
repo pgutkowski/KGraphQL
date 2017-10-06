@@ -1,5 +1,6 @@
 package com.github.pgutkowski.kgraphql.schema
 
+import com.github.pgutkowski.kgraphql.Context
 import com.github.pgutkowski.kgraphql.RequestException
 import com.github.pgutkowski.kgraphql.configuration.SchemaConfiguration
 import com.github.pgutkowski.kgraphql.request.CachingDocumentParser
@@ -17,19 +18,18 @@ import kotlin.reflect.KType
 import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.jvmErasure
 
-class DefaultSchema<Context : Any>(
-        internal val contextClass: KClass<Context>,
+class DefaultSchema (
         internal val configuration: SchemaConfiguration,
         internal val model : SchemaModel
-) : Schema<Context>, __Schema by model, LookupSchema<Context> {
+) : Schema , __Schema by model, LookupSchema {
 
     companion object {
         const val OPERATION_NAME_PARAM = "operationName"
     }
 
-    val requestExecutor : RequestExecutor<Context> = ParallelRequestExecutor(this)
+    private val requestExecutor : RequestExecutor = ParallelRequestExecutor(this)
 
-    val requestInterpreter : RequestInterpreter = RequestInterpreter(model)
+     private val requestInterpreter : RequestInterpreter = RequestInterpreter(model)
 
     /*
      * objects for request handling
@@ -40,7 +40,7 @@ class DefaultSchema<Context : Any>(
         DocumentParser()
     }
 
-    override fun execute(request: String, variables: String?, context: Context?): String {
+    override fun execute(request: String, variables: String?, context: Context): String {
         val parsedVariables = variables
                 ?.let { VariablesJson.Defined(configuration.objectMapper, variables) }
                 ?: VariablesJson.Empty()

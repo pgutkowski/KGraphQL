@@ -147,7 +147,7 @@ Add Bintray JCenter repository to <repositories> section:
 ```
 <repository>
     <id>central</id>
-    <url>http://jcenter.bintray.com</url>
+    <url>https://dl.bintray.com/pgutkowski/Maven</url>
 </repository>
 ```
 
@@ -175,7 +175,9 @@ Add Bintray JCenter repository:
 
 ```
 repositories {
-    jcenter()
+    maven {
+        url  "https://dl.bintray.com/pgutkowski/Maven" 
+    }
 }
 ```
 

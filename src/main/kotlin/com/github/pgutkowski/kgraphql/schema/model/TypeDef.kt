@@ -26,7 +26,10 @@ interface TypeDef {
             val transformations : Map<KProperty1<T, *>, Transformation<T, *>> = emptyMap(),
             description : String? = null
     ) : BaseKQLType(name, description), Kotlin<T> {
-        fun isIgnored(property: KProperty1<*, *>): Boolean = kotlinProperties[property]?.isIgnored ?: false
+
+        val propertiesByName = kotlinProperties.mapKeys { entry -> entry.key.name }
+
+        fun isIgnored(property: String): Boolean = propertiesByName[property]?.isIgnored ?: false
     }
 
     class Input<T : Any>(

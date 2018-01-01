@@ -14,7 +14,6 @@ import com.github.pgutkowski.kgraphql.schema.introspection.__Schema
 import com.github.pgutkowski.kgraphql.schema.model.BaseOperationDef
 import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
 import com.github.pgutkowski.kgraphql.schema.model.InputValueDef
-import com.github.pgutkowski.kgraphql.schema.model.MutationDef
 import com.github.pgutkowski.kgraphql.schema.model.PropertyDef
 import com.github.pgutkowski.kgraphql.schema.model.QueryDef
 import com.github.pgutkowski.kgraphql.schema.model.SchemaDefinition
@@ -24,6 +23,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.jvmErasure
 
@@ -191,7 +191,8 @@ class SchemaCompilation(
 
     private fun handleObjectType(kClass: KClass<*>) : Type {
         assertValidObjectType(kClass)
-        val objectDef = definition.objects.find { it.kClass == kClass } ?: TypeDef.Object(kClass.defaultKQLTypeName(), kClass)
+        val objectDefs = definition.objects.filter { it.kClass.isSuperclassOf(kClass) }
+        val objectDef = objectDefs.find { it.kClass == kClass } ?: TypeDef.Object(kClass.defaultKQLTypeName(), kClass)
 
         //treat introspection types as objects -> adhere to reference implementation behaviour
         val kind = if(kClass.isFinal || objectDef.name.startsWith("__")) TypeKind.OBJECT else TypeKind.INTERFACE
@@ -200,17 +201,22 @@ class SchemaCompilation(
         val typeProxy = TypeProxy(objectType)
         queryTypeProxies.put(kClass, typeProxy)
 
+        val allKotlinProperties = objectDefs.fold(emptyMap<String, PropertyDef.Kotlin<*, *>>(),
+                { acc, def -> acc + def.kotlinProperties.mapKeys { entry -> entry.key.name } })
+        val allTransformations= objectDefs.fold(emptyMap<String, Transformation<*, *>>(),
+                { acc, def -> acc + def.transformations.mapKeys { entry -> entry.key.name } })
+
         val kotlinFields = kClass.memberProperties
-                .filterNot { objectDef.isIgnored(it) }
+                .filterNot { field ->  objectDefs.any { it.isIgnored(field.name) } }
                 .map { property -> handleKotlinProperty (
                         kProperty = property,
-                        kqlProperty = objectDef.kotlinProperties[property],
-                        transformation = objectDef.transformations[property]
+                        kqlProperty = allKotlinProperties[property.name],
+                        transformation = allTransformations[property.name]
                 ) }
 
-        val extensionFields = objectDef.extensionProperties.map { property -> handleOperation(property) }
+        val extensionFields = objectDefs.flatMap(TypeDef.Object<*>::extensionProperties).map { property -> handleOperation(property) }
 
-        val unionFields = objectDef.unionProperties.map { property -> handleUnionProperty(property) }
+        val unionFields = objectDefs.flatMap(TypeDef.Object<*>::unionProperties).map { property -> handleUnionProperty(property) }
 
         val typenameResolver = { value: Any ->
             schemaProxy.typeByKClass(value.javaClass.kotlin)?.name ?: typeProxy.name

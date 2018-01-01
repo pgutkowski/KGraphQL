@@ -19,6 +19,7 @@ import com.github.pgutkowski.kgraphql.schema.structure2.Field
 import com.github.pgutkowski.kgraphql.schema.structure2.InputValue
 import com.github.pgutkowski.kgraphql.schema.structure2.Type
 import kotlinx.coroutines.experimental.channels.Channel
+import kotlinx.coroutines.experimental.defer
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
 import kotlin.reflect.KProperty1
@@ -54,7 +55,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
                             val writeOperation = writeOperation(
                                     ctx = ExecutionContext(Variables(schema, variables, execution.variables), context),
                                     node = execution,
-                                    operation = execution.field as Field.Function<*>
+                                    operation = execution.field as Field.Function<*, *>
                             )
                             channel.send(execution to writeOperation)
                         } catch (e: Exception) {
@@ -85,6 +86,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
     }
 
     private fun <T>writeOperation(ctx: ExecutionContext, node: Execution.Node, operation: FunctionWrapper<T>) : JsonNode {
+        node.field.checkAccess(null, ctx.requestContext)
         val operationResult : T? = operation.invoke (
                 funName = node.field.name,
                 receiver = null,
@@ -92,10 +94,13 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
                 args = node.arguments,
                 ctx = ctx
         )
+
         return createNode(ctx, operationResult, node, node.field.returnType)
     }
 
-    private fun <T> createUnionOperationNode(ctx: ExecutionContext, parent: T, node: Execution.Union, unionProperty: Field.Union): JsonNode {
+    private fun <T> createUnionOperationNode(ctx: ExecutionContext, parent: T, node: Execution.Union, unionProperty: Field.Union<T>): JsonNode {
+        node.field.checkAccess(parent, ctx.requestContext)
+
         val operationResult : Any? = unionProperty.invoke(
                 funName = unionProperty.name,
                 receiver = parent,
@@ -185,8 +190,8 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
             is Execution.Union -> {
                 val field = type.unwrapped()[child.key]
                         ?: throw IllegalStateException("Execution unit ${child.key} is not contained by operation return type")
-                if(field is Field.Union){
-                    return child.aliasOrKey to createUnionOperationNode(ctx, value, child, field)
+                if(field is Field.Union<*>){
+                    return child.aliasOrKey to createUnionOperationNode(ctx, value, child, field as Field.Union<T>)
                 } else {
                     throw ExecutionException("Unexpected non-union field for union execution node")
                 }
@@ -221,6 +226,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
 
     private fun <T> createPropertyNode(ctx: ExecutionContext, parentValue: T, node: Execution.Node, field: Field) : JsonNode? {
         val include = determineInclude(ctx, node.directives)
+        node.field.checkAccess(parentValue, ctx.requestContext)
 
         if(include){
             when(field){
@@ -228,8 +234,8 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
                     field.kProperty as KProperty1<T, *>
                     val rawValue = field.kProperty.get(parentValue)
                     val value : Any?
-                    if(field.transformation != null){
-                        value = field.transformation.invoke (
+                    value = if(field.transformation != null){
+                        field.transformation.invoke (
                                 funName = field.name,
                                 receiver = rawValue,
                                 inputValues = field.arguments,
@@ -237,11 +243,11 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
                                 ctx = ctx
                         )
                     } else {
-                        value = rawValue
+                        rawValue
                     }
                     return createNode(ctx, value, node, field.returnType)
                 }
-                is Field.Function<*> -> {
+                is Field.Function<*, *> -> {
                     return handleFunctionProperty(ctx, parentValue, node, field)
                 }
                 else -> {
@@ -253,7 +259,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         }
     }
 
-    fun <T>handleFunctionProperty(ctx: ExecutionContext, parentValue: T, node: Execution.Node, field: Field.Function<*>) : JsonNode {
+    fun <T>handleFunctionProperty(ctx: ExecutionContext, parentValue: T, node: Execution.Node, field: Field.Function<*, *>) : JsonNode {
         val result = field.invoke(
                 funName = field.name,
                 receiver = parentValue,

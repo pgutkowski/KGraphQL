@@ -1,15 +1,16 @@
 package com.github.pgutkowski.kgraphql.schema.dsl
 
+import com.github.pgutkowski.kgraphql.Context
 import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
 import com.github.pgutkowski.kgraphql.schema.model.InputValueDef
 import com.github.pgutkowski.kgraphql.schema.model.MutationDef
 import com.github.pgutkowski.kgraphql.schema.model.QueryDef
 
 
-class QueryOrMutationDSL<Context : Any>(
+class QueryOrMutationDSL(
         val name : String,
-        block : QueryOrMutationDSL<Context>.() -> Unit
-) : DepreciableItemDSL(), ResolverDSL.Target {
+        block : QueryOrMutationDSL.() -> Unit
+) : LimitedAccessItemDSL<Nothing>(), ResolverDSL.Target {
 
     private val inputValues = mutableListOf<InputValueDef<*>>()
 
@@ -38,6 +39,11 @@ class QueryOrMutationDSL<Context : Any>(
 
     fun <T, R, E, W, Q, A, S>resolver(function: (R, E, W, Q, A, S) -> T) = resolver(FunctionWrapper.on(function))
 
+    fun accessRule(rule: (Context) -> Exception?){
+        val accessRuleAdapter: (Nothing?, Context) -> Exception? = { _, ctx -> rule(ctx) }
+        this.accessRuleBlock = accessRuleAdapter
+    }
+
     override fun addInputValues(inputValues: Collection<InputValueDef<*>>) {
         this.inputValues.addAll(inputValues)
     }
@@ -48,7 +54,8 @@ class QueryOrMutationDSL<Context : Any>(
             description = description,
             isDeprecated = isDeprecated,
             deprecationReason = deprecationReason,
-            inputValues = inputValues
+            inputValues = inputValues,
+            accessRule = accessRuleBlock
     )
 
     internal fun toKQLMutation() = MutationDef(
@@ -57,6 +64,7 @@ class QueryOrMutationDSL<Context : Any>(
             description = description,
             isDeprecated = isDeprecated,
             deprecationReason = deprecationReason,
-            inputValues = inputValues
+            inputValues = inputValues,
+            accessRule = accessRuleBlock
     )
 }

@@ -30,11 +30,11 @@ class SchemaBuilder<Context : Any>(private val init: SchemaBuilder<Context>.() -
     // OPERATIONS
     //================================================================================
 
-    fun query(name : String, init: QueryOrMutationDSL<Context>.() -> Unit){
+    fun query(name : String, init: QueryOrMutationDSL.() -> Unit){
         model.addQuery(QueryOrMutationDSL(name, init).toKQLQuery())
     }
 
-    fun mutation(name : String, init: QueryOrMutationDSL<Context>.() -> Unit){
+    fun mutation(name : String, init: QueryOrMutationDSL.() -> Unit){
         model.addMutation(QueryOrMutationDSL(name, init).toKQLMutation())
     }
 

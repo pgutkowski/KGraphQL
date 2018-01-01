@@ -14,6 +14,7 @@ import com.github.pgutkowski.kgraphql.schema.introspection.__Schema
 import com.github.pgutkowski.kgraphql.schema.model.BaseOperationDef
 import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
 import com.github.pgutkowski.kgraphql.schema.model.InputValueDef
+import com.github.pgutkowski.kgraphql.schema.model.MutationDef
 import com.github.pgutkowski.kgraphql.schema.model.PropertyDef
 import com.github.pgutkowski.kgraphql.schema.model.QueryDef
 import com.github.pgutkowski.kgraphql.schema.model.SchemaDefinition
@@ -126,13 +127,13 @@ class SchemaCompilation(
             })
     )
 
-    private fun handleOperation(operation : BaseOperationDef<*>) : Field {
+    private fun handleOperation(operation : BaseOperationDef<*, *>) : Field {
         val returnType = handlePossiblyWrappedType(operation.kFunction.returnType, TypeCategory.QUERY)
         val inputValues = handleInputValues(operation.name, operation, operation.inputValues)
         return Field.Function(operation, returnType, inputValues)
     }
 
-    private fun handleUnionProperty(unionProperty: PropertyDef.Union) : Field {
+    private fun handleUnionProperty(unionProperty: PropertyDef.Union<*>) : Field {
         val inputValues = handleInputValues(unionProperty.name, unionProperty, unionProperty.inputValues)
         val type = handleUnionType(unionProperty.union)
 
@@ -216,7 +217,7 @@ class SchemaCompilation(
         }
 
         val __typenameField = handleOperation (
-                PropertyDef.Function ("__typename", FunctionWrapper.on(typenameResolver, true))
+                PropertyDef.Function<Nothing, String?> ("__typename", FunctionWrapper.on(typenameResolver, true))
         )
 
         val declaredFields = kotlinFields + extensionFields + unionFields

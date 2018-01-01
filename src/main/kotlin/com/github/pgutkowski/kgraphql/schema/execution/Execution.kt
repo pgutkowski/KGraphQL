@@ -29,7 +29,7 @@ sealed class Execution {
     ) : Execution()
 
     class Union (
-            val unionField: Field.Union,
+            val unionField: Field.Union<*>,
             val memberChildren: Map<Type, Collection<Execution>>,
             key: String,
             alias: String? = null,
@@ -38,14 +38,14 @@ sealed class Execution {
     ) : Execution.Node (unionField, emptyList(), key, alias, null, condition, directives, null) {
         fun memberExecution(type: Type): Execution.Node {
             return Execution.Node (
-                    field,
-                    memberChildren[type] ?: throw IllegalArgumentException("Union ${unionField.name} has no member $type"),
-                    key,
-                    alias,
-                    arguments,
-                    typeCondition,
-                    directives,
-                    null
+                    field = field,
+                    children = memberChildren[type] ?: throw IllegalArgumentException("Union ${unionField.name} has no member $type"),
+                    key = key,
+                    alias = alias,
+                    arguments = arguments,
+                    typeCondition = typeCondition,
+                    directives = directives,
+                    variables = null
             )
         }
     }

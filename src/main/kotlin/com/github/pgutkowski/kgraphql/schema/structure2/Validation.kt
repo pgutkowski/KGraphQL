@@ -51,7 +51,7 @@ fun Field.validateArguments(selectionArgs: Arguments?, parentTypeName : String?)
 /**
  * validate that only typed fragments are present
  */
-fun validateUnionRequest(field: Field.Union, selectionNode: SelectionNode) {
+fun validateUnionRequest(field: Field.Union<*>, selectionNode: SelectionNode) {
     val illegalChildren = selectionNode.children?.filterNot {
         it is Fragment.Inline || it is Fragment.External
     }

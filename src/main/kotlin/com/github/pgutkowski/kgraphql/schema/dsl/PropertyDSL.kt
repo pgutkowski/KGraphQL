@@ -1,11 +1,13 @@
 package com.github.pgutkowski.kgraphql.schema.dsl
 
+import com.github.pgutkowski.kgraphql.Context
 import com.github.pgutkowski.kgraphql.schema.model.FunctionWrapper
 import com.github.pgutkowski.kgraphql.schema.model.InputValueDef
 import com.github.pgutkowski.kgraphql.schema.model.PropertyDef
+import java.lang.IllegalArgumentException
 
 
-class PropertyDSL<out T, R>(val name : String, block : PropertyDSL<T, R>.() -> Unit) : DepreciableItemDSL(), ResolverDSL.Target {
+class PropertyDSL<T : Any, R>(val name : String, block : PropertyDSL<T, R>.() -> Unit) : LimitedAccessItemDSL<T>(), ResolverDSL.Target {
 
     init {
         block()
@@ -38,13 +40,23 @@ class PropertyDSL<out T, R>(val name : String, block : PropertyDSL<T, R>.() -> U
     fun <E, W, Q, A, S>resolver(function: (T, E, W, Q, A, S) -> R)
             = resolver(FunctionWrapper.on(function, true))
 
-    fun toKQLProperty() = PropertyDef.Function(
+    fun accessRule(rule: (T, Context) -> Exception?){
+
+        val accessRuleAdapter: (T?, Context) -> Exception? = { parent, ctx ->
+            if (parent != null) rule(parent, ctx) else IllegalArgumentException("Unexpected null parent of kotlin property")
+        }
+
+        this.accessRuleBlock = accessRuleAdapter
+    }
+
+    fun toKQLProperty() = PropertyDef.Function<T, R>(
             name = name,
             resolver = functionWrapper,
             description = description,
             isDeprecated = isDeprecated,
             deprecationReason = deprecationReason,
-            inputValues = inputValues
+            inputValues = inputValues,
+            accessRule = accessRuleBlock
     )
 
     override fun addInputValues(inputValues: Collection<InputValueDef<*>>) {

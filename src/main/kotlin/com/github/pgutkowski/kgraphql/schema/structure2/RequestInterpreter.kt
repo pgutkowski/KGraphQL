@@ -96,7 +96,7 @@ class RequestInterpreter(val schemaModel: SchemaModel) {
 
         return when(field){
             null -> throw RequestException("property ${selectionNode.key} on ${this.name} does not exist")
-            is Field.Union -> handleUnion(field, selectionNode)
+            is Field.Union<*> -> handleUnion(field, selectionNode)
             else -> {
                 validatePropertyArguments(this, field, selectionNode)
 
@@ -114,7 +114,7 @@ class RequestInterpreter(val schemaModel: SchemaModel) {
         }
     }
 
-    private fun handleUnion(field: Field.Union, selectionNode: SelectionNode) : Execution.Union {
+    private fun <T> handleUnion(field: Field.Union<T>, selectionNode: SelectionNode) : Execution.Union {
         validateUnionRequest(field, selectionNode)
 
         val unionMembersChildren = field.returnType.possibleTypes.associate { possibleType ->

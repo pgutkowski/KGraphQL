@@ -10,15 +10,19 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 
-open class TypeDSL<T : Any>(private val supportedUnions: Collection<TypeDef.Union>, val kClass: KClass<T>, block: TypeDSL<T>.() -> Unit) : ItemDSL() {
+open class TypeDSL<T : Any>(
+        private val supportedUnions: Collection<TypeDef.Union>,
+        val kClass: KClass<T>,
+        block: TypeDSL<T>.() -> Unit
+) : ItemDSL() {
 
     var name = kClass.defaultKQLTypeName()
 
     internal val transformationProperties = mutableSetOf<Transformation<T, *>>()
 
-    internal val extensionProperties = mutableSetOf<PropertyDef.Function<*>>()
+    internal val extensionProperties = mutableSetOf<PropertyDef.Function<T, *>>()
 
-    internal val unionProperties = mutableSetOf<PropertyDef.Union>()
+    internal val unionProperties = mutableSetOf<PropertyDef.Union<T>>()
 
     internal val describedKotlinProperties = mutableMapOf<KProperty1<T, *>, PropertyDef.Kotlin<T, *>>()
 
@@ -42,7 +46,7 @@ open class TypeDSL<T : Any>(private val supportedUnions: Collection<TypeDef.Unio
         transformationProperties.add(Transformation(kProperty, FunctionWrapper.on(function, true)))
     }
 
-    fun property(kProperty: KProperty1<T, *>, block : KotlinPropertyDSL<T>.() -> Unit){
+    fun <R> property(kProperty: KProperty1<T, R>, block : KotlinPropertyDSL<T, R>.() -> Unit){
         val dsl = KotlinPropertyDSL(kProperty, block)
         describedKotlinProperties[kProperty] = dsl.toKQLProperty()
     }
@@ -52,7 +56,7 @@ open class TypeDSL<T : Any>(private val supportedUnions: Collection<TypeDef.Unio
         extensionProperties.add(dsl.toKQLProperty())
     }
 
-    fun <R> KProperty1<T, R>.configure(block : KotlinPropertyDSL<T>.() -> Unit){
+    fun <R> KProperty1<T, R>.configure(block : KotlinPropertyDSL<T, R>.() -> Unit){
         property(this, block)
     }
 
@@ -74,13 +78,13 @@ open class TypeDSL<T : Any>(private val supportedUnions: Collection<TypeDef.Unio
 
     internal fun toKQLObject() : TypeDef.Object<T> {
         return TypeDef.Object(
-                name,
-                kClass,
-                describedKotlinProperties.toMap(),
-                extensionProperties.toList(),
-                unionProperties.toList(),
-                transformationProperties.associate { it.kProperty to it },
-                description
+                name = name,
+                kClass = kClass,
+                kotlinProperties = describedKotlinProperties.toMap(),
+                extensionProperties = extensionProperties.toList(),
+                unionProperties = unionProperties.toList(),
+                transformations = transformationProperties.associate { it.kProperty to it },
+                description = description
         )
     }
 }

@@ -354,4 +354,22 @@ class SchemaBuilderTest {
             }
         }
     }
+
+    @Test
+    fun `There is clear message when query resolver is not present`(){
+        expect<IllegalArgumentException>("resolver has to be specified for query [name]") {
+            KGraphQL.schema {
+                query("name") { -> "STUFF" }
+            }
+        }
+    }
+
+    @Test
+    fun `There is clear message when mutation resolver is not present`(){
+        expect<IllegalArgumentException>("resolver has to be specified for mutation [name]") {
+            KGraphQL.schema {
+                mutation("name") { -> "STUFF" }
+            }
+        }
+    }
 }

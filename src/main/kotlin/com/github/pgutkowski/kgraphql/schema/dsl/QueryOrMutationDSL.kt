@@ -18,7 +18,7 @@ class QueryOrMutationDSL(
         block()
     }
 
-    internal lateinit var functionWrapper : FunctionWrapper<*>
+    internal var functionWrapper : FunctionWrapper<*>? = null
 
     private fun resolver(function: FunctionWrapper<*>): ResolverDSL {
         functionWrapper = function
@@ -48,23 +48,31 @@ class QueryOrMutationDSL(
         this.inputValues.addAll(inputValues)
     }
 
-    internal fun toKQLQuery() = QueryDef (
-            name = name,
-            resolver = functionWrapper,
-            description = description,
-            isDeprecated = isDeprecated,
-            deprecationReason = deprecationReason,
-            inputValues = inputValues,
-            accessRule = accessRuleBlock
-    )
+    internal fun toKQLQuery(): QueryDef<out Any?> {
+        val function = functionWrapper ?: throw IllegalArgumentException("resolver has to be specified for query [$name]")
 
-    internal fun toKQLMutation() = MutationDef(
-            name = name,
-            resolver = functionWrapper,
-            description = description,
-            isDeprecated = isDeprecated,
-            deprecationReason = deprecationReason,
-            inputValues = inputValues,
-            accessRule = accessRuleBlock
-    )
+        return QueryDef (
+                name = name,
+                resolver = function,
+                description = description,
+                isDeprecated = isDeprecated,
+                deprecationReason = deprecationReason,
+                inputValues = inputValues,
+                accessRule = accessRuleBlock
+        )
+    }
+
+    internal fun toKQLMutation(): MutationDef<out Any?> {
+        val function = functionWrapper ?: throw IllegalArgumentException("resolver has to be specified for mutation [$name]")
+
+        return MutationDef(
+                name = name,
+                resolver = function,
+                description = description,
+                isDeprecated = isDeprecated,
+                deprecationReason = deprecationReason,
+                inputValues = inputValues,
+                accessRule = accessRuleBlock
+        )
+    }
 }

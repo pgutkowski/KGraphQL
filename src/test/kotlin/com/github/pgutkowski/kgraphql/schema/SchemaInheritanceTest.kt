@@ -27,9 +27,9 @@ class SchemaInheritanceTest {
 
             type<A>{ A::id.ignore() }
 
-            query("b") { -> B(name, age) }
+            query("b") { resolver { -> B(name, age) } }
 
-            query("c") { -> C(name, age) }
+            query("c") { resolver { -> C(name, age) } }
         }
 
         expect<RequestException>("property id on B does not exist") {

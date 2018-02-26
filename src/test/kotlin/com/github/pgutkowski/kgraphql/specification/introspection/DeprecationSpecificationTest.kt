@@ -108,4 +108,23 @@ class DeprecationSpecificationTest {
         assertThat(response.extract("data/__type/enumValues[0]/deprecationReason"), equalTo(expected))
         assertThat(response.extract("data/__type/enumValues[0]/isDeprecated"), equalTo(true))
     }
+
+    data class Documented(val id: Int)
+
+    @Test
+    fun `type may be documented`(){
+        val expected = "very documented type"
+        val schema = defaultSchema {
+            query("documented"){
+                resolver { -> Documented(1) }
+            }
+
+            type<Documented> {
+                description = "very documented type"
+            }
+        }
+
+        val response = deserialize(schema.execute("query { __type(name: \"Documented\") {  name, kind, description } }"))
+        assertThat(response.extract("data/__type/description"), equalTo(expected))
+    }
 }

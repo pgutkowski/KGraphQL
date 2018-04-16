@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.pgutkowski.kgraphql.configuration.SchemaConfiguration
 import kotlinx.coroutines.experimental.CommonPool
+import kotlinx.coroutines.experimental.CoroutineDispatcher
 
 
 class SchemaConfigurationDSL {
@@ -13,7 +14,7 @@ class SchemaConfigurationDSL {
     var objectMapper: ObjectMapper = jacksonObjectMapper()
     var documentParserCacheMaximumSize : Long = 1000L
     var acceptSingleValueAsArray : Boolean = true
-    var coroutineDispatcher = CommonPool
+    var coroutineDispatcher: CoroutineDispatcher = CommonPool
 
     internal fun update(block : SchemaConfigurationDSL.() -> Unit) = block()
 

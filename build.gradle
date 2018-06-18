@@ -1,8 +1,8 @@
 group 'com.github.pgutkowski'
-version '0.2.6'
+version '0.2.7'
 
 buildscript {
-    ext.kotlin_version = '1.2.0'
+    ext.kotlin_version = '1.2.50'
 
     repositories {
         mavenCentral()
@@ -34,7 +34,7 @@ repositories {
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.21'
 
@@ -69,6 +69,10 @@ jacoco {
     toolVersion = "0.7.9"
 }
 
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+}
+
 jacocoTestReport {
     reports {
         xml.destination file("${buildDir}/reports/jacoco/test/jacocoTestReport.xml")
@@ -81,6 +85,11 @@ publishing {
     publications {
         MyPublication(MavenPublication) {
             from components.java
+
+            artifact sourceJar {
+                classifier "sources"
+            }
+
             pom.withXml {
                 asNode().dependencies.'*'.findAll() {
                     it.scope.text() == 'runtime' && project.configurations.compile.allDependencies.find { dep ->
@@ -106,10 +115,10 @@ bintray {
         publications = ['MyPublication']
 
         version {
-            name = '0.2.6'
+            name = '0.2.7'
             desc = 'KGraphQL alpha release'
             released  = new Date()
-            vcsTag = '0.2.6'
+            vcsTag = '0.2.7'
         }
     }
 }

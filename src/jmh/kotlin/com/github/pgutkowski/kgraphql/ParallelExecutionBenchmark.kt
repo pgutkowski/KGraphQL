@@ -2,25 +2,20 @@ package com.github.pgutkowski.kgraphql
 
 import com.github.pgutkowski.kgraphql.schema.Schema
 import org.junit.Test
-import org.openjdk.jmh.annotations.Benchmark
-import org.openjdk.jmh.annotations.BenchmarkMode
-import org.openjdk.jmh.annotations.Fork
-import org.openjdk.jmh.annotations.Measurement
-import org.openjdk.jmh.annotations.Mode
-import org.openjdk.jmh.annotations.OutputTimeUnit
-import org.openjdk.jmh.annotations.Scope
-import org.openjdk.jmh.annotations.Setup
-import org.openjdk.jmh.annotations.State
-import org.openjdk.jmh.annotations.Warmup
+import org.openjdk.jmh.annotations.*
 import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.experimental.*
 
 @State(Scope.Benchmark)
 @Warmup(iterations = 5)
 @Measurement(iterations = 5)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 5)
+@Fork(value = 1)
 open class ParallelExecutionBenchmark {
+
+    @Param("true", "false")
+    var withSuspendResolvers = false
 
     var schema : Schema = KGraphQL.schema {  }
 
@@ -28,34 +23,40 @@ open class ParallelExecutionBenchmark {
     fun setup(){
         schema = KGraphQL.schema {
 
-            query("sample1") {
-                resolver { ->
-                    Thread.sleep(2)
-                    "233"
-                }
-            }
-            query("sample2") {
-                resolver { ->
-                    Thread.sleep(3)
-                    3.14 * ThreadLocalRandom.current().nextInt()
-                }
-            }
-            query("sample3") {
-                resolver { ->
-                    Thread.sleep(2)
-                    ThreadLocalRandom.current().nextInt() / 21
+            if (withSuspendResolvers == false)
+                repeat(1000) {
+                    query("automated-${it}") {
+                        resolver { ->
+                            Thread.sleep(3)
+                            "${it}"
+                        }
+                    }
+                } else {
+                repeat(1000) {
+                    query("automated-${it}") {
+                        suspendResolver { ->
+                            delay(3)
+                            "${it}"
+                        }
+                    }
                 }
             }
         }
     }
 
     @Benchmark @BenchmarkMode(Mode.AverageTime)
-    fun queryBenchmark(): String = schema.execute("{sample1, sample2, sample3}")
+    fun queryBenchmark(): String = schema.execute( "{ " + (0..999).map { "automated-${it}" }.joinToString(", ") + " }" )
 
     @Test
-    fun check(){
+    fun benchmarkWithThreads(){
         setup()
         println(queryBenchmark())
     }
 
+    @Test
+    fun benchmarkWithSuspendResolvers(){
+        withSuspendResolvers = true
+        setup()
+        println(queryBenchmark())
+    }
 }

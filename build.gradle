@@ -16,7 +16,7 @@ buildscript {
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "me.champeau.gradle:jmh-gradle-plugin:0.3.1"
+        classpath "me.champeau.gradle:jmh-gradle-plugin:0.4.7"
         classpath "org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.8.1"
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
     }

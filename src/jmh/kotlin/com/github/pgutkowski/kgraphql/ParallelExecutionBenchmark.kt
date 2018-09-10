@@ -5,7 +5,7 @@ import org.junit.Test
 import org.openjdk.jmh.annotations.*
 import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.*
 
 @State(Scope.Benchmark)
 @Warmup(iterations = 5)

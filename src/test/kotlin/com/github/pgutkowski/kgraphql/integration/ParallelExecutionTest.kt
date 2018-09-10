@@ -4,7 +4,7 @@ import com.github.pgutkowski.kgraphql.KGraphQL
 import com.github.pgutkowski.kgraphql.assertNoErrors
 import com.github.pgutkowski.kgraphql.extract
 import com.github.pgutkowski.kgraphql.deserialize
-import kotlinx.coroutines.experimental.delay
+import kotlinx.coroutines.delay
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.junit.Test

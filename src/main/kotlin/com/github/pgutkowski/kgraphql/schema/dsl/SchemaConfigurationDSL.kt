@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.pgutkowski.kgraphql.configuration.SchemaConfiguration
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.CoroutineDispatcher
+import kotlinx.coroutines.CommonPool
+import kotlinx.coroutines.CoroutineDispatcher
 
 
 class SchemaConfigurationDSL {

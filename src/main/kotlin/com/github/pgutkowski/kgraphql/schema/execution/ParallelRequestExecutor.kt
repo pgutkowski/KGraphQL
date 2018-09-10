@@ -18,10 +18,10 @@ import com.github.pgutkowski.kgraphql.schema.scalar.serializeScalar
 import com.github.pgutkowski.kgraphql.schema.structure2.Field
 import com.github.pgutkowski.kgraphql.schema.structure2.InputValue
 import com.github.pgutkowski.kgraphql.schema.structure2.Type
-import kotlinx.coroutines.experimental.channels.Channel
-import kotlinx.coroutines.experimental.defer
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.defer
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlin.reflect.KProperty1
 
 

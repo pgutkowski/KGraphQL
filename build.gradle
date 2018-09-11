@@ -1,5 +1,5 @@
 group 'com.github.pgutkowski'
-version '0.2.7'
+version '0.3.0-alpha'
 
 buildscript {
     ext.kotlin_version = '1.3-M2'
@@ -18,7 +18,7 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "me.champeau.gradle:jmh-gradle-plugin:0.4.7"
         classpath "org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.8.1"
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.1'
     }
 }
 
@@ -116,10 +116,10 @@ bintray {
         publications = ['MyPublication']
 
         version {
-            name = '0.2.7'
+            name = '0.3.0-alpha'
             desc = 'KGraphQL alpha release'
             released  = new Date()
-            vcsTag = '0.2.7'
+            vcsTag = '0.3.0-alpha'
         }
     }
 }

@@ -23,7 +23,7 @@ class TypeSystemSpecificationTest {
     }
 
     @Test
-    fun `All types and directives defined within a schema must not have a name which begins with "__"`(){
+    fun `All types and directives defined within a schema must not have a name which begins with __`(){
         expect<SchemaException>("Type name starting with \"__\" are excluded for introspection system"){
             schema {
                 type<__Type>()

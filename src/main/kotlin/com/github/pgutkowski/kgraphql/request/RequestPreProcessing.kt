@@ -21,7 +21,8 @@ fun tokenizeRequest(input : String) : List<String> {
                 i++
             }
             '\"' -> {
-                val token = input.substring(i+1).takeWhile { it != '\"' }
+                val substring = input.substring(i + 1)
+                val token = extractValueToken(substring)
                 i += token.length + 2 //2 for quotes
                 tokens.add("\"$token\"")
             }
@@ -39,6 +40,29 @@ fun tokenizeRequest(input : String) : List<String> {
     }
 
     return tokens
+}
+
+private fun extractValueToken(substring: String): String {
+    var index = 0
+    var isEscaped = false
+
+    val tokenBuilder = StringBuilder()
+
+    loop@ while (index < substring.length) {
+        val currentChar = substring[index]
+
+        isEscaped = when {
+            currentChar == '\"' && isEscaped.not() -> break@loop
+            currentChar == '\\' -> true
+            else -> false
+        }
+
+        tokenBuilder.append(currentChar)
+
+        index++
+    }
+
+    return tokenBuilder.toString()
 }
 
 fun createDocumentTokens(tokens : List<String>) : Document {

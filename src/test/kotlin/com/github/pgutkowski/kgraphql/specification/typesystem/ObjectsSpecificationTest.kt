@@ -15,7 +15,7 @@ class ObjectsSpecificationTest {
     data class Underscore(val __field : Int)
 
     @Test
-    fun `All fields defined within an Object type must not have a name which begins with "__"`(){
+    fun `All fields defined within an Object type must not have a name which begins with __`(){
         expect<SchemaException>("Illegal name '__field'. Names starting with '__' are reserved for introspection system"){
             KGraphQL.schema { query("underscore"){ resolver { -> Underscore(0) } } }
         }
@@ -123,7 +123,7 @@ class ObjectsSpecificationTest {
     }
 
     @Test
-    fun `All arguments defined within a field must not have a name which begins with "__"`(){
+    fun `All arguments defined within a field must not have a name which begins with __`(){
         expect<SchemaException>("Illegal name '__id'. Names starting with '__' are reserved for introspection system"){
             KGraphQL.schema {
                 query("many") { resolver { __id : String -> ManyFields(__id) } }

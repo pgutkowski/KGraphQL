@@ -72,7 +72,7 @@ class InputValuesSpecificationTest {
     @Test
     @Specification("2.9.4 String Value")
     fun `String input value`(){
-        val input = "\\Ala ma kota \\\n\\kot ma Alę\\"
+        val input = "\\Ala ma kota \\\n\\kot ma Alę"
         val response = deserialize(schema.execute("{String(value : \"$input\")}"))
         assertThat(response.extract<String>("data/String"), equalTo(input))
     }

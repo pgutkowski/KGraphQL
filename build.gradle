@@ -1,5 +1,5 @@
 group 'com.github.pgutkowski'
-version '0.2.7'
+version '0.2.8'
 
 buildscript {
     ext.kotlin_version = '1.2.50'
@@ -115,10 +115,10 @@ bintray {
         publications = ['MyPublication']
 
         version {
-            name = '0.2.7'
+            name = '0.2.8'
             desc = 'KGraphQL alpha release'
             released  = new Date()
-            vcsTag = '0.2.7'
+            vcsTag = '0.2.8'
         }
     }
 }

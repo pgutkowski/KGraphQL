@@ -138,7 +138,7 @@ Detailed documentation can be found in [wiki](https://github.com/pgutkowski/KGra
 ## Using in your project
 **_Please note that this library is still in experimental state and is subject to change._**
 
-KGraphQL is pushed to bintray repository and also linked to JCenter. It requires kotlin compiler version 1.2.x and require kotlin runtime of the same version as a dependency.
+KGraphQL is pushed to Bintray repository and also linked to JCenter. Current trunk version is 0.2.9. It requires kotlin compiler version 1.2.x and kotlin runtime of the same version as a dependency. If you are running on Kotlin 1.3.x, use prerelease version 0.3.0-beta.
 
 ### Maven
 

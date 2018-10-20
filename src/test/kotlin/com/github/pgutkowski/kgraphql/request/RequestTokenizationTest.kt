@@ -50,4 +50,12 @@ class RequestTokenizationTest {
                 )
         )
     }
+
+    @Test
+    fun `tokenize input with quotes`(){
+        testTokenization(
+                input = "{hello(name : \"Ted\\\" Mosby\")}",
+                expected = listOf("{", "hello", "(", "name", ":", "\"Ted\\\" Mosby\"", ")", "}")
+        )
+    }
 }

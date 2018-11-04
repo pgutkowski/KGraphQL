@@ -18,17 +18,21 @@ import com.github.pgutkowski.kgraphql.schema.scalar.serializeScalar
 import com.github.pgutkowski.kgraphql.schema.structure2.Field
 import com.github.pgutkowski.kgraphql.schema.structure2.InputValue
 import com.github.pgutkowski.kgraphql.schema.structure2.Type
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.defer
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KProperty1
 
 
 @Suppress("UNCHECKED_CAST") // For valid structure there is no risk of ClassCastException
-class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
+class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor, CoroutineScope {
 
     data class ExecutionContext(val variables: Variables, val requestContext: Context)
+
+    override val coroutineContext: CoroutineContext = Job()
 
     private val argumentsHandler = ArgumentsHandler(schema)
 

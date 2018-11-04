@@ -14,6 +14,7 @@ import com.github.pgutkowski.kgraphql.extract
 import com.github.pgutkowski.kgraphql.schema.introspection.TypeKind
 import com.github.pgutkowski.kgraphql.schema.scalar.StringScalarCoercion
 import com.github.pgutkowski.kgraphql.schema.structure2.Field
+import kotlinx.coroutines.delay
 import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.instanceOf
@@ -364,12 +365,134 @@ class SchemaBuilderTest {
         }
     }
 
+    class SixValues(val val1: Int = 1, val val2: String = "2", val val3: Int = 3, val val4: String = "4", val val5: Int = 5, val val6: String = "6")
+
+    fun checkSixValuesSchema(schema: Schema) {
+        val response = deserialize (schema.execute("{" +
+            "queryWith1Param(val1: 2) { val1 }" +
+            "queryWith2Params(val1: 2, val2: \"3\") { val1, val2 }" +
+            "queryWith3Params(val1: 2, val2: \"3\", val3: 4) { val1, val2, val3 }" +
+            "queryWith4Params(val1: 2, val2: \"3\", val3: 4, val4: \"5\") { val1, val2, val3, val4 }" +
+            "queryWith5Params(val1: 2, val2: \"3\", val3: 4, val4: \"5\", val5: 6) { val1, val2, val3, val4, val5 }" +
+            "queryWith6Params(val1: 2, val2: \"3\", val3: 4, val4: \"5\", val5: 6, val6: \"7\") { val1, val2, val3, val4, val5, val6 }" +
+            "}"))
+        assertThat(response.extract<Int>("data/queryWith1Param/val1"), equalTo(2))
+
+        assertThat(response.extract<Int>("data/queryWith2Params/val1"), equalTo(2))
+        assertThat(response.extract<String>("data/queryWith2Params/val2"), equalTo("3"))
+
+        assertThat(response.extract<Int>("data/queryWith3Params/val1"), equalTo(2))
+        assertThat(response.extract<String>("data/queryWith3Params/val2"), equalTo("3"))
+        assertThat(response.extract<Int>("data/queryWith3Params/val3"), equalTo(4))
+
+        assertThat(response.extract<Int>("data/queryWith4Params/val1"), equalTo(2))
+        assertThat(response.extract<String>("data/queryWith4Params/val2"), equalTo("3"))
+        assertThat(response.extract<Int>("data/queryWith4Params/val3"), equalTo(4))
+        assertThat(response.extract<String>("data/queryWith4Params/val4"), equalTo("5"))
+
+        assertThat(response.extract<Int>("data/queryWith5Params/val1"), equalTo(2))
+        assertThat(response.extract<String>("data/queryWith5Params/val2"), equalTo("3"))
+        assertThat(response.extract<Int>("data/queryWith5Params/val3"), equalTo(4))
+        assertThat(response.extract<String>("data/queryWith5Params/val4"), equalTo("5"))
+        assertThat(response.extract<Int>("data/queryWith5Params/val5"), equalTo(6))
+
+        assertThat(response.extract<Int>("data/queryWith6Params/val1"), equalTo(2))
+        assertThat(response.extract<String>("data/queryWith6Params/val2"), equalTo("3"))
+        assertThat(response.extract<Int>("data/queryWith6Params/val3"), equalTo(4))
+        assertThat(response.extract<String>("data/queryWith6Params/val4"), equalTo("5"))
+        assertThat(response.extract<Int>("data/queryWith6Params/val5"), equalTo(6))
+        assertThat(response.extract<String>("data/queryWith6Params/val6"), equalTo("7"))
+    }
+
     @Test
-    fun `There is clear message when mutation resolver is not present`(){
-        expect<IllegalArgumentException>("resolver has to be specified for mutation [name]") {
-            KGraphQL.schema {
-                mutation("name") { -> "STUFF" }
+    fun `Schema can contain resolvers with up to 6 parameters`() {
+        val schema = KGraphQL.schema {
+            query("queryWith1Param") {
+                resolver { val1: Int ->
+                    SixValues(val1)
+                }
+            }
+
+            query("queryWith2Params") {
+                resolver { val1: Int, val2: String ->
+                    SixValues(val1, val2)
+                }
+            }
+
+            query("queryWith3Params") {
+                resolver { val1: Int, val2: String, val3: Int ->
+                    SixValues(val1, val2, val3)
+                }
+            }
+
+            query("queryWith4Params") {
+                resolver { val1: Int, val2: String, val3: Int, val4: String ->
+                    SixValues(val1, val2, val3, val4)
+                }
+            }
+
+            query("queryWith5Params") {
+                resolver { val1: Int, val2: String, val3: Int, val4: String, val5: Int ->
+                    SixValues(val1, val2, val3, val4, val5)
+                }
+            }
+
+            query("queryWith6Params") {
+                resolver { val1: Int, val2: String, val3: Int, val4: String, val5: Int, val6: String ->
+                    SixValues(val1, val2, val3, val4, val5, val6)
+                }
             }
         }
+
+        checkSixValuesSchema(schema)
+    }
+
+    @Test
+    fun `Schema can contain suspend resolvers`() {
+        val schema = KGraphQL.schema {
+            query("queryWith1Param") {
+                suspendResolver { val1: Int ->
+                    delay(1)
+                    SixValues(val1)
+                }
+            }
+
+            query("queryWith2Params") {
+                suspendResolver { val1: Int, val2: String ->
+                    delay(1)
+                    SixValues(val1, val2)
+                }
+            }
+
+            query("queryWith3Params") {
+                suspendResolver { val1: Int, val2: String, val3: Int ->
+                    delay(1)
+                    SixValues(val1, val2, val3)
+                }
+            }
+
+            query("queryWith4Params") {
+                suspendResolver { val1: Int, val2: String, val3: Int, val4: String ->
+                    delay(1)
+                    SixValues(val1, val2, val3, val4)
+                }
+            }
+
+            query("queryWith5Params") {
+                suspendResolver { val1: Int, val2: String, val3: Int, val4: String, val5: Int ->
+                    delay(1)
+                    SixValues(val1, val2, val3, val4, val5)
+                }
+            }
+
+            query("queryWith6Params") {
+                suspendResolver { val1: Int, val2: String, val3: Int, val4: String, val5: Int, val6: String ->
+                    delay(1)
+                    SixValues(val1, val2, val3, val4, val5, val6)
+                }
+            }
+        }
+
+        checkSixValuesSchema(schema)
     }
 }

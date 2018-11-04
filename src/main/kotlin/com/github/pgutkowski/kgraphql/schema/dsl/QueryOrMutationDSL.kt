@@ -39,6 +39,21 @@ class QueryOrMutationDSL(
 
     fun <T, R, E, W, Q, A, S>resolver(function: (R, E, W, Q, A, S) -> T) = resolver(FunctionWrapper.on(function))
 
+
+    fun <T>suspendResolver(function: suspend () -> T) = resolver(FunctionWrapper.onSuspend(function))
+
+    fun <T, R>suspendResolver(function: suspend (R) -> T) = resolver(FunctionWrapper.onSuspend(function))
+
+    fun <T, R, E>suspendResolver(function: suspend (R, E) -> T) = resolver(FunctionWrapper.onSuspend(function))
+
+    fun <T, R, E, W>suspendResolver(function: suspend (R, E ,W ) -> T) = resolver(FunctionWrapper.onSuspend(function))
+
+    fun <T, R, E, W, Q>suspendResolver(function: suspend (R, E, W, Q) -> T) = resolver(FunctionWrapper.onSuspend(function))
+
+    fun <T, R, E, W, Q, A>suspendResolver(function: suspend (R, E, W, Q, A) -> T) = resolver(FunctionWrapper.onSuspend(function))
+
+    fun <T, R, E, W, Q, A, S>suspendResolver(function: suspend (R, E, W, Q, A, S) -> T) = resolver(FunctionWrapper.onSuspend(function))
+
     fun accessRule(rule: (Context) -> Exception?){
         val accessRuleAdapter: (Nothing?, Context) -> Exception? = { _, ctx -> rule(ctx) }
         this.accessRuleBlock = accessRuleAdapter

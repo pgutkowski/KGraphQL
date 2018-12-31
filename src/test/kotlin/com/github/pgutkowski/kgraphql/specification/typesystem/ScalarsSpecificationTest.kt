@@ -147,7 +147,12 @@ class ScalarsSpecificationTest {
         assertThat(response.extract<Boolean>("data/boolean"), equalTo(value))
     }
 
-    data class Dob(val double : Double)
+    data class Boo(val boolean: Boolean)
+    data class Lon(val long: Long)
+    data class Dob(val double: Double)
+    data class Num(val int: Int)
+    data class Str(val string: String)
+    data class Multi(val boo: Boo, val str: String, val num: Num)
 
     @Test
     fun `Schema may declare custom double scalar type`(){
@@ -166,5 +171,77 @@ class ScalarsSpecificationTest {
         val value = 232.33
         val response = deserialize(schema.execute("{double(double: $value)}"))
         assertThat(response.extract<Double>("data/double"), equalTo(value))
+    }
+
+    @Test
+    fun `Scalars within input variables`(){
+        val schema = KGraphQL.schema {
+            booleanScalar<Boo> {
+                deserialize = ::Boo
+                serialize = { (boolean) -> boolean }
+            }
+            longScalar<Lon> {
+                deserialize = ::Lon
+                serialize = { (long) -> long }
+            }
+            floatScalar<Dob> {
+                deserialize = ::Dob
+                serialize = { (double) -> double }
+            }
+            intScalar<Num> {
+                deserialize = ::Num
+                serialize = { (num) -> num }
+            }
+            stringScalar<Str> {
+                deserialize = ::Str
+                serialize = { (str) -> str }
+            }
+
+            query("boo") { resolver { boo : Boo -> boo } }
+            query("lon") { resolver { lon : Lon -> lon } }
+            query("dob") { resolver { dob : Dob -> dob } }
+            query("num") { resolver { num : Num -> num } }
+            query("str") { resolver { str : Str -> str } }
+            query("multi") { resolver { -> Multi(Boo(false), "String", Num(25)) } }
+        }
+
+        val booValue = true
+        val lonValue = 124L
+        val dobValue = 2.5
+        val numValue = 155
+        val strValue = "Test"
+        val d = '$'
+
+        val req = """
+            query Query(${d}boo: Boo!, ${d}lon: Lon!, ${d}dob: Dob!, ${d}num: Num!, ${d}str: Str!){
+                boo(boo: ${d}boo)
+                lon(lon: ${d}lon)
+                dob(dob: ${d}dob)
+                num(num: ${d}num)
+                str(str: ${d}str)
+                multi { boo, str, num }
+            }
+        """.trimIndent()
+
+        val values = """
+            {
+                "boo": $booValue,
+                "lon": $lonValue,
+                "dob": $dobValue,
+                "num": $numValue,
+                "str": "$strValue"
+            }
+        """.trimIndent()
+
+        val response = deserialize(schema.execute(req, values))
+        assertThat(response.extract<Boolean>("data/boo"), equalTo(booValue))
+        assertThat(response.extract<Int>("data/lon"), equalTo(lonValue.toInt()))
+        assertThat(response.extract<Double>("data/dob"), equalTo(dobValue))
+        assertThat(response.extract<Int>("data/num"), equalTo(numValue))
+        assertThat(response.extract<String>("data/str"), equalTo(strValue))
+
+        assertThat(response.extract<Boolean>("data/multi/boo"), equalTo(false))
+        assertThat(response.extract<String>("data/multi/str"), equalTo("String"))
+        assertThat(response.extract<Int>("data/multi/num"), equalTo(25))
     }
 }

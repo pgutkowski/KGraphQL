@@ -1,7 +1,7 @@
 package com.github.pgutkowski.kgraphql.configuration
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import kotlinx.coroutines.experimental.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
 
 data class SchemaConfiguration (
         //document parser caching mechanisms

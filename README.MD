@@ -138,7 +138,7 @@ Detailed documentation can be found in [wiki](https://github.com/pgutkowski/KGra
 ## Using in your project
 **_Please note that this library is still in experimental state and is subject to change._**
 
-KGraphQL is pushed to bintray repository and also linked to JCenter. It requires kotlin compiler version 1.2.x and require kotlin runtime of the same version as a dependency.
+KGraphQL is pushed to bintray repository and also linked to JCenter. It requires kotlin compiler version 1.3.x and require kotlin runtime of the same version as a dependency.
 
 ### Maven
 
@@ -165,7 +165,7 @@ And make sure that you use the right Kotlin version:
 
 ```
 <properties>
-    <kotlin.version>1.2.0</kotlin.version>
+    <kotlin.version>1.3.0</kotlin.version>
 </properties>
 ```
 
@@ -191,7 +191,7 @@ And make sure that you use the right Kotlin version:
 
 ```
 buildscript {
-    ext.kotlin_version = '1.2.0'
+    ext.kotlin_version = '1.3.0'
 }
 ```
 

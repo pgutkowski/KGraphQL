@@ -24,9 +24,9 @@ abstract class ScalarDSL<T : Any, Raw : Any>(kClass: KClass<T>, block: ScalarDSL
 
     var coercion: ScalarCoercion<T, Raw>? = null
 
-    internal fun createCoercion() : ScalarCoercion<T, Raw> {
+    fun createCoercion() : ScalarCoercion<T, Raw> {
         return coercion ?: createCoercionFromFunctions()
     }
 
-    abstract protected fun createCoercionFromFunctions() : ScalarCoercion<T, Raw>
+    protected abstract fun createCoercionFromFunctions() : ScalarCoercion<T, Raw>
 }

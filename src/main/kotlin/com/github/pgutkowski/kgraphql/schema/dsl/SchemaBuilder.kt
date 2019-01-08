@@ -1,5 +1,9 @@
 package com.github.pgutkowski.kgraphql.schema.dsl
 
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer
+import com.fasterxml.jackson.databind.module.SimpleModule
 import com.github.pgutkowski.kgraphql.schema.Schema
 import com.github.pgutkowski.kgraphql.schema.SchemaException
 import com.github.pgutkowski.kgraphql.schema.model.EnumValueDef
@@ -44,6 +48,7 @@ class SchemaBuilder<Context : Any>(private val init: SchemaBuilder<Context>.() -
 
     fun <T : Any>stringScalar(kClass: KClass<T>, block: ScalarDSL<T, String>.() -> Unit){
         val scalar = StringScalarDSL(kClass, block)
+        configuration.appendMapper(scalar, kClass)
         model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.createCoercion(), scalar.description))
     }
 
@@ -53,6 +58,7 @@ class SchemaBuilder<Context : Any>(private val init: SchemaBuilder<Context>.() -
 
     fun <T : Any>intScalar(kClass: KClass<T>, block: ScalarDSL<T, Int>.() -> Unit){
         val scalar = IntScalarDSL(kClass, block)
+        configuration.appendMapper(scalar, kClass)
         model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.createCoercion(), scalar.description))
     }
 
@@ -62,6 +68,7 @@ class SchemaBuilder<Context : Any>(private val init: SchemaBuilder<Context>.() -
 
     fun <T : Any>floatScalar(kClass: KClass<T>, block: ScalarDSL<T, Double>.() -> Unit){
         val scalar = DoubleScalarDSL(kClass, block)
+        configuration.appendMapper(scalar, kClass)
         model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.createCoercion(), scalar.description))
     }
 
@@ -71,6 +78,7 @@ class SchemaBuilder<Context : Any>(private val init: SchemaBuilder<Context>.() -
 
     fun <T : Any>longScalar(kClass: KClass<T>, block: ScalarDSL<T, Long>.() -> Unit){
         val scalar = LongScalarDSL(kClass, block)
+        configuration.appendMapper(scalar, kClass)
         model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.createCoercion(), scalar.description))
     }
 
@@ -80,6 +88,7 @@ class SchemaBuilder<Context : Any>(private val init: SchemaBuilder<Context>.() -
 
     fun <T : Any>booleanScalar(kClass: KClass<T>, block: ScalarDSL<T, Boolean>.() -> Unit){
         val scalar = BooleanScalarDSL(kClass, block)
+        configuration.appendMapper(scalar, kClass)
         model.addScalar(TypeDef.Scalar(scalar.name, kClass, scalar.createCoercion(), scalar.description))
     }
 
@@ -160,4 +169,18 @@ class SchemaBuilder<Context : Any>(private val init: SchemaBuilder<Context>.() -
     inline fun <reified T : Any> inputType() {
         inputType(T::class, {})
     }
+}
+
+inline fun <T: Any, reified Raw: Any> SchemaConfigurationDSL.appendMapper(scalar: ScalarDSL<T, Raw>, kClass: KClass<T>) {
+    objectMapper.registerModule(SimpleModule().addDeserializer(kClass.java, object : UsesDeserializer<T>() {
+        override fun deserialize(p: JsonParser, ctxt: DeserializationContext?): T? {
+            return scalar
+                .createCoercion()
+                .deserialize(p.readValueAs(Raw::class.java))
+        }
+    }))
+}
+
+open class UsesDeserializer<T>(vc: Class<*>? = null) : StdDeserializer<T>(vc) {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext?): T? = TODO("Implement")
 }

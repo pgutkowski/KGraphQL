@@ -14,6 +14,7 @@ import com.github.pgutkowski.kgraphql.extract
 import com.github.pgutkowski.kgraphql.schema.introspection.TypeKind
 import com.github.pgutkowski.kgraphql.schema.scalar.StringScalarCoercion
 import com.github.pgutkowski.kgraphql.schema.structure2.Field
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.equalTo
@@ -494,5 +495,18 @@ class SchemaBuilderTest {
         }
 
         checkSixValuesSchema(schema)
+    }
+
+    @Test
+    fun `client code can specify couroutine dispatcher for execution engine`(){
+        defaultSchema {
+            configure {
+                coroutineDispatcher = Dispatchers.Main
+            }
+
+            query("test") {
+                resolver { -> "test"}
+            }
+        }
     }
 }
